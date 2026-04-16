@@ -1,7 +1,7 @@
 --[[
 main.lua
 NeverLose UI Library
-Version: 1.0
+Version: 2.0
 ]]
 
 do
@@ -204,7 +204,7 @@ NeverLose.IsMosueOverOtherFrame = false;
 NeverLose.GlobalLogo = "rbxassetid://120358385035996";
 NeverLose.ImageColorMapping = "rbxassetid://4155801252";
 
--- Load Lucide Icons (optional)
+-- Load Lucide Icons
 local LucideIcons = {}
 local function LoadLucideIcons()
 	local success, iconData = pcall(function()
@@ -697,502 +697,6 @@ function NeverLose:FireKeybind()
 		NeverLose.ActiveWindow:ToggleInterface();
 	end;
 end;
-
-NeverLose.LoadIcon = LPH_NO_VIRTUALIZE(function()
-	NeverLose.RobloxIcon = {
-		["3d-cube-arrow-left"] = "3d-cube-arrow-left",
-		["amazon"] = "amazon",
-		["arm-left"] = "arm-left",
-		["arm-right"] = "arm-right",
-		["arrow-curl-to-left"] = "arrow-curl-to-left",
-		["arrow-curl-to-right"] = "arrow-curl-to-right",
-		["arrow-down-to-line"] = "arrow-down-to-line",
-		["arrow-large-down"] = "arrow-large-down",
-		["arrow-large-left"] = "arrow-large-left",
-		["arrow-large-right"] = "arrow-large-right",
-		["arrow-large-up"] = "arrow-large-up",
-		["arrow-right-from-portrait-rectangle"] = "arrow-right-from-portrait-rectangle",
-		["arrow-right-to-portrait-rectangle"] = "arrow-right-to-portrait-rectangle",
-		["arrow-rotate-down-dashed"] = "arrow-rotate-down-dashed",
-		["arrow-rotate-right"] = "arrow-rotate-right",
-		["arrow-rotate-right-dashed"] = "arrow-rotate-right-dashed",
-		["arrow-small-down"] = "arrow-small-down",
-		["arrow-small-left"] = "arrow-small-left",
-		["arrow-small-right"] = "arrow-small-right",
-		["arrow-small-up"] = "arrow-small-up",
-		["arrow-spin-clockwise"] = "arrow-spin-clockwise",
-		["arrow-spin-clockwise-10"] = "arrow-spin-clockwise-10",
-		["arrow-spin-clockwise-15"] = "arrow-spin-clockwise-15",
-		["arrow-spin-clockwise-30"] = "arrow-spin-clockwise-30",
-		["arrow-spin-counter-clockwise-10"] = "arrow-spin-counter-clockwise-10",
-		["arrow-spin-counter-clockwise-15"] = "arrow-spin-counter-clockwise-15",
-		["arrow-spin-counter-clockwise-30"] = "arrow-spin-counter-clockwise-30",
-		["arrow-thick-to-left"] = "arrow-thick-to-left",
-		["arrow-thick-to-right"] = "arrow-thick-to-right",
-		["arrow-up-from-landscape-rectangle"] = "arrow-up-from-landscape-rectangle",
-		["arrow-up-right-from-square"] = "arrow-up-right-from-square",
-		["arrow-wide-short-down"] = "arrow-wide-short-down",
-		["arrow-wide-short-left"] = "arrow-wide-short-left",
-		["arrow-wide-short-right"] = "arrow-wide-short-right",
-		["arrow-wide-short-up"] = "arrow-wide-short-up",
-		["arrows-small-directional"] = "arrows-small-directional",
-		["audio-wave-dotted-line"] = "audio-wave-dotted-line",
-		["backpack"] = "backpack",
-		["beard"] = "beard",
-		["bell"] = "bell",
-		["bell-clock"] = "bell-clock",
-		["bell-plus"] = "bell-plus",
-		["bell-slash"] = "bell-slash",
-		["belt"] = "belt",
-		["binoculars"] = "binoculars",
-		["book-closed"] = "book-closed",
-		["bookmark"] = "bookmark",
-		["bow-tie"] = "bow-tie",
-		["building-store"] = "building-store",
-		["bullet-flying"] = "bullet-flying",
-		["butterfly-wings"] = "butterfly-wings",
-		["calendar"] = "calendar",
-		["calendar-plus"] = "calendar-plus",
-		["calendar-star"] = "calendar-star",
-		["camera-small"] = "camera-small",
-		["caret-small-down"] = "caret-small-down",
-		["caret-small-left"] = "caret-small-left",
-		["caret-small-right"] = "caret-small-right",
-		["caret-small-up"] = "caret-small-up",
-		["chain-link"] = "chain-link",
-		["chart-four-vertical-bars"] = "chart-four-vertical-bars",
-		["chart-line"] = "chart-line",
-		["chart-pie"] = "chart-pie",
-		["chart-scatter-plot"] = "chart-scatter-plot",
-		["chart-three-vertical-bars"] = "chart-three-vertical-bars",
-		["check"] = "check",
-		["check-large"] = "check-large",
-		["check-small"] = "check-small",
-		["chevron-large-down"] = "chevron-large-down",
-		["chevron-large-down-to-line"] = "chevron-large-down-to-line",
-		["chevron-large-left"] = "chevron-large-left",
-		["chevron-large-left-to-line"] = "chevron-large-left-to-line",
-		["chevron-large-right"] = "chevron-large-right",
-		["chevron-large-right-to-line"] = "chevron-large-right-to-line",
-		["chevron-large-up"] = "chevron-large-up",
-		["chevron-large-up-to-line"] = "chevron-large-up-to-line",
-		["chevron-small-down"] = "chevron-small-down",
-		["chevron-small-down-to-line"] = "chevron-small-down-to-line",
-		["chevron-small-left"] = "chevron-small-left",
-		["chevron-small-left-to-line"] = "chevron-small-left-to-line",
-		["chevron-small-right"] = "chevron-small-right",
-		["chevron-small-right-to-line"] = "chevron-small-right-to-line",
-		["chevron-small-up"] = "chevron-small-up",
-		["chevron-small-up-to-line"] = "chevron-small-up-to-line",
-		["circle-check"] = "circle-check",
-		["circle-i"] = "circle-i",
-		["circle-minus"] = "circle-minus",
-		["circle-person"] = "circle-person",
-		["circle-person-three-horizontal-bars-wrapping-right"] = "circle-person-three-horizontal-bars-wrapping-right",
-		["circle-play"] = "circle-play",
-		["circle-plus"] = "circle-plus",
-		["circle-question"] = "circle-question",
-		["circle-slash"] = "circle-slash",
-		["circle-star"] = "circle-star",
-		["circle-three-dots-horizontal"] = "circle-three-dots-horizontal",
-		["circle-three-dots-vertical"] = "circle-three-dots-vertical",
-		["circle-x"] = "circle-x",
-		["clock"] = "clock",
-		["clock-dashed"] = "clock-dashed",
-		["clock-spin-reverse"] = "clock-spin-reverse",
-		["clock-spin-reverse-dashed"] = "clock-spin-reverse-dashed",
-		["clothes-hanger"] = "clothes-hanger",
-		["cloud"] = "cloud",
-		["cloud-arrow-down"] = "cloud-arrow-down",
-		["code"] = "code",
-		["compact-makeup-brush"] = "compact-makeup-brush",
-		["compass"] = "compass",
-		["controller-with-cog"] = "controller-with-cog",
-		["crop"] = "crop",
-		["crosshairs"] = "crosshairs",
-		["crosshairs-slash"] = "crosshairs-slash",
-		["cube-vertexes"] = "cube-vertexes",
-		["curved-rectangle-megaphone"] = "curved-rectangle-megaphone",
-		["diagonal-line-pattern"] = "diagonal-line-pattern",
-		["diagonal-line-pattern-sticker"] = "diagonal-line-pattern-sticker",
-		["diamond-simplified"] = "diamond-simplified",
-		["discord"] = "discord",
-		["disguise-nose-glasses"] = "disguise-nose-glasses",
-		["document-circle-slash"] = "document-circle-slash",
-		["document-list-heart"] = "document-list-heart",
-		["door-open-arrow-to-bottom-right"] = "door-open-arrow-to-bottom-right",
-		["dress"] = "dress",
-		["dual-arrows-horizontal"] = "dual-arrows-horizontal",
-		["dual-arrows-to-corners"] = "dual-arrows-to-corners",
-		["dual-arrows-vertical"] = "dual-arrows-vertical",
-		["envelope"] = "envelope",
-		["eraser"] = "eraser",
-		["eye"] = "eye",
-		["eye-slash"] = "eye-slash",
-		["eye-with-eyeliner"] = "eye-with-eyeliner",
-		["eyebrows"] = "eyebrows",
-		["eyelashes"] = "eyelashes",
-		["face-winking"] = "face-winking",
-		["facebook"] = "facebook",
-		["file-box"] = "file-box",
-		["fingerprint"] = "fingerprint",
-		["flag"] = "flag",
-		["flame"] = "flame",
-		["folder"] = "folder",
-		["fountain-pen-nib"] = "fountain-pen-nib",
-		["four-bars-horizontal-center-aligned"] = "four-bars-horizontal-center-aligned",
-		["four-bars-horizontal-chevron-left"] = "four-bars-horizontal-chevron-left",
-		["four-bars-horizontal-chevron-right"] = "four-bars-horizontal-chevron-right",
-		["four-bars-horizontal-justified-aligned"] = "four-bars-horizontal-justified-aligned",
-		["four-bars-horizontal-left-aligned"] = "four-bars-horizontal-left-aligned",
-		["four-bars-horizontal-right-aligned"] = "four-bars-horizontal-right-aligned",
-		["frame-bubble-slash"] = "frame-bubble-slash",
-		["frame-bubble-soundwave"] = "frame-bubble-soundwave",
-		["frame-camera"] = "frame-camera",
-		["frame-camera-center"] = "frame-camera-center",
-		["frame-collapsed"] = "frame-collapsed",
-		["frame-corners"] = "frame-corners",
-		["frame-expanded"] = "frame-expanded",
-		["frame-face"] = "frame-face",
-		["frame-person-torso"] = "frame-person-torso",
-		["frame-record"] = "frame-record",
-		["frame-single-bar-horizontal"] = "frame-single-bar-horizontal",
-		["frame-soundwave"] = "frame-soundwave",
-		["frame-video-camera"] = "frame-video-camera",
-		["gear"] = "gear",
-		["generic-dpad"] = "generic-dpad",
-		["gift-box"] = "gift-box",
-		["gift-card"] = "gift-card",
-		["glasses"] = "glasses",
-		["globe-detailed"] = "globe-detailed",
-		["globe-simplified"] = "globe-simplified",
-		["globe-simplipfied-speech-bubble"] = "globe-simplipfied-speech-bubble",
-		["grid"] = "grid",
-		["guilded"] = "guilded",
-		["hack-week"] = "hack-week",
-		["hammer-code"] = "hammer-code",
-		["hand-curved-arrow-left"] = "hand-curved-arrow-left",
-		["hand-dual-arrows"] = "hand-dual-arrows",
-		["hand-ellipse"] = "hand-ellipse",
-		["hand-half-ellipse"] = "hand-half-ellipse",
-		["hand-two-arrows-horizontal"] = "hand-two-arrows-horizontal",
-		["hashtag"] = "hashtag",
-		["hat-fedora"] = "hat-fedora",
-		["hat-toque"] = "hat-toque",
-		["head-blank"] = "head-blank",
-		["head-blush"] = "head-blush",
-		["head-female"] = "head-female",
-		["head-freckles"] = "head-freckles",
-		["head-lips"] = "head-lips",
-		["head-male"] = "head-male",
-		["headphones"] = "headphones",
-		["headphones-arrow-up"] = "headphones-arrow-up",
-		["headphones-arrow-up-lock"] = "headphones-arrow-up-lock",
-		["headphones-slash"] = "headphones-slash",
-		["headphones-x"] = "headphones-x",
-		["headphones-x-lock"] = "headphones-x-lock",
-		["heart"] = "heart",
-		["house"] = "house",
-		["image"] = "image",
-		["image-stacked"] = "image-stacked",
-		["instagram"] = "instagram",
-		["jacket"] = "jacket",
-		["key"] = "key",
-		["key-alt"] = "key-alt",
-		["key-apostrophe"] = "key-apostrophe",
-		["key-arrow-down"] = "key-arrow-down",
-		["key-arrow-right"] = "key-arrow-right",
-		["key-arrow-up"] = "key-arrow-up",
-		["key-asterisk"] = "key-asterisk",
-		["key-backspace"] = "key-backspace",
-		["key-caps-lock"] = "key-caps-lock",
-		["key-caret"] = "key-caret",
-		["key-comma"] = "key-comma",
-		["key-command"] = "key-command",
-		["key-control"] = "key-control",
-		["key-grave-accent"] = "key-grave-accent",
-		["key-period"] = "key-period",
-		["key-return"] = "key-return",
-		["key-shift"] = "key-shift",
-		["key-space"] = "key-space",
-		["key-tab"] = "key-tab",
-		["language-characters"] = "language-characters",
-		["leg-left"] = "leg-left",
-		["leg-right"] = "leg-right",
-		["lightning-bolt"] = "lightning-bolt",
-		["linkedin"] = "linkedin",
-		["lips"] = "lips",
-		["lipstick"] = "lipstick",
-		["list-bulleted"] = "list-bulleted",
-		["location-pin"] = "location-pin",
-		["location-pin-map"] = "location-pin-map",
-		["lock-closed"] = "lock-closed",
-		["lollipop"] = "lollipop",
-		["magnifying-glass"] = "magnifying-glass",
-		["magnifying-glass-minus"] = "magnifying-glass-minus",
-		["magnifying-glass-plus"] = "magnifying-glass-plus",
-		["mascara"] = "mascara",
-		["megaphone"] = "megaphone",
-		["memory-card"] = "memory-card",
-		["messenger"] = "messenger",
-		["microphone"] = "microphone",
-		["microphone-slash"] = "microphone-slash",
-		["microphone-text-box"] = "microphone-text-box",
-		["microphone-triangle-exclamation"] = "microphone-triangle-exclamation",
-		["minus"] = "minus",
-		["minus-small"] = "minus-small",
-		["mirror-standing"] = "mirror-standing",
-		["moments"] = "moments",
-		["moon"] = "moon",
-		["mouse-button-left"] = "mouse-button-left",
-		["mouse-button-right"] = "mouse-button-right",
-		["mouse-scrollwheel"] = "mouse-scrollwheel",
-		["music-note"] = "music-note",
-		["nebula"] = "nebula",
-		["necklace"] = "necklace",
-		["nine-dots-grid"] = "nine-dots-grid",
-		["ninja"] = "ninja",
-		["nose"] = "nose",
-		["page"] = "page",
-		["paint-brush"] = "paint-brush",
-		["paint-bucket"] = "paint-bucket",
-		["pants"] = "pants",
-		["pants-2d-text"] = "pants-2d-text",
-		["paper-airplane"] = "paper-airplane",
-		["parrot"] = "parrot",
-		["pause-large"] = "pause-large",
-		["pause-small"] = "pause-small",
-		["pencil"] = "pencil",
-		["pencil-square"] = "pencil-square",
-		["person"] = "person",
-		["person-arrow-from-bottom-right"] = "person-arrow-from-bottom-right",
-		["person-check"] = "person-check",
-		["person-circle-slash"] = "person-circle-slash",
-		["person-climbing"] = "person-climbing",
-		["person-clock"] = "person-clock",
-		["person-falling"] = "person-falling",
-		["person-graduate"] = "person-graduate",
-		["person-jumping"] = "person-jumping",
-		["person-magnifying-glass"] = "person-magnifying-glass",
-		["person-photo-camera"] = "person-photo-camera",
-		["person-play"] = "person-play",
-		["person-play-clock"] = "person-play-clock",
-		["person-plus"] = "person-plus",
-		["person-racing"] = "person-racing",
-		["person-running"] = "person-running",
-		["person-standing"] = "person-standing",
-		["person-standing-arrow-reverse"] = "person-standing-arrow-reverse",
-		["person-standing-dual-arrows-vertical"] = "person-standing-dual-arrows-vertical",
-		["person-standing-gear"] = "person-standing-gear",
-		["person-swimming"] = "person-swimming",
-		["person-teleport"] = "person-teleport",
-		["person-trash-can"] = "person-trash-can",
-		["person-walking"] = "person-walking",
-		["person-with-smaller-person"] = "person-with-smaller-person",
-		["phone"] = "phone",
-		["phone-down"] = "phone-down",
-		["phone-plus"] = "phone-plus",
-		["phone-volume"] = "phone-volume",
-		["phone-x"] = "phone-x",
-		["photo-camera"] = "photo-camera",
-		["photo-camera-face"] = "photo-camera-face",
-		["photo-camera-slash"] = "photo-camera-slash",
-		["picture-in-picture"] = "picture-in-picture",
-		["pig"] = "pig",
-		["pin"] = "pin",
-		["pin-slash"] = "pin-slash",
-		["play-large"] = "play-large",
-		["play-small"] = "play-small",
-		["plus-large"] = "plus-large",
-		["plus-small"] = "plus-small",
-		["premium"] = "premium",
-		["ps-circle"] = "ps-circle",
-		["ps-dpad-down"] = "ps-dpad-down",
-		["ps-dpad-left"] = "ps-dpad-left",
-		["ps-dpad-right"] = "ps-dpad-right",
-		["ps-dpad-up"] = "ps-dpad-up",
-		["ps-l1"] = "ps-l1",
-		["ps-l2"] = "ps-l2",
-		["ps-l3"] = "ps-l3",
-		["ps-r1"] = "ps-r1",
-		["ps-r2"] = "ps-r2",
-		["ps-r3"] = "ps-r3",
-		["ps-square"] = "ps-square",
-		["ps-stick-left"] = "ps-stick-left",
-		["ps-stick-right"] = "ps-stick-right",
-		["ps-triagle"] = "ps-triagle",
-		["ps-x"] = "ps-x",
-		["ps4-options"] = "ps4-options",
-		["ps4-share"] = "ps4-share",
-		["ps4-touchpad"] = "ps4-touchpad",
-		["ps5-options"] = "ps5-options",
-		["ps5-share"] = "ps5-share",
-		["ps5-touchpad"] = "ps5-touchpad",
-		["pumpkin"] = "pumpkin",
-		["purse"] = "purse",
-		["rectangle-list"] = "rectangle-list",
-		["rectangle-numbers-counting"] = "rectangle-numbers-counting",
-		["rectangle-person-with-three-horizontal-lines"] = "rectangle-person-with-three-horizontal-lines",
-		["robux"] = "robux",
-		["rosette-seven-point"] = "rosette-seven-point",
-		["rosette-ten-point"] = "rosette-ten-point",
-		["seven-point-rosette"] = "seven-point-rosette",
-		["shield-check"] = "shield-check",
-		["shield-lock"] = "shield-lock",
-		["shirt"] = "shirt",
-		["shirt-2d-text"] = "shirt-2d-text",
-		["shirt-pants"] = "shirt-pants",
-		["shoe-left"] = "shoe-left",
-		["shoe-right"] = "shoe-right",
-		["shopping-basket"] = "shopping-basket",
-		["shopping-basket-check"] = "shopping-basket-check",
-		["shopping-cart"] = "shopping-cart",
-		["shorts"] = "shorts",
-		["sidebar"] = "sidebar",
-		["signal-exclamation"] = "signal-exclamation",
-		["six-dots-two-column-grid"] = "six-dots-two-column-grid",
-		["skip-end-large"] = "skip-end-large",
-		["skip-end-small"] = "skip-end-small",
-		["skip-next-large"] = "skip-next-large",
-		["skip-next-small"] = "skip-next-small",
-		["skip-previous-large"] = "skip-previous-large",
-		["skip-previous-small"] = "skip-previous-small",
-		["skip-start-large"] = "skip-start-large",
-		["skip-start-small"] = "skip-start-small",
-		["smartphone-portrait"] = "smartphone-portrait",
-		["speaker"] = "speaker",
-		["speaker-slash"] = "speaker-slash",
-		["speaker-triangle-exclamation"] = "speaker-triangle-exclamation",
-		["speaker-x"] = "speaker-x",
-		["speech-bubble-align-center"] = "speech-bubble-align-center",
-		["speech-bubble-align-left"] = "speech-bubble-align-left",
-		["speech-bubble-exclamation"] = "speech-bubble-exclamation",
-		["speech-bubble-round"] = "speech-bubble-round",
-		["square-bone"] = "square-bone",
-		["square-books"] = "square-books",
-		["square-check"] = "square-check",
-		["square-code"] = "square-code",
-		["square-dashed-person-standing"] = "square-dashed-person-standing",
-		["square-dual-arrows-horizontal"] = "square-dual-arrows-horizontal",
-		["square-dual-arrows-to-corner"] = "square-dual-arrows-to-corner",
-		["square-face-sound"] = "square-face-sound",
-		["square-face-waving-hand"] = "square-face-waving-hand",
-		["square-face-winking"] = "square-face-winking",
-		["square-minus"] = "square-minus",
-		["square-person"] = "square-person",
-		["squares-grid-plus"] = "squares-grid-plus",
-		["squares-grid-qr"] = "squares-grid-qr",
-		["stacked-squares-arrow-down-left"] = "stacked-squares-arrow-down-left",
-		["stacked-squares-arrow-up-right"] = "stacked-squares-arrow-up-right",
-		["stacked-squares-plus"] = "stacked-squares-plus",
-		["star"] = "star",
-		["stop-large"] = "stop-large",
-		["stop-small"] = "stop-small",
-		["studio"] = "studio",
-		["sun"] = "sun",
-		["sweater"] = "sweater",
-		["sword"] = "sword",
-		["tag-sparkle"] = "tag-sparkle",
-		["teletype"] = "teletype",
-		["tencent-qq"] = "tencent-qq",
-		["text-b-bold"] = "text-b-bold",
-		["text-box-microphone"] = "text-box-microphone",
-		["text-h-subscript-1"] = "text-h-subscript-1",
-		["text-h-subscript-2"] = "text-h-subscript-2",
-		["text-h-subscript-3"] = "text-h-subscript-3",
-		["text-i-italic"] = "text-i-italic",
-		["text-s-strikethrough"] = "text-s-strikethrough",
-		["text-u-underline"] = "text-u-underline",
-		["text-uppercase-a-lowercase-a"] = "text-uppercase-a-lowercase-a",
-		["text-x-subscript-2"] = "text-x-subscript-2",
-		["text-x-superscript-2"] = "text-x-superscript-2",
-		["three-bars-horizontal"] = "three-bars-horizontal",
-		["three-bars-horizontal-chevron-left"] = "three-bars-horizontal-chevron-left",
-		["three-bars-horizontal-narrowing"] = "three-bars-horizontal-narrowing",
-		["three-bars-horizontal-triangles-vertical"] = "three-bars-horizontal-triangles-vertical",
-		["three-bars-vertical-triangles-horizontal"] = "three-bars-vertical-triangles-horizontal",
-		["three-chevrons-enlarging-down"] = "three-chevrons-enlarging-down",
-		["three-chevrons-enlarging-up"] = "three-chevrons-enlarging-up",
-		["three-dots-horizontal"] = "three-dots-horizontal",
-		["three-dots-vertical"] = "three-dots-vertical",
-		["three-horizontal-bars-wrapping-right"] = "three-horizontal-bars-wrapping-right",
-		["three-people"] = "three-people",
-		["three-ring-note"] = "three-ring-note",
-		["three-sliders-horizontal"] = "three-sliders-horizontal",
-		["three-stacked-squares-tilted"] = "three-stacked-squares-tilted",
-		["thumb-down"] = "thumb-down",
-		["thumb-up"] = "thumb-up",
-		["tik-tok"] = "tik-tok",
-		["tilt"] = "tilt",
-		["torso"] = "torso",
-		["trash-can"] = "trash-can",
-		["triangle-exclamation"] = "triangle-exclamation",
-		["trophy"] = "trophy",
-		["tshirt"] = "tshirt",
-		["tshirt-2d-text"] = "tshirt-2d-text",
-		["tshirt-dual-arrows"] = "tshirt-dual-arrows",
-		["twitch"] = "twitch",
-		["twitter"] = "twitter",
-		["two-arrows-down-and-up"] = "two-arrows-down-and-up",
-		["two-arrows-from-center"] = "two-arrows-from-center",
-		["two-arrows-left-right"] = "two-arrows-left-right",
-		["two-arrows-loop-clockwise"] = "two-arrows-loop-clockwise",
-		["two-arrows-loop-clockwise-1"] = "two-arrows-loop-clockwise-1",
-		["two-arrows-loop-clockwise-infinity"] = "two-arrows-loop-clockwise-infinity",
-		["two-arrows-spin-clockwise"] = "two-arrows-spin-clockwise",
-		["two-arrows-spin-clockwise-plus"] = "two-arrows-spin-clockwise-plus",
-		["two-arrows-switch-right"] = "two-arrows-switch-right",
-		["two-arrows-to-center"] = "two-arrows-to-center",
-		["two-folders"] = "two-folders",
-		["two-location-pins-connecting-arrow"] = "two-location-pins-connecting-arrow",
-		["two-makeup-brushes"] = "two-makeup-brushes",
-		["two-people"] = "two-people",
-		["two-people-speech-bubble"] = "two-people-speech-bubble",
-		["two-stacked-squares"] = "two-stacked-squares",
-		["two-switches-horizontal"] = "two-switches-horizontal",
-		["verified-backplate"] = "verified-backplate",
-		["verified-check"] = "verified-check",
-		["verified-mono"] = "verified-mono",
-		["video-camera"] = "video-camera",
-		["video-camera-arrow-to-bottom-left"] = "video-camera-arrow-to-bottom-left",
-		["video-camera-arrow-to-top-right"] = "video-camera-arrow-to-top-right",
-		["video-camera-slash"] = "video-camera-slash",
-		["video-camera-triangle-exclamation"] = "video-camera-triangle-exclamation",
-		["video-camera-x"] = "video-camera-x",
-		["wallet"] = "wallet",
-		["we-chat"] = "we-chat",
-		["whatsapp"] = "whatsapp",
-		["x"] = "x",
-		["x-small"] = "x-small",
-		["xbox-a"] = "xbox-a",
-		["xbox-a-pressed"] = "xbox-a-pressed",
-		["xbox-a-unpressed"] = "xbox-a-unpressed",
-		["xbox-b"] = "xbox-b",
-		["xbox-dpad"] = "xbox-dpad",
-		["xbox-dpad-down"] = "xbox-dpad-down",
-		["xbox-dpad-left"] = "xbox-dpad-left",
-		["xbox-dpad-right"] = "xbox-dpad-right",
-		["xbox-dpad-up"] = "xbox-dpad-up",
-		["xbox-lb"] = "xbox-lb",
-		["xbox-lt"] = "xbox-lt",
-		["xbox-menu"] = "xbox-menu",
-		["xbox-rb"] = "xbox-rb",
-		["xbox-rt"] = "xbox-rt",
-		["xbox-stick-left"] = "xbox-stick-left",
-		["xbox-stick-left-directional"] = "xbox-stick-left-directional",
-		["xbox-stick-left-horizontal"] = "xbox-stick-left-horizontal",
-		["xbox-stick-left-vertical"] = "xbox-stick-left-vertical",
-		["xbox-stick-right"] = "xbox-stick-right",
-		["xbox-stick-right-directional"] = "xbox-stick-right-directional",
-		["xbox-stick-right-horizontal"] = "xbox-stick-right-horizontal",
-		["xbox-stick-right-vertical"] = "xbox-stick-right-vertical",
-		["xbox-view"] = "xbox-view",
-		["xbox-x"] = "xbox-x",
-		["xbox-y"] = "xbox-y",
-		["xr-headset"] = "xr-headset",
-		["youtube"] = "youtube"
-	};
-end);
 
 NeverLose.IsMouseOverFrame = LPH_NO_VIRTUALIZE(function(self , Frame)
 	if not Frame then
@@ -2091,120 +1595,298 @@ function NeverLose:RegisiterHandler(Handler: Frame , Signal)
 		Config = NeverLose:ProcessParams(Config , {
 			Default = false,
 			Flag = nil,
+			Type = "Switch",  -- "Switch" atau "Checkbox"
+			Icon = nil,       -- Icon untuk checkbox/switch (hanya muncul saat ON)
 			Callback = EmptyFunction,
 		});
 
-		local Toggle = Instance.new("Frame")
-		local UICorner = Instance.new("UICorner")
-		local Circle = Instance.new("Frame")
-		local UICorner_2 = Instance.new("UICorner")
+		local ToggleLib = {};
+		
+		-- Fungsi untuk mendapatkan icon (support lucide)
+		local function getIconChar(iconName)
+			if not iconName or iconName == "" then
+				return "check"
+			end
+			if type(iconName) == "string" and iconName:sub(1,7) == "lucide:" then
+				local lucideName = iconName:sub(8)
+				return LucideIcons[lucideName] or "✓"
+			end
+			return iconName
+		end
+		
+		if Config.Type == "Checkbox" then
+			-- TAMPILAN CHECKBOX (kotak centang) - Icon hanya muncul saat ON
+			local Toggle = Instance.new("Frame")
+			local UICorner = Instance.new("UICorner")
+			local CheckIcon = Instance.new("TextLabel")
+			local UIStroke = Instance.new("UIStroke")
 
-		Toggle.Name = NeverLose.RandomString();
-		Toggle.Parent = Handler
-		Toggle.BackgroundColor3 = Color3.fromRGB(10, 13, 21)
-		Toggle.BorderColor3 = Color3.fromRGB(0, 0, 0)
-		Toggle.BorderSizePixel = 0
-		Toggle.ClipsDescendants = true
-		Toggle.Size = UDim2.new(0, 30, 0, 18)
-		Toggle.ZIndex = ZINdex + 13
-		Toggle.LayoutOrder = -(#Handler:GetChildren() + 5);
+			Toggle.Name = NeverLose.RandomString();
+			Toggle.Parent = Handler
+			Toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  -- Putih saat OFF
+			Toggle.BackgroundTransparency = 0
+			Toggle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			Toggle.BorderSizePixel = 0
+			Toggle.Size = UDim2.new(0, 18, 0, 18)
+			Toggle.ZIndex = ZINdex + 13
+			Toggle.LayoutOrder = -(#Handler:GetChildren() + 5);
 
-		UICorner.CornerRadius = UDim.new(1, 0)
-		UICorner.Parent = Toggle
+			UICorner.CornerRadius = UDim.new(0, 4)
+			UICorner.Parent = Toggle
 
-		Circle.Name = NeverLose.RandomString();
-		Circle.Parent = Toggle
-		Circle.AnchorPoint = Vector2.new(0.5, 0.5)
-		Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		Circle.BackgroundTransparency = 0.500
-		Circle.BorderColor3 = Color3.fromRGB(0, 0, 0)
-		Circle.BorderSizePixel = 0
-		Circle.Position = UDim2.new(0.300000012, 0, 0.5, 0)
-		Circle.Size = UDim2.new(0, 16, 0, 16)
-		Circle.ZIndex = ZINdex + 14
+			UIStroke.Transparency = 0.650
+			UIStroke.Color = Color3.fromRGB(100, 100, 110)
+			UIStroke.Thickness = 1.5
+			UIStroke.Parent = Toggle
 
-		UICorner_2.CornerRadius = UDim.new(1, 0)
-		UICorner_2.Parent = Circle
+			local iconChar = getIconChar(Config.Icon)
+			CheckIcon.Name = NeverLose.RandomString();
+			CheckIcon.Parent = Toggle
+			CheckIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+			CheckIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			CheckIcon.BackgroundTransparency = 1.000
+			CheckIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			CheckIcon.BorderSizePixel = 0
+			CheckIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+			CheckIcon.Size = UDim2.new(1, -4, 1, -4)
+			CheckIcon.ZIndex = ZINdex + 14
+			CheckIcon.FontFace = NeverLose.BuiltInBold
+			CheckIcon.Text = iconChar
+			CheckIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+			CheckIcon.TextSize = 12.000
+			CheckIcon.TextTransparency = 1  -- Hidden saat OFF
+			CheckIcon.TextWrapped = true
 
-		local ToggleLib = {
-			Root = Toggle	
-		};
+			ToggleLib.Root = Toggle
 
-		ToggleLib.SetUI = LPH_NO_VIRTUALIZE(function(value)
-			if value then
-				NeverLose.PlayAnimate(Toggle,SlowyTween,{
-					BackgroundTransparency = 0,
-					BackgroundColor3 = NeverLose.AccentColor
+			ToggleLib.SetUI = LPH_NO_VIRTUALIZE(function(value)
+				if value then
+					-- ON: Background warna accent, icon muncul
+					NeverLose.PlayAnimate(Toggle, SlowyTween, {
+						BackgroundColor3 = NeverLose.AccentColor
+					})
+					NeverLose.PlayAnimate(UIStroke, SlowyTween, {
+						Transparency = 0,
+						Color = NeverLose.AccentColor
+					})
+					NeverLose.PlayAnimate(CheckIcon, SlowyTween, {
+						TextTransparency = 0  -- Icon muncul
+					})
+				else
+					-- OFF: Background putih, icon hidden
+					NeverLose.PlayAnimate(Toggle, SlowyTween, {
+						BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+					})
+					NeverLose.PlayAnimate(UIStroke, SlowyTween, {
+						Transparency = 0.650,
+						Color = Color3.fromRGB(100, 100, 110)
+					})
+					NeverLose.PlayAnimate(CheckIcon, SlowyTween, {
+						TextTransparency = 1  -- Icon hidden
+					})
+				end
+			end)
+
+			ToggleLib.SetVisible = LPH_NO_VIRTUALIZE(function(value)
+				if value then
+					ToggleLib.SetUI(Config.Default);
+				else
+					NeverLose.PlayAnimate(Toggle, SlowyTween, {
+						BackgroundTransparency = 1
+					})
+					NeverLose.PlayAnimate(UIStroke, SlowyTween, {
+						Transparency = 1
+					})
+					NeverLose.PlayAnimate(CheckIcon, SlowyTween, {
+						TextTransparency = 1
+					})
+				end
+			end)
+
+			ToggleLib.SetUI(Config.Default)
+			ToggleLib.SetVisible(Signal:GetValue())
+
+			-- Hover effect
+			local BtnInput = NeverLose:CreateInput(Toggle, LPH_NO_VIRTUALIZE(function()
+				Config.Default = not Config.Default
+				ToggleLib.SetUI(Config.Default)
+				Config.Callback(Config.Default)
+			end))
+
+			NeverLose:AddSignal(BtnInput.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+				NeverLose.PlayAnimate(Toggle, FastTween, {
+					Size = UDim2.new(0, 20, 0, 20)
 				})
+			end)))
 
-				NeverLose.PlayAnimate(Circle,SlowyTween,{
-					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-					BackgroundTransparency = 0,
-					Position = UDim2.new(0.7, 0, 0.5, 0)
+			NeverLose:AddSignal(BtnInput.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+				NeverLose.PlayAnimate(Toggle, FastTween, {
+					Size = UDim2.new(0, 18, 0, 18)
 				})
-			else
-				NeverLose.PlayAnimate(Toggle,SlowyTween,{
-					BackgroundTransparency = 0,
-					BackgroundColor3 = Color3.fromRGB(10, 13, 21)
-				})
+			end)))
 
-				NeverLose.PlayAnimate(Circle,SlowyTween,{
-					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-					BackgroundTransparency = 0.500,
-					Position = UDim2.new(0.300000012, 0, 0.5, 0)
-				})
-			end;
-		end);
+			ToggleLib.Signal = Signal:Connect(ToggleLib.SetVisible)
 
-		ToggleLib.SetVisible = LPH_NO_VIRTUALIZE(function(value)
-			if value then
-				ToggleLib.SetUI(Config.Default);
-			else
-				NeverLose.PlayAnimate(Toggle,SlowyTween,{
-					BackgroundTransparency = 1,
-					BackgroundColor3 = Color3.fromRGB(10, 13, 21)
-				})
+			function ToggleLib:GetValue()
+				return Config.Default
+			end
 
-				NeverLose.PlayAnimate(Circle,SlowyTween,{
-					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-					BackgroundTransparency = 1,
-					Position = UDim2.new(0.300000012, 0, 0.5, 0)
-				})
-			end;
-		end);
+			function ToggleLib:SetValue(v)
+				Config.Default = v
+				if Signal:GetValue() then
+					ToggleLib.SetUI(Config.Default)
+				end
+				Config.Callback(Config.Default)
+			end
+			
+			function ToggleLib:SetIcon(iconName)
+				local newIcon = getIconChar(iconName)
+				CheckIcon.Text = newIcon
+			end
 
-		ToggleLib.SetUI(Config.Default);
-		ToggleLib.SetVisible(Signal:GetValue());
+			if Config.Flag then
+				NeverLose.Flags[Config.Flag] = ToggleLib
+			end
 
-		NeverLose:CreateInput(Toggle , LPH_NO_VIRTUALIZE(function()
-			Config.Default = not Config.Default;
+			return ToggleLib
+			
+		else
+			-- TAMPILAN SWITCH (toggle slider) - Icon hanya muncul saat ON
+			local Toggle = Instance.new("Frame")
+			local UICorner = Instance.new("UICorner")
+			local Circle = Instance.new("Frame")
+			local UICorner_2 = Instance.new("UICorner")
+			local CircleIcon = Instance.new("TextLabel")  -- Icon di dalam circle (hanya muncul saat ON)
 
-			ToggleLib.SetUI(Config.Default);
+			Toggle.Name = NeverLose.RandomString();
+			Toggle.Parent = Handler
+			Toggle.BackgroundColor3 = Color3.fromRGB(30, 30, 35)  -- Hitam keabu-abuan saat OFF
+			Toggle.BackgroundTransparency = 0
+			Toggle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			Toggle.BorderSizePixel = 0
+			Toggle.ClipsDescendants = true
+			Toggle.Size = UDim2.new(0, 36, 0, 20)
+			Toggle.ZIndex = ZINdex + 13
+			Toggle.LayoutOrder = -(#Handler:GetChildren() + 5);
 
-			Config.Callback(Config.Default)
-		end))
+			UICorner.CornerRadius = UDim.new(1, 0)
+			UICorner.Parent = Toggle
 
-		ToggleLib.Signal = Signal:Connect(ToggleLib.SetVisible);
+			Circle.Name = NeverLose.RandomString();
+			Circle.Parent = Toggle
+			Circle.AnchorPoint = Vector2.new(0.5, 0.5)
+			Circle.BackgroundColor3 = Color3.fromRGB(200, 200, 210)
+			Circle.BackgroundTransparency = 0
+			Circle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			Circle.BorderSizePixel = 0
+			Circle.Position = UDim2.new(0.25, 0, 0.5, 0)  -- Posisi kiri saat OFF
+			Circle.Size = UDim2.new(0, 16, 0, 16)
+			Circle.ZIndex = ZINdex + 14
+			Circle.ClipsDescendants = true
 
-		function ToggleLib:GetValue()
-			return Config.Default;
-		end;
+			UICorner_2.CornerRadius = UDim.new(1, 0)
+			UICorner_2.Parent = Circle
+			
+			-- Icon di dalam circle (hanya muncul saat ON)
+			local iconChar = getIconChar(Config.Icon)
+			CircleIcon.Name = NeverLose.RandomString();
+			CircleIcon.Parent = Circle
+			CircleIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+			CircleIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			CircleIcon.BackgroundTransparency = 1.000
+			CircleIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			CircleIcon.BorderSizePixel = 0
+			CircleIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+			CircleIcon.Size = UDim2.new(1, -4, 1, -4)
+			CircleIcon.ZIndex = ZINdex + 15
+			CircleIcon.FontFace = NeverLose.BuiltInBold
+			CircleIcon.Text = iconChar
+			CircleIcon.TextColor3 = NeverLose.AccentColor
+			CircleIcon.TextSize = 10.000
+			CircleIcon.TextTransparency = 1  -- Hidden saat OFF
+			CircleIcon.TextWrapped = true
 
-		function ToggleLib:SetValue(v)
-			Config.Default = v;
+			ToggleLib.Root = Toggle
 
-			if Signal:GetValue() then
-				ToggleLib.SetUI(Config.Default);
-			end;
+			ToggleLib.SetUI = LPH_NO_VIRTUALIZE(function(value)
+				if value then
+					-- ON: Background warna accent, circle ke kanan, icon muncul
+					NeverLose.PlayAnimate(Toggle, SlowyTween, {
+						BackgroundColor3 = NeverLose.AccentColor
+					})
+					NeverLose.PlayAnimate(Circle, SlowyTween, {
+						BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+						Position = UDim2.new(0.75, 0, 0.5, 0)
+					})
+					NeverLose.PlayAnimate(CircleIcon, SlowyTween, {
+						TextTransparency = 0  -- Icon muncul saat ON
+					})
+				else
+					-- OFF: Background hitam, circle ke kiri, icon hidden
+					NeverLose.PlayAnimate(Toggle, SlowyTween, {
+						BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+					})
+					NeverLose.PlayAnimate(Circle, SlowyTween, {
+						BackgroundColor3 = Color3.fromRGB(200, 200, 210),
+						Position = UDim2.new(0.25, 0, 0.5, 0)
+					})
+					NeverLose.PlayAnimate(CircleIcon, SlowyTween, {
+						TextTransparency = 1  -- Icon hidden saat OFF
+					})
+				end
+			end)
 
-			Config.Callback(Config.Default)
-		end;
+			ToggleLib.SetVisible = LPH_NO_VIRTUALIZE(function(value)
+				if value then
+					ToggleLib.SetUI(Config.Default);
+				else
+					NeverLose.PlayAnimate(Toggle, SlowyTween, {
+						BackgroundTransparency = 1
+					})
+					NeverLose.PlayAnimate(Circle, SlowyTween, {
+						BackgroundTransparency = 1
+					})
+					NeverLose.PlayAnimate(CircleIcon, SlowyTween, {
+						TextTransparency = 1
+					})
+				end
+			end)
 
-		if Config.Flag then
-			NeverLose.Flags[Config.Flag] = ToggleLib;
-		end;
+			ToggleLib.SetUI(Config.Default)
+			ToggleLib.SetVisible(Signal:GetValue())
 
-		return ToggleLib;
+			-- Click handler
+			NeverLose:CreateInput(Toggle, LPH_NO_VIRTUALIZE(function()
+				Config.Default = not Config.Default
+				ToggleLib.SetUI(Config.Default)
+				Config.Callback(Config.Default)
+			end))
+
+			ToggleLib.Signal = Signal:Connect(ToggleLib.SetVisible)
+
+			function ToggleLib:GetValue()
+				return Config.Default
+			end
+
+			function ToggleLib:SetValue(v)
+				Config.Default = v
+				if Signal:GetValue() then
+					ToggleLib.SetUI(Config.Default)
+				end
+				Config.Callback(Config.Default)
+			end
+			
+			function ToggleLib:SetIcon(iconName)
+				local newIcon = getIconChar(iconName)
+				CircleIcon.Text = newIcon
+			end
+
+			if Config.Flag then
+				NeverLose.Flags[Config.Flag] = ToggleLib
+			end
+
+			return ToggleLib
+		end
 	end;
 
 	function handle:AddSlider(Config)
@@ -4193,9 +3875,60 @@ function NeverLose:RegisiterItem(Frame: Frame , Signel)
 	end;
 
 	return idx;
-end;
+end
 
-function NeverLose:CreateWindow(Config)
+-- Fungsi untuk memproses image (support berbagai format)
+local function processImage(img, defaultImg)
+	defaultImg = defaultImg or "rbxassetid://101833678008843"
+	if not img or img == "" then return defaultImg end
+	
+	if tostring(img):match("^%d+$") then
+		return "rbxassetid://" .. img
+	end
+	
+	if tostring(img):match("^rbxassetid://") then
+		return img
+	end
+	
+	if tostring(img):match("^https?://") then
+		if getcustomasset and writefile and isfile then
+			local cacheFolder = "NeverLoseCache"
+			pcall(function() makefolder(cacheFolder) end)
+			local fileName = cacheFolder .. "/img_" .. string.gsub(tostring(img), "[^%w]", "_") .. ".png"
+			
+			if not isfile(fileName) then
+				local success, data = pcall(function()
+					return game:HttpGet(img)
+				end)
+				if success and data and #data > 100 then
+					pcall(function() writefile(fileName, data) end)
+				end
+			end
+			
+			if isfile(fileName) then
+				local success, asset = pcall(getcustomasset, fileName)
+				if success and asset then
+					return asset
+				end
+			end
+		end
+		return img
+	end
+	
+	if isfile and (tostring(img):match("%.png$") or tostring(img):match("%.jpg$")) then
+		if isfile(img) then
+			local success, asset = pcall(getcustomasset, img)
+			if success and asset then
+				return asset
+			end
+		end
+	end
+	
+	return defaultImg
+end
+
+-- MAIN FUNCTION: NeverLose:Window
+function NeverLose:Window(Config)
 	Config = NeverLose:ProcessParams(Config , {
 		Logo = NeverLose.GlobalLogo,
 		Name = "Neverlose",
@@ -4236,8 +3969,11 @@ function NeverLose:CreateWindow(Config)
 		Window.Logo = Config.Image
 	end
 	
+	local processedLogo = processImage(Window.Logo)
+	local processedToggleImage = processImage(Window.ToggleButtonImage)
+	
 	NeverLose.AccentColor = Config.Color or NeverLose.AccentColor
-	NeverLose.GlobalLogo = Window.Logo;
+	NeverLose.GlobalLogo = processedLogo;
 
 	local Logging = NeverLose:CreateLogger();
 	if not isfolder(Window.ConfigFolder) then
@@ -4276,7 +4012,6 @@ function NeverLose:CreateWindow(Config)
 	local ConfigBthIcon = Instance.new("TextLabel")
 	local TabContainer = Instance.new("Frame")
 	
-	-- Search UI components (hanya dibuat jika Search enabled)
 	local SearchFrame = nil
 	local SearchIcon = nil
 	local SearchBox = nil
@@ -4569,7 +4304,7 @@ function NeverLose:CreateWindow(Config)
 	LogoImage.Position = UDim2.new(0, 10, 0.5, 0)
 	LogoImage.Size = UDim2.new(0, 35, 0, 35)
 	LogoImage.ZIndex = 7
-	LogoImage.Image = Window.Logo
+	LogoImage.Image = processedLogo
 	LogoImage.ImageColor3 = NeverLose.IconColor
 
 	UICorner_2.CornerRadius = UDim.new(0, 7)
@@ -4852,7 +4587,6 @@ function NeverLose:CreateWindow(Config)
 	ConfigBthIcon.TextTransparency = 0.250
 	ConfigBthIcon.TextWrapped = true
 
-	-- Hanya buat SearchFrame jika Search = true
 	if Window.SearchEnabled then
 		SearchFrame = Instance.new("Frame")
 		SearchIcon = Instance.new("TextLabel")
@@ -4906,7 +4640,6 @@ function NeverLose:CreateWindow(Config)
 		SearchBox.TextTransparency = 1
 		SearchBox.TextXAlignment = Enum.TextXAlignment.Left
 
-		-- Search functionality
 		do
 			Window.Searching = false;
 			local Input = NeverLose:CreateInput(SearchIcon , LPH_NO_VIRTUALIZE(function()
@@ -6518,7 +6251,7 @@ function NeverLose:CreateWindow(Config)
 		return Watermark_lb;
 	end;
 
-	-- Toggle Button (seperti Vilaris UI)
+	-- Toggle Button (TANPA ANIMASI KLIK)
 	local ToggleButtonGui = nil
 	local ToggleMainButton = nil
 	
@@ -6541,7 +6274,7 @@ function NeverLose:CreateWindow(Config)
 		ToggleMainButton.Position = UDim2.new(0, 15, 0, 100)
 		ToggleMainButton.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 		ToggleMainButton.BackgroundTransparency = 0.15
-		ToggleMainButton.Image = "rbxassetid://" .. (Window.ToggleButtonImage or "101833678008843")
+		ToggleMainButton.Image = processedToggleImage
 		ToggleMainButton.ScaleType = Enum.ScaleType.Fit
 		ToggleMainButton.ZIndex = 50
 		
@@ -6562,6 +6295,7 @@ function NeverLose:CreateWindow(Config)
 		ClickButton.ImageTransparency = 1
 		ClickButton.ZIndex = 51
 		
+		-- Hover animation (tanpa animasi klik)
 		ClickButton.MouseEnter:Connect(function()
 			NeverLose.PlayAnimate(ToggleMainButton, FastTween, {
 				BackgroundTransparency = 0.1,
@@ -6578,6 +6312,7 @@ function NeverLose:CreateWindow(Config)
 			NeverLose.PlayAnimate(BtnStroke, FastTween, { Transparency = 0.3 })
 		end)
 		
+		-- Dragging functionality
 		local dragging = false
 		local dragStart, startPos
 		
@@ -6607,19 +6342,9 @@ function NeverLose:CreateWindow(Config)
 			end
 		end)
 		
+		-- Toggle UI when clicked (TANPA ANIMASI KLIK)
 		ClickButton.MouseButton1Click:Connect(function()
 			Window:ToggleInterface()
-			
-			NeverLose.PlayAnimate(ToggleMainButton, TweenInfo.new(0.1), {
-				Size = UDim2.new(0, 37, 0, 37)
-			})
-			task.delay(0.1, function()
-				if ToggleMainButton and ToggleMainButton.Parent then
-					NeverLose.PlayAnimate(ToggleMainButton, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-						Size = UDim2.new(0, 42, 0, 42)
-					})
-				end
-			end)
 		end)
 	end
 	
@@ -6673,7 +6398,10 @@ function NeverLose:CreateWindow(Config)
 	end;
 
 	return Window;
-end;
+end
+
+-- Alias untuk backward compatibility
+NeverLose.CreateWindow = NeverLose.Window
 
 function NeverLose:CreateNotification()
 	if NeverLose.__Notification_Cache then
@@ -7240,4 +6968,4 @@ function NeverLose:Unload()
 	end;
 end;
 
-return NeverLose;
+return NeverLose
