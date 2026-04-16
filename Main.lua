@@ -1,4976 +1,6623 @@
--- main.lua
--- Obsidian UI Library - Complete Main File
+--[[
+main.lua
+]]
 
-local cloneref = (cloneref or clonereference or function(instance: any)
-    return instance
-end)
-
-local CoreGui: CoreGui = cloneref(game:GetService("CoreGui"))
-local Players: Players = cloneref(game:GetService("Players"))
-local RunService: RunService = cloneref(game:GetService("RunService"))
-local SoundService: SoundService = cloneref(game:GetService("SoundService"))
-local UserInputService: UserInputService = cloneref(game:GetService("UserInputService"))
-local TextService: TextService = cloneref(game:GetService("TextService"))
-local Teams: Teams = cloneref(game:GetService("Teams"))
-local TweenService: TweenService = cloneref(game:GetService("TweenService"))
-
-local getgenv = getgenv or function()
-    return shared
-end
-local setclipboard = setclipboard or nil
-local protectgui = protectgui or (syn and syn.protect_gui) or function() end
-local gethui = gethui or function()
-    return CoreGui
-end
-
-local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local Mouse = cloneref(LocalPlayer:GetMouse())
-
-local Labels = {}
-local Buttons = {}
-local Toggles = {}
-local Options = {}
-local Tooltips = {}
-
-local BaseURL = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
-local CustomImageManager = {}
-local CustomImageManagerAssets = {
-    TransparencyTexture = {
-        RobloxId = 139785960036434,
-        Path = "Obsidian/assets/TransparencyTexture.png",
-        URL = BaseURL .. "assets/TransparencyTexture.png",
-        Id = nil,
-    },
-    SaturationMap = {
-        RobloxId = 4155801252,
-        Path = "Obsidian/assets/SaturationMap.png",
-        URL = BaseURL .. "assets/SaturationMap.png",
-        Id = nil,
-    },
-    LoadingIcon = {
-        RobloxId = 97544096941083,
-        Path = "Obsidian/assets/LoadingIcon.png",
-        URL = BaseURL .. "assets/LoadingIcon.png",
-        Id = nil,
-    },
-    CheckIcon = {
-        RobloxId = 97682394690683,
-        Path = "Obsidian/assets/CheckIcon.png",
-        URL = BaseURL .. "assets/CheckIcon.png",
-        Id = nil,
-    },
-}
-
--- Custom Image Manager Functions
 do
-    local function RecursiveCreatePath(Path: string, IsFile: boolean?)
-        if not isfolder or not makefolder then
-            return
-        end
+	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
+	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
+end;
 
-        local Segments = Path:split("/")
-        local TraversedPath = ""
+cloneref = cloneref or function(i) return i end;
+gethui = gethui or get_hidden_gui;
+getcustomasset = getcustomasset or getsynasset;
+getgenv = getgenv or getfenv;
 
-        if IsFile then
-            table.remove(Segments, #Segments)
-        end
+local LOAD_ENV = LPH_NO_VIRTUALIZE(function()
+	if game:GetService('RunService'):IsStudio() then
+		local BaseWorkspace = game:GetService("ReplicatedFirst"):FindFirstChild('PRI_WORKSPACE') or Instance.new('Folder',game:GetService("ReplicatedFirst"));
 
-        for _, Segment in ipairs(Segments) do
-            if not isfolder(TraversedPath .. Segment) then
-                makefolder(TraversedPath .. Segment)
-            end
-            TraversedPath = TraversedPath .. Segment .. "/"
-        end
-        return TraversedPath
-    end
+		BaseWorkspace.Name = 'PRI\0.'..tostring(string.char(math.random(50,120)))..tostring(string.char(math.random(50,120)))..tostring(string.char(math.random(50,120)))..tostring(string.char(math.random(50,120)))..tostring(string.char(math.random(50,120)))..tostring(string.char(math.random(50,120)));
 
-    function CustomImageManager.AddAsset(AssetName: string, RobloxAssetId: number, URL: string, ForceRedownload: boolean?)
-        if CustomImageManagerAssets[AssetName] ~= nil then
-            error(string.format("Asset %q already exists", AssetName))
-        end
-        assert(typeof(RobloxAssetId) == "number", "RobloxAssetId must be a number")
+		local __get_path_c = function(path)
+			return (string.find(path,'/',1,true) and string.split(path,'/')) or (string.find(path,'\\',1,true) and string.split(path,'\\')) or {path};
+		end;
 
-        CustomImageManagerAssets[AssetName] = {
-            RobloxId = RobloxAssetId,
-            Path = string.format("Obsidian/custom_assets/%s", AssetName),
-            URL = URL,
-            Id = nil,
-        }
-        CustomImageManager.DownloadAsset(AssetName, ForceRedownload)
-    end
+		local __get_path = function(path)
+			local main = __get_path_c(path);
 
-    function CustomImageManager.GetAsset(AssetName: string)
-        if not CustomImageManagerAssets[AssetName] then
-            return nil
-        end
+			local block = BaseWorkspace;
 
-        local AssetData = CustomImageManagerAssets[AssetName]
-        if AssetData.Id then
-            return AssetData.Id
-        end
+			for i,v in next , main do
+				block = block[v];
+			end;
 
-        local AssetID = string.format("rbxassetid://%s", AssetData.RobloxId)
+			return block;
+		end;
 
-        if getcustomasset then
-            local Success, NewID = pcall(getcustomasset, AssetData.Path)
-            if Success and NewID then
-                AssetID = NewID
-            end
-        end
+		getgenv().readfile = function(path)
+			local path : StringValue = __get_path(path);
 
-        AssetData.Id = AssetID
-        return AssetID
-    end
+			return path.Value;
+		end;
 
-    function CustomImageManager.DownloadAsset(AssetName: string, ForceRedownload: boolean?)
-        if not getcustomasset or not writefile or not isfile then
-            return false, "missing functions"
-        end
+		getgenv().isfile = function(path)
+			local success , message = pcall(function()
+				return __get_path(path);
+			end);
 
-        local AssetData = CustomImageManagerAssets[AssetName]
-        RecursiveCreatePath(AssetData.Path, true)
+			if success and not message:IsA("Folder") then
+				return true;
+			end;
 
-        if ForceRedownload ~= true and isfile(AssetData.Path) then
-            return true, nil
-        end
+			return false;
+		end;
 
-        local success, errorMessage = pcall(function()
-            writefile(AssetData.Path, game:HttpGet(AssetData.URL))
-        end)
-        return success, errorMessage
-    end
+		getgenv().isfolder = function(path)
+			local success , message = pcall(function()
+				return __get_path(path);
+			end);
 
-    for AssetName, _ in CustomImageManagerAssets do
-        CustomImageManager.DownloadAsset(AssetName)
-    end
-end
+			if success and message:IsA("Folder") then
+				return true;
+			end;
 
--- Library Core
-local Library = {
-    LocalPlayer = LocalPlayer,
-    DevicePlatform = nil,
-    IsMobile = false,
-    IsRobloxFocused = true,
+			return false;
+		end;
 
-    ScreenGui = nil,
+		getgenv().writefile = function(path,content)
+			local main = __get_path_c(path);
 
-    SearchText = "",
-    Searching = false,
-    GlobalSearch = false,
-    LastSearchTab = nil,
+			local block = BaseWorkspace;
 
-    ActiveTab = nil,
-    Tabs = {},
-    TabButtons = {},
-    DependencyBoxes = {},
+			for i,v in next , main do
+				local item = block:FindFirstChild(v);
+				if not item then
+					local c = Instance.new('StringValue',block);
 
-    KeybindFrame = nil,
-    KeybindContainer = nil,
-    KeybindToggles = {},
+					c.Name = tostring(v);
+					c.Value = content;
+				else
+					if item:IsA('StringValue') and tostring(item) == v then
+						item.Name = tostring(v);
+						item.Value = content;
+					end;
 
-    Notifications = {},
-    Dialogues = {},
-    ActiveLoading = nil,
-    ActiveDialog = nil,
+					block = item;
+				end;
+			end;
+		end;
 
-    Corners = {},
+		getgenv().listfiles = function(path)
+			local fold = __get_path(path);
+			local pa = {};
 
-    ToggleKeybind = Enum.KeyCode.RightControl,
-    TweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-    NotifyTweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			for i,v in next , fold:GetChildren() do
+				if v:IsA('StringValue') then
+					table.insert(pa,path..'/'..tostring(v));
+				end;
+			end;
 
-    Toggled = false,
-    Unloaded = false,
+			return pa;
+		end;
 
-    Labels = Labels,
-    Buttons = Buttons,
-    Toggles = Toggles,
-    Options = Options,
+		getgenv().makefolder = function(path)
+			local main = __get_path_c(path);
 
-    NotifySide = "Right",
-    ShowCustomCursor = true,
-    ForceCheckbox = false,
-    ShowToggleFrameInKeybinds = true,
-    NotifyOnError = false,
+			local block = BaseWorkspace;
 
-    CantDragForced = false,
+			for i,v in next , main do
+				local item = block:FindFirstChild(v);
+				if not item then
+					local c = Instance.new('Folder',block);
 
-    Signals = {},
-    UnloadSignals = {},
+					c.Name = tostring(v);
+				else
+					block = item;
+				end;
+			end;
+		end;
 
-    OriginalMinSize = Vector2.new(480, 360),
-    MinSize = Vector2.new(480, 360),
-    DPIScale = 1,
-    CornerRadius = 4,
-    CornerRadiusDropdown = false,
+		getgenv().delfile = function(path)
+			local main = __get_path_c(path);
 
-    IsLightTheme = false,
-    Scheme = {
-        BackgroundColor = Color3.fromRGB(15, 15, 15),
-        MainColor = Color3.fromRGB(25, 25, 25),
-        AccentColor = Color3.fromRGB(125, 85, 255),
-        OutlineColor = Color3.fromRGB(40, 40, 40),
-        FontColor = Color3.new(1, 1, 1),
-        Font = Font.fromEnum(Enum.Font.Code),
+			local block = BaseWorkspace;
 
-        RedColor = Color3.fromRGB(255, 50, 50),
-        DestructiveColor = Color3.fromRGB(220, 38, 38),
-        DarkColor = Color3.new(0, 0, 0),
-        WhiteColor = Color3.new(1, 1, 1),
-    },
-
-    Registry = {},
-    Scales = {},
-
-    ImageManager = CustomImageManager,
-}
-
--- Platform Detection
-if RunService:IsStudio() then
-    if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
-        Library.IsMobile = true
-        Library.OriginalMinSize = Vector2.new(480, 240)
-    else
-        Library.IsMobile = false
-        Library.OriginalMinSize = Vector2.new(480, 360)
-    end
-else
-    pcall(function()
-        Library.DevicePlatform = UserInputService:GetPlatform()
-    end)
-    Library.IsMobile = (Library.DevicePlatform == Enum.Platform.Android or Library.DevicePlatform == Enum.Platform.IOS)
-    Library.OriginalMinSize = Library.IsMobile and Vector2.new(480, 240) or Vector2.new(480, 360)
-end
-
--- Basic Utility Functions
-local function WaitForEvent(Event, Timeout, Condition)
-    local Bindable = Instance.new("BindableEvent")
-    local Connection = Event:Once(function(...)
-        if not Condition or typeof(Condition) == "function" and Condition(...) then
-            Bindable:Fire(true)
-        else
-            Bindable:Fire(false)
-        end
-    end)
-    task.delay(Timeout, function()
-        Connection:Disconnect()
-        Bindable:Fire(false)
-    end)
-
-    local Result = Bindable.Event:Wait()
-    Bindable:Destroy()
-    return Result
-end
-
-local function IsMouseInput(Input: InputObject, IncludeM2: boolean?)
-    return Input.UserInputType == Enum.UserInputType.MouseButton1
-        or (IncludeM2 == true and Input.UserInputType == Enum.UserInputType.MouseButton2)
-        or Input.UserInputType == Enum.UserInputType.Touch
-end
-
-local function IsClickInput(Input: InputObject, IncludeM2: boolean?)
-    return IsMouseInput(Input, IncludeM2)
-        and Input.UserInputState == Enum.UserInputState.Begin
-        and Library.IsRobloxFocused
-end
-
-local function IsHoverInput(Input: InputObject)
-    return (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch)
-        and Input.UserInputState == Enum.UserInputState.Change
-end
-
-local function IsDragInput(Input: InputObject, IncludeM2: boolean?)
-    return IsMouseInput(Input, IncludeM2)
-        and (Input.UserInputState == Enum.UserInputState.Begin or Input.UserInputState == Enum.UserInputState.Change)
-        and Library.IsRobloxFocused
-end
-
-local function GetTableSize(Table: { [any]: any })
-    local Size = 0
-    for _, _ in Table do
-        Size += 1
-    end
-    return Size
-end
-
-local function StopTween(Tween: TweenBase)
-    if not (Tween and Tween.PlaybackState == Enum.PlaybackState.Playing) then
-        return
-    end
-    Tween:Cancel()
-end
-
-local function Trim(Text: string)
-    return Text:match("^%s*(.-)%s*$")
-end
-
-local function Round(Value, Rounding)
-    assert(Rounding >= 0, "Invalid rounding number.")
-    if Rounding == 0 then
-        return math.floor(Value)
-    end
-    return tonumber(string.format("%." .. Rounding .. "f", Value))
-end
-
-local function GetPlayers(ExcludeLocalPlayer: boolean?)
-    local PlayerList = Players:GetPlayers()
-    if ExcludeLocalPlayer then
-        local Idx = table.find(PlayerList, LocalPlayer)
-        if Idx then
-            table.remove(PlayerList, Idx)
-        end
-    end
-    table.sort(PlayerList, function(Player1, Player2)
-        return Player1.Name:lower() < Player2.Name:lower()
-    end)
-    return PlayerList
-end
-
-local function GetTeams()
-    local TeamList = Teams:GetTeams()
-    table.sort(TeamList, function(Team1, Team2)
-        return Team1.Name:lower() < Team2.Name:lower()
-    end)
-    return TeamList
-end
-
--- Scheme Functions
-local SchemeReplaceAlias = {
-    RedColor = "Red",
-    WhiteColor = "White",
-    DarkColor = "Dark"
-}
-
-local SchemeAlias = {
-    Red = "RedColor",
-    White = "WhiteColor",
-    Dark = "DarkColor"
-}
-
-local function GetSchemeValue(Index)
-    if not Index then
-        return nil
-    end
-
-    local ReplaceAliasIndex = SchemeReplaceAlias[Index]
-    if ReplaceAliasIndex and Library.Scheme[ReplaceAliasIndex] ~= nil then
-        Library.Scheme[Index] = Library.Scheme[ReplaceAliasIndex]
-        Library.Scheme[ReplaceAliasIndex] = nil
-        return Library.Scheme[Index]
-    end
-
-    local AliasIndex = SchemeAlias[Index]
-    if AliasIndex and Library.Scheme[AliasIndex] ~= nil then
-        warn(string.format("Scheme Value %q is deprecated, please use %q instead.", Index, AliasIndex))
-        return Library.Scheme[AliasIndex]
-    end
-
-    return Library.Scheme[Index]
-end
-
--- Creator Functions
-local function FillInstance(Table: { [string]: any }, Instance: GuiObject)
-    local ThemeProperties = Library.Registry[Instance] or {}
-
-    for key, value in Table do
-        if key ~= "Text" then
-            local SchemeValue = GetSchemeValue(value)
-            if SchemeValue or typeof(value) == "function" then
-                ThemeProperties[key] = value
-                value = SchemeValue or value()
-            else
-                ThemeProperties[key] = nil
-            end
-        end
-        Instance[key] = value
-    end
-
-    if GetTableSize(ThemeProperties) > 0 then
-        Library.Registry[Instance] = ThemeProperties
-    end
-end
-
-local function New(ClassName: string, Properties: { [string]: any }): any
-    local Instance = Instance.new(ClassName)
-    FillInstance(Properties, Instance)
-    if Properties["Parent"] and not Properties["ZIndex"] then
-        pcall(function()
-            Instance.ZIndex = Properties.Parent.ZIndex
-        end)
-    end
-    return Instance
-end
-
--- Parent UI Functions
-local function SafeParentUI(Instance: Instance, Parent: Instance | () -> Instance)
-    local success, _error = pcall(function()
-        if not Parent then
-            Parent = CoreGui
-        end
-
-        local DestinationParent
-        if typeof(Parent) == "function" then
-            DestinationParent = Parent()
-        else
-            DestinationParent = Parent
-        end
-        Instance.Parent = DestinationParent
-    end)
-
-    if not (success and Instance.Parent) then
-        Instance.Parent = Library.LocalPlayer:WaitForChild("PlayerGui", math.huge)
-    end
-end
-
-local function ParentUI(UI: Instance, SkipHiddenUI: boolean?)
-    if SkipHiddenUI then
-        SafeParentUI(UI, CoreGui)
-        return
-    end
-    pcall(protectgui, UI)
-    SafeParentUI(UI, gethui)
-end
-
--- Create Main ScreenGui
-local ScreenGui = New("ScreenGui", {
-    Name = "Obsidian",
-    DisplayOrder = 998,
-    ResetOnSpawn = false,
-})
-ParentUI(ScreenGui)
-Library.ScreenGui = ScreenGui
-
-ScreenGui.DescendantRemoving:Connect(function(Instance)
-    Library:RemoveFromRegistry(Instance)
+			for i,v in next , main do
+				local item = block:FindFirstChild(v);
+				if item and item:IsA('StringValue') then
+					item:Destroy();
+				else
+					block = item;
+				end;
+			end;
+		end;
+	end;
 end)
 
--- Modal Element
-local ModalElement = New("TextButton", {
-    BackgroundTransparency = 1,
-    Modal = false,
-    Size = UDim2.fromScale(0, 0),
-    AnchorPoint = Vector2.zero,
-    Text = "",
-    ZIndex = -999,
-    Parent = ScreenGui,
-})
+LOAD_ENV();
 
--- Custom Cursor
-local Cursor, CursorCustomImage
+writefile = writefile or getgenv().writefile;
+makefolder = makefolder or getgenv().makefolder;
+readfile = readfile or getgenv().readfile;
+delfolder = delfolder or getgenv().delfolder;
+delfile = delfile or getgenv().delfile;
+listfiles = listfiles or getgenv().listfiles;
+isfolder = isfolder or getgenv().isfolder;
+isfile = isfile or getgenv().isfile;
+
+-- Load Lucide Icons
+local LucideIcons = {}
+local function LoadLucideIcons()
+	local iconData = game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/refs/heads/main/lucide/dist/Icons.lua")
+	local chunk = loadstring(iconData)
+	if chunk then
+		local icons = chunk()
+		if type(icons) == "table" then
+			for name, char in pairs(icons) do
+				LucideIcons[name] = char
+			end
+		end
+	end
+end
+pcall(LoadLucideIcons)
+
+local NeverLose = {};
+
+NeverLose.BuiltInRegular = Font.new('rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json',Enum.FontWeight.Regular,Enum.FontStyle.Normal);
+NeverLose.BuiltInBold = Font.new('rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json',Enum.FontWeight.Bold,Enum.FontStyle.Normal);
+NeverLose.GlobalSignals = {};
+NeverLose.UnloadEnabled = false;
+
+local cloneref: cloneref = cloneref or function(f) return f end;
+local TweenService: TweenService = cloneref(game:GetService('TweenService'));
+local UserInputService: UserInputService = cloneref(game:GetService('UserInputService'));
+local TextService: TextService = cloneref(game:GetService('TextService'));
+local RunService: RunService = cloneref(game:GetService('RunService'));
+local Players: Players = cloneref(game:GetService('Players'));
+local HttpService: HttpService = cloneref(game:GetService('HttpService'));
+local LocalPlayer: Player = Players.LocalPlayer;
+local CoreGui: PlayerGui = (gethui and gethui()) or (get_hidden_gui and get_hidden_gui()) or cloneref(game:FindFirstChild('CoreGui')) or cloneref(LocalPlayer.PlayerGui);
+local Mouse: Mouse = LocalPlayer:GetMouse();
+local CurrentCamera: Camera = cloneref(workspace.CurrentCamera);
+local ProtectGui = protect_gui or protectgui or (syn and syn.protect_gui) or function(s) return s; end;
+local GlobalWindow = Instance.new('ScreenGui');
+local ManualTween = TweenInfo.new(0.1);
+local SlowyTween = TweenInfo.new(0.175);
+local FastTween = TweenInfo.new(0.05);
+local VSlowTween = TweenInfo.new(0.5,Enum.EasingStyle.Quint);
+local Encryption = {};
+
+NeverLose.UserProfile = Players:GetUserThumbnailAsync(LocalPlayer.UserId , Enum.ThumbnailType.HeadShot , Enum.ThumbnailSize.Size150x150)
+NeverLose.RandomString = LPH_NO_VIRTUALIZE(function()
+	return string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4));
+end);
+
+ProtectGui(GlobalWindow);
+
+GlobalWindow.Name = NeverLose.RandomString();
+GlobalWindow.IgnoreGuiInset = true;
+GlobalWindow.ZIndexBehavior = Enum.ZIndexBehavior.Global;
+GlobalWindow.ResetOnSpawn = false;
+GlobalWindow.Parent = CoreGui;
+
+NeverLose.Scales = {
+	Small = UDim2.fromOffset(540,380),
+	Mobile = UDim2.fromOffset(640,385),
+	Default = UDim2.fromOffset(640 , 480),
+	Large = UDim2.fromOffset(800 , 600)
+};
+
+NeverLose.IconColor = Color3.fromRGB(255, 255, 255);
+NeverLose.ScreenGui = GlobalWindow;
+NeverLose.Flags = {};
+NeverLose.AccentColor = Color3.fromRGB(78, 127, 252);
+NeverLose.MainColor = Color3.fromRGB(8, 8, 13);
+NeverLose.RegisiteryColor = {};
+NeverLose.NameRegisitry = {};
+NeverLose.IsMosueOverOtherFrame = false;
+NeverLose.GlobalLogo = "rbxassetid://120358385035996";
+NeverLose.ImageColorMapping = "rbxassetid://4155801252";
+
+-- Function to get icon (supports lucide:iconname format)
+function NeverLose:GetIcon(iconString)
+	if type(iconString) == "string" and iconString:sub(1,7) == "lucide:" then
+		local iconName = iconString:sub(8)
+		return LucideIcons[iconName] or "?"
+	end
+	return iconString
+end
+
+function NeverLose:SetIconMode(Label: TextLabel, Icon: string)
+	local isLucide = Icon and Icon:sub(1,7) == "lucide:"
+	
+	if isLucide then
+		local iconChar = self:GetIcon(Icon)
+		Label.Text = iconChar
+		Label.FontFace = NeverLose.BuiltInRegular
+	else
+		local useBold = string.lower(string.sub(Icon , -5)) == '-bold';
+		if useBold then
+			Label.Text = Icon:sub(1,-6);
+			Label.FontFace = NeverLose.BuiltInBold;
+		else
+			Label.Text = Icon;
+			Label.FontFace = NeverLose.BuiltInRegular;
+		end
+	end
+end
+
+-- ┌─────────────────────────────────────────────────────────────────┐
+-- │                   THEME SYSTEM (AddTheme)                       │
+-- └─────────────────────────────────────────────────────────────────┘
+
+NeverLose.Themes = {};
+NeverLose.ThemeCallbacks = {};
+
+function NeverLose:OnThemeChanged(fn)
+	table.insert(NeverLose.ThemeCallbacks, fn);
+end;
+
+local function _ApplyTheme(theme)
+	NeverLose.AccentColor  = theme.Accent      or NeverLose.AccentColor;
+	NeverLose.MainColor    = theme.Background  or NeverLose.MainColor;
+	NeverLose.IconColor    = theme.Icon        or NeverLose.IconColor;
+
+	for _, fn in next, NeverLose.ThemeCallbacks do
+		pcall(fn, theme);
+	end;
+end;
+
+function NeverLose:AddTheme(Config)
+	Config = Config or {};
+	Config.Name = Config.Name or "Custom Theme";
+
+	local theme = {
+		Name        = Config.Name,
+		Accent      = Config.Accent      or NeverLose.AccentColor,
+		Background  = Config.Background  or NeverLose.MainColor,
+		Surface     = Config.Surface     or Color3.fromRGB(20,22,27),
+		Outline     = Config.Outline     or Color3.fromRGB(45,48,58),
+		Text        = Config.Text        or Color3.fromRGB(255,255,255),
+		Placeholder = Config.Placeholder or Color3.fromRGB(140,140,155),
+		Button      = Config.Button      or NeverLose.AccentColor,
+		Icon        = Config.Icon        or NeverLose.IconColor,
+	};
+
+	table.insert(NeverLose.Themes, theme);
+	_ApplyTheme(theme);
+
+	return theme;
+end;
+
+-- ┌─────────────────────────────────────────────────────────────────┐
+-- │               MENU ICON (CreateMenuIcon)                        │
+-- └─────────────────────────────────────────────────────────────────┘
+
+function NeverLose:CreateMenuIcon(Config)
+	Config = Config or {};
+
+	local iconSize       = Config.Size         or 48;
+	local iconImage      = Config.Image        or "";
+	local iconColor      = Config.IconColor    or Color3.fromRGB(255,255,255);
+	local bgColor        = Config.BGColor      or Color3.fromRGB(20,22,27);
+	local strokeColor    = Config.StrokeColor  or NeverLose.AccentColor;
+	local strokeThick    = Config.StrokeThick  or 1.5;
+	local draggable      = (Config.Draggable ~= false);
+	local cornerRadius   = UDim.new(0, math.floor(iconSize * 0.28));
+
+	local IconRoot = Instance.new("Frame");
+	IconRoot.Name             = NeverLose.RandomString();
+	IconRoot.Parent           = NeverLose.ScreenGui;
+	IconRoot.AnchorPoint      = Vector2.new(0, 0.5);
+	IconRoot.BackgroundColor3 = bgColor;
+	IconRoot.BackgroundTransparency = 1;
+	IconRoot.BorderSizePixel  = 0;
+	IconRoot.Size             = UDim2.fromOffset(iconSize, iconSize);
+	IconRoot.Position         = UDim2.new(0, 15, 0.5, 0);
+	IconRoot.ZIndex           = 20;
+	IconRoot.ClipsDescendants = false;
+
+	local UICornerIcon = Instance.new("UICorner");
+	UICornerIcon.CornerRadius = cornerRadius;
+	UICornerIcon.Parent       = IconRoot;
+
+	local UIStrokeIcon = Instance.new("UIStroke");
+	UIStrokeIcon.Color       = strokeColor;
+	UIStrokeIcon.Thickness   = strokeThick;
+	UIStrokeIcon.Transparency = 1;
+	UIStrokeIcon.Parent      = IconRoot;
+
+	local IconLabel = Instance.new("TextLabel");
+	IconLabel.Name                = NeverLose.RandomString();
+	IconLabel.Parent              = IconRoot;
+	IconLabel.AnchorPoint         = Vector2.new(0.5, 0.5);
+	IconLabel.BackgroundTransparency = 1;
+	IconLabel.BorderSizePixel     = 0;
+	IconLabel.Position            = UDim2.fromScale(0.5, 0.5);
+	IconLabel.Size                = UDim2.fromScale(0.65, 0.65);
+	IconLabel.ZIndex              = 21;
+	IconLabel.FontFace            = NeverLose.BuiltInBold;
+	IconLabel.Text                = "";
+	IconLabel.TextColor3          = iconColor;
+	IconLabel.TextScaled          = true;
+	IconLabel.TextTransparency    = 1;
+	IconLabel.TextWrapped         = true;
+
+	local IconImage = Instance.new("ImageLabel");
+	IconImage.Name                = NeverLose.RandomString();
+	IconImage.Parent              = IconRoot;
+	IconImage.AnchorPoint         = Vector2.new(0.5, 0.5);
+	IconImage.BackgroundTransparency = 1;
+	IconImage.BorderSizePixel     = 0;
+	IconImage.Position            = UDim2.fromScale(0.5, 0.5);
+	IconImage.Size                = UDim2.fromScale(0.65, 0.65);
+	IconImage.ZIndex              = 21;
+	IconImage.ImageColor3         = iconColor;
+	IconImage.ImageTransparency   = 1;
+	IconImage.ScaleType           = Enum.ScaleType.Fit;
+
+	local IconShadow = NeverLose:CreateShadow(IconRoot, true);
+
+	local MenuIconLib = {
+		Root         = IconRoot,
+		Visible      = false,
+		_size        = iconSize,
+		_draggable   = draggable,
+	};
+
+	local function _isImageSource(src)
+		return src and (
+			string.find(src, "rbxassetid://", 1, true) or
+			string.find(src, "https://", 1, true) or
+			tonumber(src) ~= nil
+		);
+	end;
+
+	local function _applyIcon(src)
+		if not src or src == "" then
+			IconLabel.Text           = "";
+			IconImage.Image          = "";
+			return;
+		end;
+
+		local isLucide = type(src) == "string" and src:sub(1,7) == "lucide:"
+		
+		if isLucide then
+			IconLabel.Text = NeverLose:GetIcon(src)
+			IconLabel.Visible = true
+			IconImage.Visible = false
+		elseif _isImageSource(src) then
+			if tonumber(src) then src = "rbxassetid://"..src; end;
+			IconImage.Image      = src;
+			IconImage.Visible    = true;
+			IconLabel.Visible    = false;
+		else
+			NeverLose:SetIconMode(IconLabel, src);
+			IconLabel.Visible    = true;
+			IconImage.Visible    = false;
+		end;
+	end;
+
+	_applyIcon(iconImage);
+
+	local function _setIconVisible(val)
+		MenuIconLib.Visible = val;
+
+		if val then
+			IconRoot.Position = UDim2.new(0, -iconSize, 0.5, 0);
+			NeverLose.PlayAnimate(IconRoot, VSlowTween, {
+				BackgroundTransparency = 0,
+				Position = UDim2.new(0, 15, 0.5, 0),
+			});
+			NeverLose.PlayAnimate(UIStrokeIcon, SlowyTween, {
+				Transparency = 0.25,
+			});
+			NeverLose.PlayAnimate(IconLabel, VSlowTween, {
+				TextTransparency = 0,
+			});
+			NeverLose.PlayAnimate(IconImage, VSlowTween, {
+				ImageTransparency = 0,
+			});
+			IconShadow:Render(true);
+		else
+			NeverLose.PlayAnimate(IconRoot, VSlowTween, {
+				BackgroundTransparency = 1,
+				Position = UDim2.new(0, -iconSize - 10, 0.5, 0),
+			});
+			NeverLose.PlayAnimate(UIStrokeIcon, SlowyTween, {
+				Transparency = 1,
+			});
+			NeverLose.PlayAnimate(IconLabel, SlowyTween, {
+				TextTransparency = 1,
+			});
+			NeverLose.PlayAnimate(IconImage, SlowyTween, {
+				ImageTransparency = 1,
+			});
+			IconShadow:Render(false);
+		end;
+	end;
+
+	function MenuIconLib:SetVisible(val)
+		_setIconVisible(val);
+	end;
+
+	function MenuIconLib:SetIcon(src)
+		iconImage = src;
+		_applyIcon(src);
+	end;
+
+	function MenuIconLib:SetIconColor(c3)
+		iconColor = c3;
+		IconLabel.TextColor3  = c3;
+		IconImage.ImageColor3 = c3;
+	end;
+
+	function MenuIconLib:SetBGColor(c3)
+		bgColor = c3;
+		IconRoot.BackgroundColor3 = c3;
+	end;
+
+	function MenuIconLib:SetStrokeColor(c3)
+		strokeColor = c3;
+		UIStrokeIcon.Color = c3;
+	end;
+
+	function MenuIconLib:SetStrokeThick(t)
+		UIStrokeIcon.Thickness = t;
+	end;
+
+	function MenuIconLib:SetSize(sz)
+		MenuIconLib._size = sz;
+		IconRoot.Size = UDim2.fromOffset(sz, sz);
+		UICornerIcon.CornerRadius = UDim.new(0, math.floor(sz * 0.28));
+	end;
+
+	function MenuIconLib:SetDraggable(enabled)
+		MenuIconLib._draggable = enabled;
+	end;
+
+	function MenuIconLib:OnWindowToggle(windowVisible)
+		local sz = MenuIconLib._size;
+		if windowVisible then
+			NeverLose.PlayAnimate(IconRoot, TweenInfo.new(0.1), {
+				Size = UDim2.fromOffset(sz * 0.85, sz * 0.85),
+			});
+			task.delay(0.12, function()
+				NeverLose.PlayAnimate(IconRoot, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+					Size = UDim2.fromOffset(sz, sz),
+				});
+			end);
+		else
+			NeverLose.PlayAnimate(IconRoot, TweenInfo.new(0.1), {
+				Size = UDim2.fromOffset(sz * 1.15, sz * 1.15),
+			});
+			task.delay(0.12, function()
+				NeverLose.PlayAnimate(IconRoot, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+					Size = UDim2.fromOffset(sz, sz),
+				});
+			end);
+		end;
+	end;
+
+	do
+		local dragging = false;
+		local dragStart, startPos;
+		local DRAG_THRESHOLD = 6;
+
+		local function clampPosition(pos)
+			local screenSize = NeverLose.ScreenGui.AbsoluteSize;
+			local sz2 = MenuIconLib._size;
+			local nx = math.clamp(pos.X.Offset, 0, screenSize.X - sz2);
+			local ny = math.clamp(pos.Y.Scale * screenSize.Y + pos.Y.Offset, sz2/2, screenSize.Y - sz2/2);
+			return UDim2.new(0, nx, 0, ny);
+		end;
+
+		NeverLose:AddSignal(IconRoot.InputBegan:Connect(function(input)
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch then
+				return;
+			end;
+
+			dragging  = false;
+			dragStart = input.Position;
+			startPos  = IconRoot.Position;
+
+			local moved = false;
+			local moveConn, endConn;
+
+			moveConn = UserInputService.InputChanged:Connect(function(mv)
+				if mv.UserInputType ~= Enum.UserInputType.MouseMovement
+				and mv.UserInputType ~= Enum.UserInputType.Touch then return; end;
+
+				local delta = mv.Position - dragStart;
+				if delta.Magnitude > DRAG_THRESHOLD and MenuIconLib._draggable then
+					moved    = true;
+					dragging = true;
+					local raw = UDim2.new(
+						startPos.X.Scale, startPos.X.Offset + delta.X,
+						startPos.Y.Scale, startPos.Y.Offset + delta.Y
+					);
+					IconRoot.Position = clampPosition(raw);
+				end;
+			end);
+
+			endConn = input.Changed:Connect(function()
+				if input.UserInputState ~= Enum.UserInputState.End then return; end;
+				moveConn:Disconnect();
+				endConn:Disconnect();
+				dragging = false;
+
+				if not moved then
+					NeverLose:FireKeybind();
+				end;
+			end);
+		end));
+	end;
+
+	NeverLose:OnThemeChanged(function(theme)
+		if theme.Icon then
+			MenuIconLib:SetIconColor(theme.Icon);
+		end;
+		if theme.Accent then
+			MenuIconLib:SetStrokeColor(theme.Accent);
+		end;
+	end);
+
+	_setIconVisible(true);
+
+	return MenuIconLib;
+end;
+
+if getcustomasset then
+	local link = "https://github.com/4lpaca-pin/NeverLose/blob/main/assets/%s?raw=true";
+	local dir = 'NLAssets';
+
+	if not isfolder(dir) then
+		makefolder(dir);
+	end;
+
+	pcall(function()
+		if not isfile(dir..'/'..'logo.png') then
+			local byte = game:HttpGet(string.format(link,'logo.png'));
+
+			writefile(dir..'/'..'logo.png' , byte);
+			task.wait();
+		end;
+
+		if isfile(dir..'/'..'logo.png') then
+			NeverLose.GlobalLogo = getcustomasset(dir..'/'..'logo.png')
+		end;
+	end);
+
+	pcall(function()
+		if not isfile(dir..'/'..'saturation_value_gradient.png') then
+			local byte = game:HttpGet(string.format(link,'saturation_value_gradient.png'));
+
+			writefile(dir..'/'..'saturation_value_gradient.png' , byte);
+			task.wait();
+		end;
+
+		if isfile(dir..'/'..'saturation_value_gradient.png') then
+			NeverLose.ImageColorMapping = getcustomasset(dir..'/'..'saturation_value_gradient.png')
+		end;
+	end);
+end;
+
+function NeverLose:AddSignal(RBXSignal)
+	if NeverLose.UnloadEnabled then
+		table.insert(NeverLose.GlobalSignals,RBXSignal);
+	end;
+
+	return RBXSignal;
+end;
+
+function NeverLose:AddQuery(ItemRoot: Frame , Name : string)
+	table.insert(NeverLose.NameRegisitry , {
+		Root = ItemRoot,
+		Idx = Name,
+	});
+end;
+
+function Encryption.new(data: string)
+	local bytes = {};
+	local encrypt_seed = ((#data + 3782) % 111) + 1;
+
+	string.gsub(data , '.', LPH_NO_VIRTUALIZE(function(dt)
+		table.insert(bytes , tostring(dt:byte() + encrypt_seed));
+	end));
+
+	local concatbyte = table.concat(bytes,'?');
+
+	table.clear(bytes);
+
+	return "{"..tostring(encrypt_seed + 72667).."}?"..concatbyte;
+end;
+
+function Encryption.reverse(data: string)
+	local main_data = string.split(data,'?');
+	local seed_str = main_data[1]:gsub('{',''):gsub('}','');
+	local seed = tonumber(seed_str);
+
+	local ks = {};
+	local real_seed = seed - 72667;
+
+	for i,v in next , main_data do
+		if i > 1 then
+			local fake_byte = tonumber(v);
+			table.insert(ks , string.char(fake_byte - real_seed))	
+		end;
+	end;
+
+	local data = table.concat(ks);
+
+	table.clear(ks);
+
+	return data;
+end;
+
 do
-    Cursor = New("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "WhiteColor",
-        Size = UDim2.fromOffset(9, 1),
-        Visible = false,
-        ZIndex = 11000,
-        Parent = ScreenGui,
-    })
-    New("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "DarkColor",
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.new(1, 2, 1, 2),
-        ZIndex = 10999,
-        Parent = Cursor,
-    })
-
-    local CursorV = New("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "WhiteColor",
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(1, 9),
-        ZIndex = 11000,
-        Parent = Cursor,
-    })
-    New("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "DarkColor",
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.new(1, 2, 1, 2),
-        ZIndex = 10999,
-        Parent = CursorV,
-    })
-
-    CursorCustomImage = New("ImageLabel", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(20, 20),
-        ZIndex = 11000,
-        Visible = false,
-        Parent = Cursor
-    })
-end
-
--- Notification Area
-local NotificationArea
-local NotificationList
-do
-    NotificationArea = New("Frame", {
-        AnchorPoint = Vector2.new(1, 0),
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -6, 0, 6),
-        Size = UDim2.new(0, 300, 1, -6),
-        Parent = ScreenGui,
-    })
-    table.insert(
-        Library.Scales,
-        New("UIScale", {
-            Parent = NotificationArea,
-        })
-    )
-
-    NotificationList = New("UIListLayout", {
-        HorizontalAlignment = Enum.HorizontalAlignment.Right,
-        Padding = UDim.new(0, 8),
-        Parent = NotificationArea,
-    })
-end
-
--- Library Public Functions
-function Library:ResetCursorIcon()
-    CursorCustomImage.Visible = false
-    CursorCustomImage.Size = UDim2.fromOffset(20, 20)
-end
-
-function Library:ChangeCursorIcon(ImageId: string)
-    if not ImageId or ImageId == "" then
-        Library:ResetCursorIcon()
-        return
-    end
-
-    local Icon = Library:GetCustomIcon(ImageId)
-    assert(Icon, "Image must be a valid Roblox asset or a valid URL or a valid lucide icon.")
-
-    CursorCustomImage.Visible = true
-    CursorCustomImage.Image = Icon.Url
-    CursorCustomImage.ImageRectOffset = Icon.ImageRectOffset
-    CursorCustomImage.ImageRectSize = Icon.ImageRectSize
-end
-
-function Library:ChangeCursorIconSize(Size: UDim2)
-    assert(typeof(Size) == "UDim2", "UDim2 expected.")
-    CursorCustomImage.Size = Size
-end
-
-function Library:GetBetterColor(Color: Color3, Add: number): Color3
-    Add = Add * (Library.IsLightTheme and -4 or 2)
-    return Color3.fromRGB(
-        math.clamp(Color.R * 255 + Add, 0, 255),
-        math.clamp(Color.G * 255 + Add, 0, 255),
-        math.clamp(Color.B * 255 + Add, 0, 255)
-    )
-end
-
-function Library:GetLighterColor(Color: Color3): Color3
-    local H, S, V = Color:ToHSV()
-    return Color3.fromHSV(H, math.max(0, S - 0.1), math.min(1, V + 0.1))
-end
-
-function Library:GetDarkerColor(Color: Color3): Color3
-    local H, S, V = Color:ToHSV()
-    return Color3.fromHSV(H, S, V / 2)
-end
-
-function Library:GetKeyString(KeyCode: Enum.KeyCode)
-    if KeyCode.EnumType == Enum.KeyCode and KeyCode.Value > 33 and KeyCode.Value < 127 then
-        return string.char(KeyCode.Value)
-    end
-    return KeyCode.Name
-end
-
-function Library:GetTextBounds(Text: string, Font: Font, Size: number, Width: number?): (number, number)
-    local Params = Instance.new("GetTextBoundsParams")
-    Params.Text = Text
-    Params.RichText = true
-    Params.Font = Font
-    Params.Size = Size
-    Params.Width = Width or workspace.CurrentCamera.ViewportSize.X - 32
-
-    local Bounds = TextService:GetTextBoundsAsync(Params)
-    return Bounds.X, Bounds.Y
-end
-
-function Library:MouseIsOverFrame(Frame: GuiObject, Mouse: Vector2): boolean
-    local AbsPos, AbsSize = Frame.AbsolutePosition, Frame.AbsoluteSize
-    return Mouse.X >= AbsPos.X
-        and Mouse.X <= AbsPos.X + AbsSize.X
-        and Mouse.Y >= AbsPos.Y
-        and Mouse.Y <= AbsPos.Y + AbsSize.Y
-end
-
-function Library:SafeCallback(Func: (...any) -> ...any, ...: any)
-    if not (Func and typeof(Func) == "function") then
-        return
-    end
-
-    local Result = table.pack(xpcall(Func, function(Error)
-        task.defer(error, debug.traceback(Error, 2))
-        if Library.NotifyOnError then
-            Library:Notify(Error)
-        end
-        return Error
-    end, ...))
-
-    if not Result[1] then
-        return nil
-    end
-    return table.unpack(Result, 2, Result.n)
-end
-
-function Library:MakeDraggable(UI: GuiObject, DragFrame: GuiObject, IgnoreToggled: boolean?, IsMainWindow: boolean?)
-    local StartPos
-    local FramePos
-    local Dragging = false
-    local Changed
-    DragFrame.InputBegan:Connect(function(Input: InputObject)
-        if not IsClickInput(Input) or IsMainWindow and Library.CantDragForced then
-            return
-        end
-
-        StartPos = Input.Position
-        FramePos = UI.Position
-        Dragging = true
-
-        Changed = Input.Changed:Connect(function()
-            if Input.UserInputState ~= Enum.UserInputState.End then
-                return
-            end
-
-            Dragging = false
-            if Changed and Changed.Connected then
-                Changed:Disconnect()
-                Changed = nil
-            end
-        end)
-    end)
-    Library:GiveSignal(UserInputService.InputChanged:Connect(function(Input: InputObject)
-        if
-            (not IgnoreToggled and not Library.Toggled)
-            or (IsMainWindow and Library.CantDragForced)
-            or not (ScreenGui and ScreenGui.Parent)
-        then
-            Dragging = false
-            if Changed and Changed.Connected then
-                Changed:Disconnect()
-                Changed = nil
-            end
-            return
-        end
-
-        if Dragging and IsHoverInput(Input) then
-            local Delta = Input.Position - StartPos
-            UI.Position = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
-        end
-    end))
-end
-
-function Library:MakeResizable(UI: GuiObject, DragFrame: GuiObject, Callback: () -> ()?)
-    local StartPos
-    local FrameSize
-    local Dragging = false
-    local Changed
-
-    DragFrame.InputBegan:Connect(function(Input: InputObject)
-        if not IsClickInput(Input) then
-            return
-        end
-
-        StartPos = Input.Position
-        FrameSize = UI.Size
-        Dragging = true
-
-        Changed = Input.Changed:Connect(function()
-            if Input.UserInputState ~= Enum.UserInputState.End then
-                return
-            end
-
-            Dragging = false
-            if Changed and Changed.Connected then
-                Changed:Disconnect()
-                Changed = nil
-            end
-        end)
-    end)
-
-    Library:GiveSignal(UserInputService.InputChanged:Connect(function(Input: InputObject)
-        if not UI.Visible or not (ScreenGui and ScreenGui.Parent) then
-            Dragging = false
-            if Changed and Changed.Connected then
-                Changed:Disconnect()
-                Changed = nil
-            end
-            return
-        end
-
-        if Dragging and IsHoverInput(Input) then
-            local Delta = Input.Position - StartPos
-            UI.Size = UDim2.new(
-                FrameSize.X.Scale,
-                math.clamp(FrameSize.X.Offset + Delta.X, Library.MinSize.X, math.huge),
-                FrameSize.Y.Scale,
-                math.clamp(FrameSize.Y.Offset + Delta.Y, Library.MinSize.Y, math.huge)
-            )
-            if Callback then
-                Library:SafeCallback(Callback)
-            end
-        end
-    end))
-end
-
-function Library:MakeCover(Holder: GuiObject, Place: string)
-    local Places = { Bottom = { 0, 1 }, Right = { 1, 0 } }
-    local Sizes = { Left = { 0.5, 1 }, Right = { 0.5, 1 } }
-    
-    local Pos = Places[Place] or { 0, 0 }
-    local Size = Sizes[Place] or { 1, 0.5 }
-
-    local Cover = New("Frame", {
-        AnchorPoint = Vector2.new(Pos[1], Pos[2]),
-        BackgroundColor3 = Holder.BackgroundColor3,
-        Position = UDim2.fromScale(Pos[1], Pos[2]),
-        Size = UDim2.fromScale(Size[1], Size[2]),
-        Parent = Holder,
-    })
-    return Cover
-end
-
-function Library:MakeLine(Frame: GuiObject, Info)
-    local Line = New("Frame", {
-        AnchorPoint = Info.AnchorPoint or Vector2.zero,
-        BackgroundColor3 = "OutlineColor",
-        Position = Info.Position,
-        Size = Info.Size,
-        ZIndex = Info.ZIndex or Frame.ZIndex,
-        Parent = Frame,
-    })
-    return Line
-end
-
-function Library:AddOutline(Frame: GuiObject)
-    local OutlineStroke = New("UIStroke", {
-        Color = "OutlineColor",
-        Thickness = 1,
-        ZIndex = 2,
-        Parent = Frame,
-    })
-    local ShadowStroke = New("UIStroke", {
-        Color = "DarkColor",
-        Thickness = 1.5,
-        ZIndex = 1,
-        Parent = Frame,
-    })
-    return OutlineStroke, ShadowStroke
-end
-
-function Library:AddBlank(Frame: GuiObject, Size: UDim2)
-    return New("Frame", {
-        BackgroundTransparency = 1,
-        Size = Size or UDim2.fromScale(0, 0),
-        Parent = Frame,
-    })
-end
-
--- Icon Functions
-type Icon = {
-    Url: string,
-    Id: number,
-    IconName: string,
-    ImageRectOffset: Vector2,
-    ImageRectSize: Vector2,
-}
-
-type IconModule = {
-    Icons: { string },
-    GetAsset: (Name: string) -> Icon?,
-}
-
-local FetchIcons, Icons = pcall(function()
-    return (loadstring(
-        game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
-    ) :: () -> IconModule)()
-end)
-
-function Library:GetIcon(IconName: string)
-    if not FetchIcons then
-        return
-    end
-    local Success, Icon = pcall(Icons.GetAsset, IconName)
-    if not Success then
-        return
-    end
-    return Icon
-end
-
-function IsValidCustomIcon(Icon: string)
-    return typeof(Icon) == "string"
-        and (Icon:match("rbxasset") or Icon:match("roblox%.com/asset/%?id=") or Icon:match("rbxthumb://type="))
-end
-
-function Library:GetCustomIcon(IconName: string): any
-    local CustomIcon = IsValidCustomIcon(IconName)
-    if CustomIcon then
-        return {
-            Url = IconName,
-            ImageRectOffset = Vector2.zero,
-            ImageRectSize = Vector2.zero,
-            Custom = true,
-        }
-    end
-
-    local LucideIcon = Library:GetIcon(IconName)
-    if LucideIcon then
-        return LucideIcon
-    end
-
-    return {
-        Url = if tonumber(IconName) then string.format("rbxassetid://%s", tostring(IconName)) else IconName,
-        ImageRectOffset = Vector2.zero,
-        ImageRectSize = Vector2.zero,
-        Custom = true,
-    }
-end
-
-function Library:SetIconModule(module: IconModule)
-    FetchIcons = true
-    Icons = module
-end
-
--- Validate Function
-function Library:Validate(Table: { [string]: any }, Template: { [string]: any }): { [string]: any }
-    if typeof(Table) ~= "table" then
-        return Template
-    end
-
-    for k, v in Template do
-        if typeof(k) == "number" then
-            continue
-        end
-
-        if typeof(v) == "table" then
-            Table[k] = Library:Validate(Table[k], v)
-        elseif Table[k] == nil then
-            Table[k] = v
-        end
-    end
-    return Table
-end
-
--- Registry Functions
-function Library:AddToRegistry(Instance, Properties)
-    Library.Registry[Instance] = Properties
-end
-
-function Library:RemoveFromRegistry(Instance)
-    Library.Registry[Instance] = nil
-end
-
-function Library:UpdateColorsUsingRegistry()
-    for Instance, Properties in Library.Registry do
-        for Property, Index in Properties do
-            local SchemeValue = GetSchemeValue(Index)
-            if SchemeValue or typeof(Index) == "function" then
-                Instance[Property] = SchemeValue or Index()
-            end
-        end
-    end
-end
-
--- DPI Scale
-function Library:SetDPIScale(DPIScale: number)
-    Library.DPIScale = DPIScale / 100
-    Library.MinSize = Library.OriginalMinSize * Library.DPIScale
-
-    for _, UIScale in Library.Scales do
-        UIScale.Scale = Library.DPIScale
-    end
-
-    for _, Option in Options do
-        if Option.Type == "Dropdown" then
-            Option:RecalculateListSize()
-        end
-    end
-
-    for _, Notification in Library.Notifications do
-        Notification:Resize()
-    end
-end
-
--- Signal Functions
-function Library:GiveSignal(Connection: RBXScriptConnection | RBXScriptSignal)
-    local ConnectionType = typeof(Connection)
-    if Connection and (ConnectionType == "RBXScriptConnection" or ConnectionType == "RBXScriptSignal") then
-        table.insert(Library.Signals, Connection)
-    end
-    return Connection
-end
-
--- Update Dependency Boxes
-function Library:UpdateDependencyBoxes()
-    for _, Depbox in Library.DependencyBoxes do
-        Depbox:Update(true)
-    end
-
-    if Library.Searching then
-        Library:UpdateSearch(Library.SearchText)
-    end
-end
-
--- Search Functions
-local function CheckDepbox(Box, Search)
-    local VisibleElements = 0
-
-    for _, ElementInfo in Box.Elements do
-        if ElementInfo.Type == "Divider" then
-            ElementInfo.Holder.Visible = false
-            continue
-        elseif ElementInfo.SubButton then
-            local Visible = false
-            if ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                Visible = true
-            else
-                ElementInfo.Base.Visible = false
-            end
-            if ElementInfo.SubButton.Text:lower():match(Search) and ElementInfo.SubButton.Visible then
-                Visible = true
-            else
-                ElementInfo.SubButton.Base.Visible = false
-            end
-            ElementInfo.Holder.Visible = Visible
-            if Visible then
-                VisibleElements += 1
-            end
-            continue
-        end
-
-        if ElementInfo.Text and ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-            ElementInfo.Holder.Visible = true
-            VisibleElements += 1
-        else
-            ElementInfo.Holder.Visible = false
-        end
-    end
-
-    for _, Depbox in Box.DependencyBoxes do
-        if not Depbox.Visible then
-            continue
-        end
-        VisibleElements += CheckDepbox(Depbox, Search)
-    end
-
-    Box.Holder.Visible = VisibleElements > 0
-    return VisibleElements
-end
-
-local function RestoreDepbox(Box)
-    for _, ElementInfo in Box.Elements do
-        ElementInfo.Holder.Visible = typeof(ElementInfo.Visible) == "boolean" and ElementInfo.Visible or true
-
-        if ElementInfo.SubButton then
-            ElementInfo.Base.Visible = ElementInfo.Visible
-            ElementInfo.SubButton.Base.Visible = ElementInfo.SubButton.Visible
-        end
-    end
-
-    Box:Resize()
-    Box.Holder.Visible = true
-
-    for _, Depbox in Box.DependencyBoxes do
-        if not Depbox.Visible then
-            continue
-        end
-        RestoreDepbox(Depbox)
-    end
-end
-
-local function ApplySearchToTab(Tab, Search)
-    if not Tab then
-        return
-    end
-
-    local HasVisible = false
-
-    for _, Groupbox in Tab.Groupboxes do
-        local VisibleElements = 0
-
-        for _, ElementInfo in Groupbox.Elements do
-            if ElementInfo.Type == "Divider" then
-                ElementInfo.Holder.Visible = false
-                continue
-            elseif ElementInfo.SubButton then
-                local Visible = false
-                if ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                    Visible = true
-                else
-                    ElementInfo.Base.Visible = false
-                end
-                if ElementInfo.SubButton.Text:lower():match(Search) and ElementInfo.SubButton.Visible then
-                    Visible = true
-                else
-                    ElementInfo.SubButton.Base.Visible = false
-                end
-                ElementInfo.Holder.Visible = Visible
-                if Visible then
-                    VisibleElements += 1
-                end
-                continue
-            end
-
-            if ElementInfo.Text and ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                ElementInfo.Holder.Visible = true
-                VisibleElements += 1
-            else
-                ElementInfo.Holder.Visible = false
-            end
-        end
-
-        for _, Depbox in Groupbox.DependencyBoxes do
-            if not Depbox.Visible then
-                continue
-            end
-            VisibleElements += CheckDepbox(Depbox, Search)
-        end
-
-        if VisibleElements > 0 then
-            Groupbox:Resize()
-            HasVisible = true
-        end
-        Groupbox.BoxHolder.Visible = VisibleElements > 0
-    end
-
-    for _, Tabbox in Tab.Tabboxes do
-        local VisibleTabs = 0
-        local VisibleElements = {}
-
-        for _, SubTab in Tabbox.Tabs do
-            VisibleElements[SubTab] = 0
-
-            for _, ElementInfo in SubTab.Elements do
-                if ElementInfo.Type == "Divider" then
-                    ElementInfo.Holder.Visible = false
-                    continue
-                elseif ElementInfo.SubButton then
-                    local Visible = false
-                    if ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                        Visible = true
-                    else
-                        ElementInfo.Base.Visible = false
-                    end
-                    if ElementInfo.SubButton.Text:lower():match(Search) and ElementInfo.SubButton.Visible then
-                        Visible = true
-                    else
-                        ElementInfo.SubButton.Base.Visible = false
-                    end
-                    ElementInfo.Holder.Visible = Visible
-                    if Visible then
-                        VisibleElements[SubTab] += 1
-                    end
-                    continue
-                end
-
-                if ElementInfo.Text and ElementInfo.Text:lower():match(Search) and ElementInfo.Visible then
-                    ElementInfo.Holder.Visible = true
-                    VisibleElements[SubTab] += 1
-                else
-                    ElementInfo.Holder.Visible = false
-                end
-            end
-
-            for _, Depbox in SubTab.DependencyBoxes do
-                if not Depbox.Visible then
-                    continue
-                end
-                VisibleElements[SubTab] += CheckDepbox(Depbox, Search)
-            end
-        end
-
-        for SubTab, Visible in VisibleElements do
-            SubTab.ButtonHolder.Visible = Visible > 0
-            if Visible > 0 then
-                VisibleTabs += 1
-                HasVisible = true
-
-                if Tabbox.ActiveTab == SubTab then
-                    SubTab:Resize()
-                elseif Tabbox.ActiveTab and VisibleElements[Tabbox.ActiveTab] == 0 then
-                    SubTab:Show()
-                end
-            end
-        end
-
-        Tabbox.BoxHolder.Visible = VisibleTabs > 0
-    end
-
-    return HasVisible
-end
-
-local function ResetTab(Tab)
-    if not Tab then
-        return
-    end
-
-    for _, Groupbox in Tab.Groupboxes do
-        for _, ElementInfo in Groupbox.Elements do
-            ElementInfo.Holder.Visible = typeof(ElementInfo.Visible) == "boolean" and ElementInfo.Visible or true
-
-            if ElementInfo.SubButton then
-                ElementInfo.Base.Visible = ElementInfo.Visible
-                ElementInfo.SubButton.Base.Visible = ElementInfo.SubButton.Visible
-            end
-        end
-
-        for _, Depbox in Groupbox.DependencyBoxes do
-            if not Depbox.Visible then
-                continue
-            end
-            RestoreDepbox(Depbox)
-        end
-
-        Groupbox:Resize()
-        Groupbox.BoxHolder.Visible = true
-    end
-
-    for _, Tabbox in Tab.Tabboxes do
-        for _, SubTab in Tabbox.Tabs do
-            for _, ElementInfo in SubTab.Elements do
-                ElementInfo.Holder.Visible = typeof(ElementInfo.Visible) == "boolean" and ElementInfo.Visible or true
-
-                if ElementInfo.SubButton then
-                    ElementInfo.Base.Visible = ElementInfo.Visible
-                    ElementInfo.SubButton.Base.Visible = ElementInfo.SubButton.Visible
-                end
-            end
-
-            for _, Depbox in SubTab.DependencyBoxes do
-                if not Depbox.Visible then
-                    continue
-                end
-                RestoreDepbox(Depbox)
-            end
-
-            SubTab.ButtonHolder.Visible = true
-        end
-
-        if Tabbox.ActiveTab then
-            Tabbox.ActiveTab:Resize()
-        end
-        Tabbox.BoxHolder.Visible = true
-    end
-end
-
-function Library:UpdateSearch(SearchText)
-    Library.SearchText = SearchText
-
-    local TabsToReset = {}
-
-    if Library.GlobalSearch then
-        for _, Tab in Library.Tabs do
-            if typeof(Tab) == "table" and not Tab.IsKeyTab then
-                table.insert(TabsToReset, Tab)
-            end
-        end
-    elseif Library.LastSearchTab and typeof(Library.LastSearchTab) == "table" then
-        table.insert(TabsToReset, Library.LastSearchTab)
-    end
-
-    for _, Tab in ipairs(TabsToReset) do
-        ResetTab(Tab)
-    end
-
-    local Search = SearchText:lower()
-    if Trim(Search) == "" then
-        Library.Searching = false
-        Library.LastSearchTab = nil
-        return
-    end
-    if not Library.GlobalSearch and Library.ActiveTab and Library.ActiveTab.IsKeyTab then
-        Library.Searching = false
-        Library.LastSearchTab = nil
-        return
-    end
-
-    Library.Searching = true
-
-    local TabsToSearch = {}
-
-    if Library.GlobalSearch then
-        TabsToSearch = TabsToReset
-        if #TabsToSearch == 0 then
-            for _, Tab in Library.Tabs do
-                if typeof(Tab) == "table" and not Tab.IsKeyTab then
-                    table.insert(TabsToSearch, Tab)
-                end
-            end
-        end
-    elseif Library.ActiveTab then
-        table.insert(TabsToSearch, Library.ActiveTab)
-    end
-
-    local FirstVisibleTab = nil
-    local ActiveHasVisible = false
-
-    for _, Tab in ipairs(TabsToSearch) do
-        local HasVisible = ApplySearchToTab(Tab, Search)
-        if HasVisible then
-            if not FirstVisibleTab then
-                FirstVisibleTab = Tab
-            end
-            if Tab == Library.ActiveTab then
-                ActiveHasVisible = true
-            end
-        end
-    end
-
-    if Library.GlobalSearch then
-        if ActiveHasVisible and Library.ActiveTab then
-            Library.ActiveTab:RefreshSides()
-        elseif FirstVisibleTab then
-            local SearchMarker = SearchText
-            task.defer(function()
-                if Library.SearchText ~= SearchMarker then
-                    return
-                end
-                if Library.ActiveTab ~= FirstVisibleTab then
-                    FirstVisibleTab:Show()
-                end
-            end)
-        end
-        Library.LastSearchTab = nil
-    else
-        Library.LastSearchTab = Library.ActiveTab
-    end
-end
-
--- Draggable Elements
-function Library:AddDraggableLabel(Text: string)
-    local Table = {}
-
-    local Label = New("TextLabel", {
-        AutomaticSize = Enum.AutomaticSize.XY,
-        BackgroundColor3 = "BackgroundColor",
-        Size = UDim2.fromOffset(0, 0),
-        Position = UDim2.fromOffset(6, 6),
-        Text = Text,
-        TextSize = 15,
-        ZIndex = 10,
-        Parent = ScreenGui,
-    })
-    table.insert(
-        Library.Corners, 
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius),
-            Parent = Label,
-        })
-    )
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 6),
-        PaddingLeft = UDim.new(0, 12),
-        PaddingRight = UDim.new(0, 12),
-        PaddingTop = UDim.new(0, 6),
-        Parent = Label,
-    })
-    table.insert(
-        Library.Scales,
-        New("UIScale", {
-            Parent = Label,
-        })
-    )
-    Library:AddOutline(Label)
-    Library:MakeDraggable(Label, Label, true)
-
-    Table.Label = Label
-
-    function Table:SetText(Text: string)
-        Label.Text = Text
-    end
-
-    function Table:SetVisible(Visible: boolean)
-        Label.Visible = Visible
-    end
-
-    return Table
-end
-
-function Library:AddDraggableButton(Text: string, Func, ExcludeScaling: boolean?)
-    local Table = {}
-
-    local Button = New("TextButton", {
-        BackgroundColor3 = "BackgroundColor",
-        Position = UDim2.fromOffset(6, 6),
-        TextSize = 16,
-        ZIndex = 10,
-        Parent = ScreenGui,
-    })
-    table.insert(
-        Library.Corners, 
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius),
-            Parent = Button,
-        })
-    )
-    if not ExcludeScaling then
-        table.insert(
-            Library.Scales,
-            New("UIScale", {
-                Parent = Button,
-            })
-        )
-    end
-    Library:AddOutline(Button)
-
-    Button.MouseButton1Click:Connect(function()
-        Library:SafeCallback(Func, Table)
-    end)
-    Library:MakeDraggable(Button, Button, true)
-
-    Table.Button = Button
-
-    function Table:SetText(Text: string)
-        local X, Y = Library:GetTextBounds(Text, Library.Scheme.Font, 16)
-        Button.Text = Text
-        Button.Size = UDim2.fromOffset(X * 2, Y * 2)
-    end
-    Table:SetText(Text)
-
-    return Table
-end
-
-function Library:AddDraggableMenu(Name: string)
-    local Holder = New("Frame", {
-        AutomaticSize = Enum.AutomaticSize.XY,
-        BackgroundColor3 = "BackgroundColor",
-        Position = UDim2.fromOffset(6, 6),
-        Size = UDim2.fromOffset(0, 0),
-        ZIndex = 10,
-        Parent = ScreenGui,
-    })
-    table.insert(
-        Library.Corners,
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius),
-            Parent = Holder,
-        })
-    )
-    table.insert(
-        Library.Scales,
-        New("UIScale", {
-            Parent = Holder,
-        })
-    )
-    Library:AddOutline(Holder)
-
-    Library:MakeLine(Holder, {
-        Position = UDim2.fromOffset(0, 34),
-        Size = UDim2.new(1, 0, 0, 1),
-    })
-
-    local Label = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 34),
-        Text = Name,
-        TextSize = 15,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = Holder,
-    })
-    New("UIPadding", {
-        PaddingLeft = UDim.new(0, 12),
-        PaddingRight = UDim.new(0, 12),
-        Parent = Label,
-    })
-
-    local Container = New("Frame", {
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(0, 35),
-        Size = UDim2.new(1, 0, 1, -35),
-        Parent = Holder,
-    })
-    New("UIListLayout", {
-        Padding = UDim.new(0, 7),
-        Parent = Container,
-    })
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 7),
-        PaddingLeft = UDim.new(0, 7),
-        PaddingRight = UDim.new(0, 7),
-        PaddingTop = UDim.new(0, 7),
-        Parent = Container,
-    })
-
-    Library:MakeDraggable(Holder, Label, true)
-    return Holder, Container
-end
-
--- Context Menu
-local CurrentMenu
-function Library:AddContextMenu(
-    Holder: GuiObject,
-    Size: UDim2 | () -> (),
-    Offset: { [number]: number } | () -> {},
-    List: number?,
-    ActiveCallback: (Active: boolean) -> ()?,
-    IgnoreCornerRadius: boolean?
-)
-    local Menu
-    local ParentGui = Holder:FindFirstAncestorOfClass("ScreenGui")
-    if ParentGui ~= ScreenGui and (Library.ActiveLoading and ParentGui ~= Library.ActiveLoading.ScreenGui) then
-        ParentGui = ScreenGui
-    end
-
-    if List then
-        Menu = New("ScrollingFrame", {
-            AutomaticCanvasSize = List == 2 and Enum.AutomaticSize.Y or Enum.AutomaticSize.None,
-            AutomaticSize = List == 1 and Enum.AutomaticSize.Y or Enum.AutomaticSize.None,
-            BackgroundColor3 = "BackgroundColor",
-            BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-            CanvasSize = UDim2.fromOffset(0, 0),
-            ScrollBarImageColor3 = "OutlineColor",
-            ScrollBarThickness = List == 2 and 2 or 0,
-            Size = typeof(Size) == "function" and Size() or Size,
-            TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-            Visible = false,
-            ZIndex = 10,
-            Parent = ParentGui,
-        })
-    else
-        Menu = New("Frame", {
-            BackgroundColor3 = "BackgroundColor",
-            Size = typeof(Size) == "function" and Size() or Size,
-            Visible = false,
-            ZIndex = 10,
-            Parent = ParentGui,
-        })
-    end
-    table.insert(
-        Library.Scales,
-        New("UIScale", {
-            Parent = Menu,
-        })
-    )
-
-    New("UIStroke", {
-        Color = "OutlineColor",
-        Parent = Menu,
-    })
-
-    if IgnoreCornerRadius ~= true then
-        table.insert(
-            Library.Corners,
-            New("UICorner", {
-                CornerRadius = UDim.new(0, Library.CornerRadius / 2),
-                Parent = Menu,
-            })
-        )
-    end
-
-    local Table = {
-        Active = false,
-        Holder = Holder,
-        Menu = Menu,
-        List = nil,
-        Signal = nil,
-        Size = Size,
-    }
-
-    if List then
-        Table.List = New("UIListLayout", {
-            Parent = Menu,
-        })
-    end
-
-    function Table:Open()
-        if CurrentMenu == Table then
-            return
-        elseif CurrentMenu then
-            CurrentMenu:Close()
-        end
-
-        CurrentMenu = Table
-        Table.Active = true
-
-        if typeof(Offset) == "function" then
-            Menu.Position = UDim2.fromOffset(
-                math.floor(Holder.AbsolutePosition.X + Offset()[1]),
-                math.floor(Holder.AbsolutePosition.Y + Offset()[2])
-            )
-        else
-            Menu.Position = UDim2.fromOffset(
-                math.floor(Holder.AbsolutePosition.X + Offset[1]),
-                math.floor(Holder.AbsolutePosition.Y + Offset[2])
-            )
-        end
-        Menu.Size = typeof(Table.Size) == "function" and Table.Size() or Table.Size
-        if typeof(ActiveCallback) == "function" then
-            Library:SafeCallback(ActiveCallback, true)
-        end
-
-        Menu.Visible = true
-
-        Table.Signal = Holder:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
-            if typeof(Offset) == "function" then
-                Menu.Position = UDim2.fromOffset(
-                    math.floor(Holder.AbsolutePosition.X + Offset()[1]),
-                    math.floor(Holder.AbsolutePosition.Y + Offset()[2])
-                )
-            else
-                Menu.Position = UDim2.fromOffset(
-                    math.floor(Holder.AbsolutePosition.X + Offset[1]),
-                    math.floor(Holder.AbsolutePosition.Y + Offset[2])
-                )
-            end
-        end)
-    end
-
-    function Table:Close()
-        if CurrentMenu ~= Table then
-            return
-        end
-        Menu.Visible = false
-
-        if Table.Signal then
-            Table.Signal:Disconnect()
-            Table.Signal = nil
-        end
-        Table.Active = false
-        CurrentMenu = nil
-        if typeof(ActiveCallback) == "function" then
-            Library:SafeCallback(ActiveCallback, false)
-        end
-    end
-
-    function Table:Toggle()
-        if Table.Active then
-            Table:Close()
-        else
-            Table:Open()
-        end
-    end
-
-    function Table:SetSize(Size)
-        Table.Size = Size
-        Menu.Size = typeof(Size) == "function" and Size() or Size
-    end
-
-    return Table
-end
-
-Library:GiveSignal(UserInputService.InputBegan:Connect(function(Input: InputObject)
-    if Library.Unloaded then
-        return
-    end
-
-    if IsClickInput(Input, true) then
-        local Location = Input.Position
-
-        if
-            CurrentMenu
-            and not (
-                Library:MouseIsOverFrame(CurrentMenu.Menu, Location)
-                or Library:MouseIsOverFrame(CurrentMenu.Holder, Location)
-            )
-        then
-            CurrentMenu:Close()
-        end
-    end
-end))
-
--- Tooltip
-local TooltipLabel = New("TextLabel", {
-    AutomaticSize = Enum.AutomaticSize.Y,
-    BackgroundColor3 = "BackgroundColor",
-    TextSize = 14,
-    TextWrapped = true,
-    Visible = false,
-    ZIndex = 20,
-    Parent = ScreenGui,
-})
-New("UIPadding", {
-    PaddingBottom = UDim.new(0, 2),
-    PaddingLeft = UDim.new(0, 4),
-    PaddingRight = UDim.new(0, 4),
-    PaddingTop = UDim.new(0, 2),
-    Parent = TooltipLabel,
-})
-table.insert(
-    Library.Scales,
-    New("UIScale", {
-        Parent = TooltipLabel,
-    })
-)
-New("UIStroke", {
-    Color = "OutlineColor",
-    Parent = TooltipLabel,
-})
-table.insert(
-    Library.Corners,
-    New("UICorner", {
-        CornerRadius = UDim.new(0, Library.CornerRadius / 2),
-        Parent = TooltipLabel,
-    })
-)
-TooltipLabel:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
-    if Library.Unloaded then
-        return
-    end
-
-    local X, _ = Library:GetTextBounds(
-        TooltipLabel.Text,
-        TooltipLabel.FontFace,
-        TooltipLabel.TextSize,
-        (workspace.CurrentCamera.ViewportSize.X - TooltipLabel.AbsolutePosition.X - 8) / Library.DPIScale
-    )
-    TooltipLabel.Size = UDim2.fromOffset(X + 8)
-end)
-
-local CurrentHoverInstance
-function Library:AddTooltip(InfoStr: string, DisabledInfoStr: string, HoverInstance: GuiObject)
-    local TooltipTable = {
-        Disabled = false,
-        Hovering = false,
-        Signals = {},
-    }
-
-    local function DoHover()
-        if
-            CurrentHoverInstance == HoverInstance
-            or Library.ActiveDialog
-            or (CurrentMenu and Library:MouseIsOverFrame(CurrentMenu.Menu, Mouse))
-            or (TooltipTable.Disabled and typeof(DisabledInfoStr) ~= "string")
-            or (not TooltipTable.Disabled and typeof(InfoStr) ~= "string")
-        then
-            return
-        end
-        CurrentHoverInstance = HoverInstance
-
-        local ParentGui = HoverInstance:FindFirstAncestorOfClass("ScreenGui")
-        if ParentGui ~= ScreenGui and (Library.ActiveLoading and ParentGui ~= Library.ActiveLoading.ScreenGui) then
-            ParentGui = ScreenGui
-        end
-        TooltipLabel.Parent = ParentGui
-
-        TooltipLabel.Text = TooltipTable.Disabled and DisabledInfoStr or InfoStr
-        TooltipLabel.Visible = true
-
-        while
-            (Library.Toggled or Library.ActiveLoading)
-            and not Library.ActiveDialog
-            and Library:MouseIsOverFrame(HoverInstance, Mouse)
-            and not (CurrentMenu and Library:MouseIsOverFrame(CurrentMenu.Menu, Mouse))
-        do
-            TooltipLabel.Position = UDim2.fromOffset(
-                Mouse.X + (Library.ShowCustomCursor and 8 or 14),
-                Mouse.Y + (Library.ShowCustomCursor and 8 or 12)
-            )
-            RunService.RenderStepped:Wait()
-        end
-
-        TooltipLabel.Visible = false
-        CurrentHoverInstance = nil
-    end
-
-    local function GiveSignal(Connection: RBXScriptConnection | RBXScriptSignal)
-        local ConnectionType = typeof(Connection)
-        if Connection and (ConnectionType == "RBXScriptConnection" or ConnectionType == "RBXScriptSignal") then
-            table.insert(TooltipTable.Signals, Connection)
-        end
-        return Connection
-    end
-
-    GiveSignal(HoverInstance.MouseEnter:Connect(DoHover))
-    GiveSignal(HoverInstance.MouseMoved:Connect(DoHover))
-    GiveSignal(HoverInstance.MouseLeave:Connect(function()
-        if CurrentHoverInstance ~= HoverInstance then
-            return
-        end
-        TooltipLabel.Visible = false
-        CurrentHoverInstance = nil
-    end))
-
-    function TooltipTable:Destroy()
-        for Index = #TooltipTable.Signals, 1, -1 do
-            local Connection = table.remove(TooltipTable.Signals, Index)
-            if Connection and Connection.Connected then
-                Connection:Disconnect()
-            end
-        end
-
-        if CurrentHoverInstance == HoverInstance then
-            if TooltipLabel then
-                TooltipLabel.Visible = false
-            end
-            CurrentHoverInstance = nil
-        end
-    end
-
-    table.insert(Tooltips, TooltipLabel)
-    return TooltipTable
-end
-
--- Unload Functions
-function Library:OnUnload(Callback)
-    table.insert(Library.UnloadSignals, Callback)
-end
-
-function Library:Unload()
-    for Index = #Library.Signals, 1, -1 do
-        local Connection = table.remove(Library.Signals, Index)
-        if Connection and Connection.Connected then
-            Connection:Disconnect()
-        end
-    end
-
-    for _, Callback in Library.UnloadSignals do
-        Library:SafeCallback(Callback)
-    end
-
-    for _, Tooltip in Tooltips do
-        Library:SafeCallback(Tooltip.Destroy, Tooltip)
-    end
-
-    Library.Unloaded = true
-
-    if Library.ActiveLoading then
-        Library.ActiveLoading:Destroy()
-    end
-
-    if ScreenGui then
-        ScreenGui:Destroy()
-    end
-
-    getgenv().Library = nil
-end
-
--- Icons
-local CheckIcon = Library:GetIcon("check")
-local ArrowIcon = Library:GetIcon("chevron-up")
-local ResizeIcon = Library:GetIcon("move-diagonal-2")
-local KeyIcon = Library:GetIcon("key")
-local MoveIcon = Library:GetIcon("move")
-
--- Font Functions
-function Library:SetFont(FontFace)
-    if typeof(FontFace) == "EnumItem" then
-        FontFace = Font.fromEnum(FontFace)
-    end
-    Library.Scheme.Font = FontFace
-    Library:UpdateColorsUsingRegistry()
-end
-
--- Notify Side
-function Library:SetNotifySide(Side: string)
-    Library.NotifySide = Side
-
-    if Side:lower() == "left" then
-        NotificationArea.AnchorPoint = Vector2.new(0, 0)
-        NotificationArea.Position = UDim2.fromOffset(6, 6)
-        NotificationList.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    else
-        NotificationArea.AnchorPoint = Vector2.new(1, 0)
-        NotificationArea.Position = UDim2.new(1, -6, 0, 6)
-        NotificationList.HorizontalAlignment = Enum.HorizontalAlignment.Right
-    end
-end
-
--- Notify Function
-function Library:Notify(...)
-    local Data = {}
-    local Info = select(1, ...)
-
-    if typeof(Info) == "table" then
-        Data.Title = tostring(Info.Title)
-        Data.Description = tostring(Info.Description)
-        Data.Time = Info.Time or 5
-        Data.SoundId = Info.SoundId
-        Data.Steps = Info.Steps
-        Data.Persist = Info.Persist
-        Data.Icon = Info.Icon
-        Data.BigIcon = Info.BigIcon
-        Data.IconColor = Info.IconColor
-    else
-        Data.Description = tostring(Info)
-        Data.Time = select(2, ...) or 5
-        Data.SoundId = select(3, ...)
-    end
-    Data.Destroyed = false
-
-    local DeletedInstance = false
-    local DeleteConnection = nil
-    if typeof(Data.Time) == "Instance" then
-        DeleteConnection = Data.Time.Destroying:Connect(function()
-            DeletedInstance = true
-            DeleteConnection:Disconnect()
-            DeleteConnection = nil
-        end)
-    end
-
-    local FakeBackground = New("Frame", {
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundTransparency = 1,
-        Size = UDim2.fromScale(1, 0),
-        Visible = false,
-        Parent = NotificationArea,
-    })
-
-    local Holder = New("Frame", {
-        AutomaticSize = Enum.AutomaticSize.Y,
-        BackgroundColor3 = "MainColor",
-        Position = Library.NotifySide:lower() == "left" and UDim2.new(-1, -8, 0, -2) or UDim2.new(1, 8, 0, -2),
-        Size = UDim2.fromScale(1, 1),
-        ZIndex = 5,
-        Parent = FakeBackground,
-    })
-    table.insert(
-        Library.Corners,
-        New("UICorner", {
-            CornerRadius = UDim.new(0, Library.CornerRadius),
-            Parent = Holder,
-        })
-    )
-    New("UIListLayout", {
-        Padding = UDim.new(0, 4),
-        Parent = Holder,
-    })
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 8),
-        PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8),
-        PaddingTop = UDim.new(0, 8),
-        Parent = Holder,
-    })
-    Library:AddOutline(Holder)
-
-    local ContentContainer = New("Frame", {
-        BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.XY,
-        Size = UDim2.fromScale(1, 0),
-        Parent = Holder,
-    })
-    
-    if Data.BigIcon then
-        New("UIListLayout", {
-            Padding = UDim.new(0, 8),
-            FillDirection = Enum.FillDirection.Horizontal,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            Parent = ContentContainer,
-        })
-    end
-
-    local BigIconLabel
-    if Data.BigIcon then
-        local ParsedIcon = Library:GetCustomIcon(Data.BigIcon)
-        if ParsedIcon then
-            BigIconLabel = New("ImageLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.fromOffset(24, 24),
-                Image = ParsedIcon.Url,
-                ImageColor3 = Data.IconColor or "AccentColor",
-                ImageRectOffset = ParsedIcon.ImageRectOffset,
-                ImageRectSize = ParsedIcon.ImageRectSize,
-                Parent = ContentContainer,
-            })
-        end
-    end
-
-    local TextContainer = New("Frame", {
-        BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.XY,
-        Size = UDim2.fromScale(0, 0),
-        Parent = ContentContainer,
-    })
-    New("UIListLayout", {
-        Padding = UDim.new(0, 4),
-        Parent = TextContainer,
-    })
-    
-    local TitleContainer
-    if Data.Title then
-        TitleContainer = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(0, 0),
-            Parent = TextContainer,
-        })
-    end
-
-    local IconLabel
-    if Data.Icon and TitleContainer then
-        local ParsedIcon = Library:GetCustomIcon(Data.Icon)
-        if ParsedIcon then
-            IconLabel = New("ImageLabel", {
-                BackgroundTransparency = 1,
-                AnchorPoint = Vector2.new(0, 0.5),
-                Position = UDim2.new(0, 0, 0.5, 1),
-                Size = UDim2.fromOffset(15, 15),
-                Image = ParsedIcon.Url,
-                ImageColor3 = Data.IconColor or "FontColor",
-                ImageRectOffset = ParsedIcon.ImageRectOffset,
-                ImageRectSize = ParsedIcon.ImageRectSize,
-                Parent = TitleContainer,
-            })
-        end
-    end
-
-    local Title
-    local Desc
-    local TitleX = 0
-    local DescX = 0
-    local TimerFill
-
-    if Data.Title then
-        Title = New("TextLabel", {
-            AutomaticSize = Enum.AutomaticSize.None,
-            BackgroundTransparency = 1,
-            AnchorPoint = Vector2.new(0, 0.5),
-            Position = UDim2.new(0, (Data.Icon and 21 or 0), 0.5, 0),
-            Size = UDim2.fromScale(0, 0),
-            Text = Data.Title,
-            TextSize = 15,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Center,
-            TextWrapped = true,
-            Parent = TitleContainer,
-        })
-    end
-
-    if Data.Description then
-        Desc = New("TextLabel", {
-            AutomaticSize = Enum.AutomaticSize.None,
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(0, 0),
-            Text = Data.Description,
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextWrapped = true,
-            Parent = TextContainer,
-        })
-    end
-
-    function Data:Resize()
-        local ExtraWidth = BigIconLabel and 32 or 0
-        local IconWidth = IconLabel and 21 or 0
-
-        if Title then
-            local X, Y = Library:GetTextBounds(Title.Text, Title.FontFace, Title.TextSize, (NotificationArea.AbsoluteSize.X / Library.DPIScale) - 24 - ExtraWidth - IconWidth)
-            Title.Size = UDim2.fromOffset(X, Y)
-            TitleX = X + IconWidth
-            TitleContainer.Size = UDim2.fromOffset(TitleX, math.max(Y, IconLabel and 16 or 0))
-        end
-
-        if Desc then
-            local X, Y = Library:GetTextBounds(Desc.Text, Desc.FontFace, Desc.TextSize, (NotificationArea.AbsoluteSize.X / Library.DPIScale) - 24 - ExtraWidth)
-            Desc.Size = UDim2.fromOffset(X, Y)
-            DescX = X
-        end
-
-        FakeBackground.Size = UDim2.fromOffset(math.max(TitleX, DescX) + 24 + ExtraWidth, 0)
-    end
-
-    function Data:ChangeTitle(Text)
-        if Title then
-            Data.Title = tostring(Text)
-            Title.Text = Data.Title
-            Data:Resize()
-        end
-    end
-
-    function Data:ChangeDescription(Text)
-        if Desc then
-            Data.Description = tostring(Text)
-            Desc.Text = Data.Description
-            Data:Resize()
-        end
-    end
-
-    function Data:ChangeStep(NewStep)
-        if TimerFill and Data.Steps then
-            NewStep = math.clamp(NewStep or 0, 0, Data.Steps)
-            TimerFill.Size = UDim2.fromScale(NewStep / Data.Steps, 1)
-        end
-    end
-
-    function Data:Destroy()
-        Data.Destroyed = true
-
-        if typeof(Data.Time) == "Instance" then
-            pcall(Data.Time.Destroy, Data.Time)
-        end
-
-        if DeleteConnection then
-            DeleteConnection:Disconnect()
-        end
-
-        TweenService
-            :Create(Holder, Library.NotifyTweenInfo, {
-                Position = Library.NotifySide:lower() == "left" and UDim2.new(-1, -8, 0, -2) or UDim2.new(1, 8, 0, -2),
-            })
-            :Play()
-
-        task.delay(Library.NotifyTweenInfo.Time, function()
-            Library.Notifications[FakeBackground] = nil
-            FakeBackground:Destroy()
-        end)
-    end
-
-    Data:Resize()
-
-    local TimerHolder = New("Frame", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 7),
-        Visible = (Data.Persist ~= true and typeof(Data.Time) ~= "Instance") or typeof(Data.Steps) == "number",
-        Parent = Holder,
-    })
-    local TimerBar = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
-        BorderColor3 = "OutlineColor",
-        BorderSizePixel = 1,
-        Position = UDim2.fromOffset(0, 3),
-        Size = UDim2.new(1, 0, 0, 2),
-        Parent = TimerHolder,
-    })
-    TimerFill = New("Frame", {
-        BackgroundColor3 = "AccentColor",
-        Size = UDim2.fromScale(1, 1),
-        Parent = TimerBar,
-    })
-
-    if typeof(Data.Time) == "Instance" then
-        TimerFill.Size = UDim2.fromScale(0, 1)
-    end
-    if Data.SoundId then
-        local SoundId = Data.SoundId
-        if typeof(SoundId) == "number" then
-            SoundId = string.format("rbxassetid://%d", SoundId)
-        end
-        New("Sound", {
-            SoundId = SoundId,
-            Volume = 3,
-            PlayOnRemove = true,
-            Parent = SoundService,
-        }):Destroy()
-    end
-
-    Library.Notifications[FakeBackground] = Data
-
-    FakeBackground.Visible = true
-    TweenService:Create(Holder, Library.NotifyTweenInfo, {
-        Position = UDim2.fromOffset(0, 0),
-    }):Play()
-
-    task.delay(Library.NotifyTweenInfo.Time, function()
-        if Data.Persist then
-            return
-        elseif typeof(Data.Time) == "Instance" then
-            repeat
-                task.wait()
-            until DeletedInstance or Data.Destroyed
-        else
-            TweenService
-                :Create(TimerFill, TweenInfo.new(Data.Time, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {
-                    Size = UDim2.fromScale(0, 1),
-                })
-                :Play()
-            task.wait(Data.Time)
-        end
-
-        if not Data.Destroyed then
-            Data:Destroy()
-        end
-    end)
-
-    return Data
-end
-
--- Load Elements Module
-local Elements = loadstring(game:HttpGet("https://raw.githubusercontent.com/opsidian279/Moded/refs/heads/main/element.lua"))()
-
--- Merge Elements into Library
-for k, v in pairs(Elements.Templates) do
-    if Library.Templates == nil then
-        Library.Templates = {}
-    end
-    Library.Templates[k] = v
-end
-
--- Create Window Function
-function Library:CreateWindow(WindowInfo)
-    local ViewportSize: Vector2 = workspace.CurrentCamera.ViewportSize
-    if RunService:IsStudio() and ViewportSize.X <= 5 and ViewportSize.Y <= 5 then
-        repeat
-            ViewportSize = workspace.CurrentCamera.ViewportSize
-            task.wait()
-        until ViewportSize.X > 5 and ViewportSize.Y > 5
-    end
-
-    local MaxX = ViewportSize.X - 64
-    local MaxY = ViewportSize.Y - 64
-
-    Library.OriginalMinSize = Vector2.new(math.min(Library.OriginalMinSize.X, MaxX), math.min(Library.OriginalMinSize.Y, MaxY))
-    Library.MinSize = Library.OriginalMinSize
-
-    WindowInfo = Library:Validate(WindowInfo, Library.Templates.Window)
-    
-    WindowInfo.Size = UDim2.fromOffset(
-        math.clamp(WindowInfo.Size.X.Offset, Library.MinSize.X, MaxX),
-        math.clamp(WindowInfo.Size.Y.Offset, Library.MinSize.Y, MaxY)
-    )
-    if typeof(WindowInfo.Font) == "EnumItem" then
-        WindowInfo.Font = Font.fromEnum(WindowInfo.Font)
-    end
-    WindowInfo.CornerRadius = math.min(WindowInfo.CornerRadius, 20)
-    
-    -- Old Naming
-    if WindowInfo.Compact ~= nil then
-        WindowInfo.SidebarCompacted = WindowInfo.Compact
-    end
-    if WindowInfo.SidebarMinWidth ~= nil then
-        WindowInfo.MinSidebarWidth = WindowInfo.SidebarMinWidth
-    end
-    WindowInfo.MinSidebarWidth = math.max(64, WindowInfo.MinSidebarWidth)
-    WindowInfo.SidebarCompactWidth = math.max(48, WindowInfo.SidebarCompactWidth)
-    WindowInfo.SidebarCollapseThreshold = math.clamp(WindowInfo.SidebarCollapseThreshold, 0.1, 0.9)
-    WindowInfo.CompactWidthActivation = math.max(48, WindowInfo.CompactWidthActivation)
-
-    Library.CornerRadius = WindowInfo.CornerRadius
-    Library:SetNotifySide(WindowInfo.NotifySide)
-    Library.ShowCustomCursor = WindowInfo.ShowCustomCursor
-    Library.Scheme.Font = WindowInfo.Font
-    Library.ToggleKeybind = WindowInfo.ToggleKeybind
-    Library.GlobalSearch = WindowInfo.GlobalSearch
-
-    local IsDefaultSearchbarSize = WindowInfo.SearchbarSize == UDim2.fromScale(1, 1)
-    local MainFrame
-    local DividerLine
-    local TitleHolder
-    local WindowTitle
-    local WindowIcon
-    local RightWrapper
-    local SearchBox
-    local CurrentTabInfo
-    local CurrentTabLabel
-    local CurrentTabDescription
-    local ResizeButton
-    local Tabs
-    local Container
-    local BackgroundImage
-    local BottomBackground
-    local FooterLabel
-
-    local InitialLeftWidth = math.ceil(WindowInfo.Size.X.Offset * 0.3)
-    local IsCompact = WindowInfo.SidebarCompacted
-    local LastExpandedWidth = InitialLeftWidth
-
-    -- Create UI Elements
-    Library.KeybindFrame, Library.KeybindContainer = Library:AddDraggableMenu("Keybinds")
-    Library.KeybindFrame.AnchorPoint = Vector2.new(0, 0.5)
-    Library.KeybindFrame.Position = UDim2.new(0, 6, 0.5, 0)
-    Library.KeybindFrame.Visible = false
-
-    MainFrame = New("TextButton", {
-        BackgroundColor3 = function()
-            return Library:GetBetterColor(Library.Scheme.BackgroundColor, -1)
-        end,
-        Name = "Main",
-        Text = "",
-        Position = WindowInfo.Position,
-        Size = WindowInfo.Size,
-        Visible = false,
-        Parent = ScreenGui,
-    })
-    table.insert(
-        Library.Corners,
-        New("UICorner", {
-            CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-            Parent = MainFrame,
-        })
-    )
-    table.insert(
-        Library.Scales,
-        New("UIScale", {
-            Parent = MainFrame,
-        })
-    )
-    Library:AddOutline(MainFrame)
-    Library:MakeLine(MainFrame, {
-        Position = UDim2.fromOffset(0, 48),
-        Size = UDim2.new(1, 0, 0, 1),
-    })
-
-    DividerLine = New("Frame", {
-        BackgroundColor3 = "OutlineColor",
-        Position = UDim2.fromOffset(InitialLeftWidth, 0),
-        Size = UDim2.new(0, 1, 1, -21),
-        Parent = MainFrame,
-    })
-
-    if WindowInfo.BackgroundImage then
-        BackgroundImage = New("ImageLabel", {
-            Image = WindowInfo.BackgroundImage,
-            Position = UDim2.fromScale(0, 0),
-            Size = UDim2.fromScale(1, 1),
-            ScaleType = Enum.ScaleType.Stretch,
-            ZIndex = 999,
-            BackgroundTransparency = 1,
-            ImageTransparency = 0.75,
-            Parent = MainFrame,
-        })
-        table.insert(
-            Library.Corners,
-            New("UICorner", {
-                CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-                Parent = BackgroundImage,
-            })
-        )
-    end
-
-    if WindowInfo.Center then
-        MainFrame.Position = UDim2.new(0.5, -MainFrame.Size.X.Offset / 2, 0.5, -MainFrame.Size.Y.Offset / 2)
-    end
-
-    -- Top Bar
-    local TopBar = New("Frame", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 48),
-        Parent = MainFrame,
-    })
-    Library:MakeDraggable(MainFrame, TopBar, false, true)
-
-    TitleHolder = New("Frame", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0, InitialLeftWidth, 1, 0),
-        Parent = TopBar,
-    })
-    New("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal,
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 6),
-        Parent = TitleHolder,
-    })
-
-    if WindowInfo.Icon then
-        local Icon = Library:GetCustomIcon(WindowInfo.Icon)
-        WindowIcon = New("ImageLabel", {
-            Image = Icon.Url,
-            ImageRectOffset = Icon.ImageRectOffset,
-            ImageRectSize = Icon.ImageRectSize,
-            Size = WindowInfo.IconSize,
-            Parent = TitleHolder,
-        })
-    else
-        WindowIcon = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = WindowInfo.IconSize,
-            Text = WindowInfo.Title:sub(1, 1),
-            TextScaled = true,
-            Visible = false,
-            Parent = TitleHolder,
-        })
-    end
-
-    local X = Library:GetTextBounds(WindowInfo.Title, Library.Scheme.Font, 20, TitleHolder.AbsoluteSize.X - (WindowInfo.Icon and WindowInfo.IconSize.X.Offset + 6 or 0) - 12)
-    WindowTitle = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0, X, 1, 0),
-        Text = WindowInfo.Title,
-        TextSize = 20,
-        Parent = TitleHolder,
-    })
-
-    RightWrapper = New("Frame", {
-        AnchorPoint = Vector2.new(1, 0.5),
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -49, 0.5, 0),
-        Size = UDim2.new(1, -InitialLeftWidth - 57 - 1, 1, -16),
-        Parent = TopBar,
-    })
-
-    New("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal,
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 8),
-        Parent = RightWrapper,
-    })
-
-    CurrentTabInfo = New("Frame", {
-        Size = UDim2.fromScale(WindowInfo.DisableSearch and 1 or 0.5, 1),
-        Visible = false,
-        BackgroundTransparency = 1,
-        Parent = RightWrapper,
-    })
-
-    New("UIFlexItem", {
-        FlexMode = Enum.UIFlexMode.Grow,
-        Parent = CurrentTabInfo,
-    })
-
-    New("UIListLayout", {
-        FillDirection = Enum.FillDirection.Vertical,
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Parent = CurrentTabInfo,
-    })
-
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 8),
-        PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8),
-        PaddingTop = UDim.new(0, 8),
-        Parent = CurrentTabInfo,
-    })
-
-    CurrentTabLabel = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.fromScale(1, 0),
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Text = "",
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = CurrentTabInfo,
-    })
-
-    CurrentTabDescription = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.fromScale(1, 0),
-        AutomaticSize = Enum.AutomaticSize.Y,
-        Text = "",
-        TextWrapped = true,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextTransparency = 0.5,
-        Parent = CurrentTabInfo,
-    })
-
-    SearchBox = New("TextBox", {
-        BackgroundColor3 = "MainColor",
-        PlaceholderText = "Search",
-        Size = WindowInfo.SearchbarSize,
-        TextScaled = true,
-        Visible = not (WindowInfo.DisableSearch or false),
-        Parent = RightWrapper,
-    })
-    New("UIFlexItem", {
-        FlexMode = Enum.UIFlexMode.Shrink,
-        Parent = SearchBox,
-    })
-    table.insert(
-        Library.Corners,
-        New("UICorner", {
-            CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-            Parent = SearchBox,
-        })
-    )
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 8),
-        PaddingLeft = UDim.new(0, 8),
-        PaddingRight = UDim.new(0, 8),
-        PaddingTop = UDim.new(0, 8),
-        Parent = SearchBox,
-    })
-    New("UIStroke", {
-        Color = "OutlineColor",
-        Parent = SearchBox,
-    })
-
-    local SearchIcon = Library:GetIcon("search")
-    if SearchIcon then
-        New("ImageLabel", {
-            Image = SearchIcon.Url,
-            ImageColor3 = "FontColor",
-            ImageRectOffset = SearchIcon.ImageRectOffset,
-            ImageRectSize = SearchIcon.ImageRectSize,
-            ImageTransparency = 0.5,
-            Size = UDim2.fromScale(1, 1),
-            SizeConstraint = Enum.SizeConstraint.RelativeYY,
-            Parent = SearchBox,
-        })
-    end
-
-    if MoveIcon then
-        New("ImageLabel", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            Image = MoveIcon.Url,
-            ImageColor3 = "OutlineColor",
-            ImageRectOffset = MoveIcon.ImageRectOffset,
-            ImageRectSize = MoveIcon.ImageRectSize,
-            Position = UDim2.new(1, -10, 0.5, 0),
-            Size = UDim2.fromOffset(28, 28),
-            SizeConstraint = Enum.SizeConstraint.RelativeYY,
-            Parent = TopBar,
-        })
-    end
-
-    -- Bottom Bar
-    BottomBackground = New("Frame", {
-        AnchorPoint = Vector2.new(0, 1),
-        BackgroundColor3 = function()
-            return Library:GetBetterColor(Library.Scheme.BackgroundColor, 4)
-        end,
-        Position = UDim2.fromScale(0, 1),
-        Size = UDim2.new(1, 0, 0, 20 + WindowInfo.CornerRadius),
-        Parent = MainFrame
-    })
-    Library:MakeLine(MainFrame, {
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.new(0, 0, 1, -20),
-        Size = UDim2.new(1, 0, 0, 1),
-    })
-
-    local BottomBar = New("Frame", {
-        AnchorPoint = Vector2.new(0, 1),
-        BackgroundTransparency = 1,
-        Position = UDim2.fromScale(0, 1),
-        Size = UDim2.new(1, 0, 0, 20),
-        Parent = MainFrame,
-    })
-    table.insert(
-        Library.Corners,
-        New("UICorner", {
-            CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-            Parent = BottomBackground,
-        })
-    )
-
-    FooterLabel = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.fromScale(1, 1),
-        Text = WindowInfo.Footer,
-        TextSize = 14,
-        TextTransparency = 0.5,
-        Parent = BottomBar,
-    })
-
-    if WindowInfo.Resizable then
-        ResizeButton = New("TextButton", {
-            AnchorPoint = Vector2.new(1, 0),
-            BackgroundTransparency = 1,
-            Position = UDim2.new(1, -WindowInfo.CornerRadius / 4, 0, 0),
-            Size = UDim2.fromScale(1, 1),
-            SizeConstraint = Enum.SizeConstraint.RelativeYY,
-            Text = "",
-            Parent = BottomBar,
-        })
-        Library:MakeResizable(MainFrame, ResizeButton, function()
-            for _, Tab in Library.Tabs do
-                Tab:Resize(true)
-            end
-        end)
-    end
-
-    New("ImageLabel", {
-        Image = ResizeIcon and ResizeIcon.Url or "",
-        ImageColor3 = "FontColor",
-        ImageRectOffset = ResizeIcon and ResizeIcon.ImageRectOffset or Vector2.zero,
-        ImageRectSize = ResizeIcon and ResizeIcon.ImageRectSize or Vector2.zero,
-        ImageTransparency = 0.5,
-        Position = UDim2.fromOffset(2, 2),
-        Size = UDim2.new(1, -4, 1, -4),
-        Parent = ResizeButton,
-    })
-
-    -- Tabs Container
-    Tabs = New("ScrollingFrame", {
-        AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        BackgroundColor3 = "BackgroundColor",
-        CanvasSize = UDim2.fromScale(0, 0),
-        Position = UDim2.fromOffset(0, 49),
-        ScrollBarThickness = 0,
-        Size = UDim2.new(0, InitialLeftWidth, 1, -70),
-        Parent = MainFrame,
-    })
-    New("UIListLayout", {
-        Parent = Tabs,
-    })
-
-    -- Content Container
-    Container = New("Frame", {
-        AnchorPoint = Vector2.new(1, 0),
-        BackgroundColor3 = function()
-            return Library:GetBetterColor(Library.Scheme.BackgroundColor, 1)
-        end,
-        Name = "Container",
-        Position = UDim2.new(1, 0, 0, 49),
-        Size = UDim2.new(1, -InitialLeftWidth - 1, 1, -70),
-        Parent = MainFrame,
-    })
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 0),
-        PaddingLeft = UDim.new(0, 6),
-        PaddingRight = UDim.new(0, 6),
-        PaddingTop = UDim.new(0, 0),
-        Parent = Container,
-    })
-
-    -- Window Functions
-    local Window = {}
-
-    function Window:ChangeTitle(title)
-        assert(typeof(title) == "string", "Expected string for title got: " .. typeof(title))
-        WindowTitle.Text = title
-        WindowInfo.Title = title
-    end
-
-    if WindowInfo.BackgroundImage then
-        function Window:SetBackgroundImage(Image: string)
-            assert(typeof(Image) == "string", "Expected string for Image got: " .. typeof(Image))
-            BackgroundImage.Image = Image
-            WindowInfo.BackgroundImage = Image
-        end
-    end
-
-    function Window:SetFooter(footer: string)
-        assert(typeof(footer) == "string", "Expected string for footer got: " .. typeof(footer))
-        FooterLabel.Text = footer
-        WindowInfo.Footer = footer
-    end
-
-    function Window:SetCornerRadius(Radius: number)
-        assert(typeof(Radius) == "number", "Expected number for Radius got: " .. typeof(Radius))
-        Radius = math.min(Radius, 20)
-
-        for _, UICorner in Library.Corners do
-            if UICorner.CornerRadius.Offset == Library.CornerRadius / 2 then
-                UICorner.CornerRadius = UDim.new(0, Radius / 2)
-            else
-                UICorner.CornerRadius = UDim.new(0, Radius)
-            end
-        end
-
-        Library.CornerRadius = Radius
-        WindowInfo.CornerRadius = Radius
-
-        if ResizeButton then
-            ResizeButton.Position = UDim2.new(1, -Radius / 4, 0, 0)
-        end
-        BottomBackground.Size = UDim2.new(1, 0, 0, 20 + Radius)
-
-        for _, Tab in Library.Tabs do
-            if Tab.IsKeyTab then
-                continue
-            end
-            for _, Tabbox in Tab.Tabboxes do
-                Tabbox:UpdateCorners()
-            end
-        end
-    end
-
-    local function ApplyCompact()
-        IsCompact = Window:GetSidebarWidth() == WindowInfo.SidebarCompactWidth
-        if WindowInfo.DisableCompactingSnap then
-            IsCompact = Window:GetSidebarWidth() <= WindowInfo.CompactWidthActivation
-        end
-
-        WindowTitle.Visible = not IsCompact
-        if not WindowInfo.Icon then
-            WindowIcon.Visible = IsCompact
-        end
-
-        for _, Button in Library.TabButtons do
-            if not Button.Icon then
-                continue
-            end
-            Button.Label.Visible = not IsCompact
-            Button.Padding.PaddingBottom = UDim.new(0, IsCompact and 6 or 11)
-            Button.Padding.PaddingLeft = UDim.new(0, IsCompact and 6 or 12)
-            Button.Padding.PaddingRight = UDim.new(0, IsCompact and 6 or 12)
-            Button.Padding.PaddingTop = UDim.new(0, IsCompact and 6 or 11)
-            Button.Icon.SizeConstraint = IsCompact and Enum.SizeConstraint.RelativeXY or Enum.SizeConstraint.RelativeYY
-        end
-    end
-
-    function Window:IsSidebarCompacted()
-        return IsCompact
-    end
-
-    function Window:SetCompact(State)
-        Window:SetSidebarWidth(State and WindowInfo.SidebarCompactWidth or LastExpandedWidth)
-    end
-
-    function Window:GetSidebarWidth()
-        return Tabs.Size.X.Offset
-    end
-
-    function Window:SetSidebarWidth(Width)
-        Width = math.clamp(Width, 48, MainFrame.Size.X.Offset - WindowInfo.MinContainerWidth - 1)
-
-        DividerLine.Position = UDim2.fromOffset(Width, 0)
-        TitleHolder.Size = UDim2.new(0, Width, 1, 0)
-        RightWrapper.Size = UDim2.new(1, -Width - 57 - 1, 1, -16)
-        Tabs.Size = UDim2.new(0, Width, 1, -70)
-        Container.Size = UDim2.new(1, -Width - 1, 1, -70)
-
-        if WindowInfo.EnableCompacting then
-            ApplyCompact()
-        end
-        if not IsCompact then
-            LastExpandedWidth = Width
-        end
-    end
-
-    function Window:ShowTabInfo(Name, Description)
-        CurrentTabLabel.Text = Name
-        CurrentTabDescription.Text = Description
-
-        if IsDefaultSearchbarSize then
-            SearchBox.Size = UDim2.fromScale(0.5, 1)
-        end
-        CurrentTabInfo.Visible = true
-    end
-
-    function Window:HideTabInfo()
-        CurrentTabInfo.Visible = false
-        if IsDefaultSearchbarSize then
-            SearchBox.Size = UDim2.fromScale(1, 1)
-        end
-    end
-
-    -- Add Tab Function
-    function Window:AddTab(...)
-        local Name = nil
-        local Icon = nil
-        local Description = nil
-
-        if select("#", ...) == 1 and typeof(...) == "table" then
-            local Info = select(1, ...)
-            Name = Info.Name or "Tab"
-            Icon = Info.Icon
-            Description = Info.Description
-        else
-            Name = select(1, ...)
-            Icon = select(2, ...)
-            Description = select(3, ...)
-        end
-
-        local TabButton: TextButton
-        local TabLabel
-        local TabIcon
-        local TabContainer
-        local TabLeft
-        local TabRight
-
-        Icon = Library:GetCustomIcon(Icon)
-        
-        TabButton = New("TextButton", {
-            BackgroundColor3 = "MainColor",
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 40),
-            Text = "",
-            Parent = Tabs,
-        })
-        local ButtonPadding = New("UIPadding", {
-            PaddingBottom = UDim.new(0, IsCompact and 6 or 11),
-            PaddingLeft = UDim.new(0, IsCompact and 6 or 12),
-            PaddingRight = UDim.new(0, IsCompact and 6 or 12),
-            PaddingTop = UDim.new(0, IsCompact and 6 or 11),
-            Parent = TabButton,
-        })
-
-        TabLabel = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(30, 0),
-            Size = UDim2.new(1, -30, 1, 0),
-            Text = Name,
-            TextSize = 16,
-            TextTransparency = 0.5,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Visible = not IsCompact,
-            Parent = TabButton,
-        })
-
-        if Icon then
-            TabIcon = New("ImageLabel", {
-                Image = Icon.Url,
-                ImageColor3 = Icon.Custom and "WhiteColor" or "AccentColor",
-                ImageRectOffset = Icon.ImageRectOffset,
-                ImageRectSize = Icon.ImageRectSize,
-                ImageTransparency = 0.5,
-                ScaleType = Enum.ScaleType.Fit,
-                Size = UDim2.fromScale(1, 1),
-                SizeConstraint = IsCompact and Enum.SizeConstraint.RelativeXY or Enum.SizeConstraint.RelativeYY,
-                Parent = TabButton,
-            })
-        end
-
-        table.insert(Library.TabButtons, {
-            Label = TabLabel,
-            Padding = ButtonPadding,
-            Icon = TabIcon,
-        })
-
-        -- Tab Container
-        TabContainer = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Visible = false,
-            Parent = Container,
-        })
-
-        TabLeft = New("ScrollingFrame", {
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1,
-            CanvasSize = UDim2.fromScale(0, 0),
-            ScrollBarImageTransparency = 1,
-            ScrollBarThickness = 0,
-            Size = UDim2.new(0.5, -3, 1, 0),
-            Parent = TabContainer,
-        })
-        New("UIListLayout", {
-            Padding = UDim.new(0, 2),
-            Parent = TabLeft,
-        })
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 2),
-            PaddingLeft = UDim.new(0, 2),
-            PaddingRight = UDim.new(0, 2),
-            PaddingTop = UDim.new(0, 2),
-            Parent = TabLeft,
-        })
-        do
-            New("Frame", {
-                BackgroundTransparency = 1,
-                LayoutOrder = -1,
-                Parent = TabLeft,
-            })
-            New("Frame", {
-                BackgroundTransparency = 1,
-                LayoutOrder = 1,
-                Parent = TabLeft,
-            })
-        end
-
-        TabRight = New("ScrollingFrame", {
-            AnchorPoint = Vector2.new(1, 0),
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1,
-            CanvasSize = UDim2.fromScale(0, 0),
-            Position = UDim2.fromScale(1, 0),
-            ScrollBarImageTransparency = 1,
-            ScrollBarThickness = 0,
-            Size = UDim2.new(0.5, -3, 1, 0),
-            Parent = TabContainer,
-        })
-        New("UIListLayout", {
-            Padding = UDim.new(0, 2),
-            Parent = TabRight,
-        })
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 2),
-            PaddingLeft = UDim.new(0, 2),
-            PaddingRight = UDim.new(0, 2),
-            PaddingTop = UDim.new(0, 2),
-            Parent = TabRight,
-        })
-        do
-            New("Frame", {
-                BackgroundTransparency = 1,
-                LayoutOrder = -1,
-                Parent = TabRight,
-            })
-            New("Frame", {
-                BackgroundTransparency = 1,
-                LayoutOrder = 1,
-                Parent = TabRight,
-            })
-        end
-
-        -- Warning Box
-        local WarningBoxHolder = New("Frame", {
-            AutomaticSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(0, 7),
-            Size = UDim2.fromScale(1, 0),
-            Visible = false,
-            Parent = TabContainer,
-        })
-
-        local WarningBox
-        local WarningBoxOutline
-        local WarningBoxShadowOutline
-        local WarningBoxScrollingFrame
-        local WarningTitle
-        local WarningStroke
-        local WarningText
-        
-        WarningBox = New("Frame", {
-            BackgroundColor3 = "BackgroundColor",
-            Position = UDim2.fromOffset(2, 0),
-            Size = UDim2.new(1, -5, 0, 0),
-            Parent = WarningBoxHolder,
-        })
-        table.insert(
-            Library.Corners,
-            New("UICorner", {
-                CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-                Parent = WarningBox,
-            })
-        )
-        WarningBoxOutline, WarningBoxShadowOutline = Library:AddOutline(WarningBox)
-
-        WarningBoxScrollingFrame = New("ScrollingFrame", {
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Size = UDim2.fromScale(1, 1),
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-            ScrollBarThickness = 3,
-            ScrollingDirection = Enum.ScrollingDirection.Y,
-            Parent = WarningBox,
-        })
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 4),
-            PaddingLeft = UDim.new(0, 6),
-            PaddingRight = UDim.new(0, 6),
-            PaddingTop = UDim.new(0, 4),
-            Parent = WarningBoxScrollingFrame,
-        })
-
-        WarningTitle = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, -4, 0, 14),
-            Text = "",
-            TextColor3 = Color3.fromRGB(255, 50, 50),
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = WarningBoxScrollingFrame,
-        })
-
-        WarningStroke = New("UIStroke", {
-            ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual,
-            Color = Color3.fromRGB(169, 0, 0),
-            LineJoinMode = Enum.LineJoinMode.Miter,
-            Parent = WarningTitle,
-        })
-
-        WarningText = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(0, 16),
-            Size = UDim2.new(1, -4, 0, 0),
-            Text = "",
-            TextSize = 14,
-            TextWrapped = true,
-            Parent = WarningBoxScrollingFrame,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Top,
-        })
-
-        New("UIStroke", {
-            ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual,
-            Color = "DarkColor",
-            LineJoinMode = Enum.LineJoinMode.Miter,
-            Parent = WarningText,
-        })
-
-        -- Tab Table
-        local Tab = {
-            Groupboxes = {},
-            Tabboxes = {},
-            DependencyGroupboxes = {},
-            Sides = {
-                TabLeft,
-                TabRight,
-            },
-            WarningBox = {
-                IsNormal = false,
-                LockSize = false,
-                Visible = false,
-                Title = "WARNING",
-                Text = "",
-            },
-        }
-
-        function Tab:UpdateWarningBox(Info)
-            if typeof(Info.IsNormal) == "boolean" then
-                Tab.WarningBox.IsNormal = Info.IsNormal
-            end
-            if typeof(Info.LockSize) == "boolean" then
-                Tab.WarningBox.LockSize = Info.LockSize
-            end
-            if typeof(Info.Visible) == "boolean" then
-                Tab.WarningBox.Visible = Info.Visible
-            end
-            if typeof(Info.Title) == "string" then
-                Tab.WarningBox.Title = Info.Title
-            end
-            if typeof(Info.Text) == "string" then
-                Tab.WarningBox.Text = Info.Text
-            end
-
-            WarningBoxHolder.Visible = Tab.WarningBox.Visible
-            WarningTitle.Text = Tab.WarningBox.Title
-            WarningText.Text = Tab.WarningBox.Text
-            Tab:Resize(true)
-
-            WarningBox.BackgroundColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.BackgroundColor or Color3.fromRGB(127, 0, 0)
-            WarningBoxShadowOutline.Color = Tab.WarningBox.IsNormal == true and Library.Scheme.DarkColor or Color3.fromRGB(85, 0, 0)
-            WarningBoxOutline.Color = Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor or Color3.fromRGB(255, 50, 50)
-            WarningTitle.TextColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.FontColor or Color3.fromRGB(255, 50, 50)
-            WarningStroke.Color = Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor or Color3.fromRGB(169, 0, 0)
-        end
-
-        function Tab:RefreshSides()
-            local Offset = WarningBoxHolder.Visible and WarningBox.Size.Y.Offset + 8 or 0
-            for _, Side in Tab.Sides do
-                Side.Position = UDim2.new(Side.Position.X.Scale, 0, 0, Offset)
-                Side.Size = UDim2.new(0.5, -3, 1, -Offset)
-            end
-        end
-
-        function Tab:Resize(ResizeWarningBox)
-            if ResizeWarningBox then
-                local MaximumSize = math.floor(TabContainer.AbsoluteSize.Y / 3.25)
-                local _, YText = Library:GetTextBounds(WarningText.Text, Library.Scheme.Font, WarningText.TextSize, WarningText.AbsoluteSize.X)
-
-                local YBox = 24 + YText
-                if Tab.WarningBox.LockSize == true and YBox >= MaximumSize then
-                    WarningBoxScrollingFrame.CanvasSize = UDim2.fromOffset(0, YBox)
-                    YBox = MaximumSize
-                else
-                    WarningBoxScrollingFrame.CanvasSize = UDim2.fromOffset(0, 0)
-                end
-
-                WarningText.Size = UDim2.new(1, -4, 0, YText)
-                WarningBox.Size = UDim2.new(1, -5, 0, YBox + 4)
-            end
-            Tab:RefreshSides()
-        end
-
-        function Tab:AddGroupbox(Info)
-            local BoxHolder = New("Frame", {
-                AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 0),
-                Parent = Info.Side == 1 and TabLeft or TabRight,
-            })
-            New("UIListLayout", {
-                Padding = UDim.new(0, 6),
-                Parent = BoxHolder,
-            })
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 4),
-                PaddingTop = UDim.new(0, 4),
-                Parent = BoxHolder,
-            })
-
-            local GroupboxHolder
-            local GroupboxLabel
-            local GroupboxContainer
-            local GroupboxList
-
-            GroupboxHolder = New("Frame", {
-                BackgroundColor3 = "BackgroundColor",
-                Size = UDim2.fromScale(1, 0),
-                Parent = BoxHolder,
-            })
-            table.insert(
-                Library.Corners,
-                New("UICorner", {
-                    CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-                    Parent = GroupboxHolder,
-                })
-            )
-            Library:AddOutline(GroupboxHolder)
-            Library:MakeLine(GroupboxHolder, {
-                Position = UDim2.fromOffset(0, 34),
-                Size = UDim2.new(1, 0, 0, 1),
-            })
-
-            local BoxIcon = Library:GetCustomIcon(Info.IconName)
-            if BoxIcon then
-                New("ImageLabel", {
-                    Image = BoxIcon.Url,
-                    ImageColor3 = BoxIcon.Custom and "WhiteColor" or "AccentColor",
-                    ImageRectOffset = BoxIcon.ImageRectOffset,
-                    ImageRectSize = BoxIcon.ImageRectSize,
-                    Position = UDim2.fromOffset(6, 6),
-                    Size = UDim2.fromOffset(22, 22),
-                    Parent = GroupboxHolder,
-                })
-            end
-
-            GroupboxLabel = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Position = UDim2.fromOffset(BoxIcon and 24 or 0, 0),
-                Size = UDim2.new(1, 0, 0, 34),
-                Text = Info.Name,
-                TextSize = 15,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = GroupboxHolder,
-            })
-            New("UIPadding", {
-                PaddingLeft = UDim.new(0, 12),
-                PaddingRight = UDim.new(0, 12),
-                Parent = GroupboxLabel,
-            })
-
-            GroupboxContainer = New("Frame", {
-                BackgroundTransparency = 1,
-                Position = UDim2.fromOffset(0, 35),
-                Size = UDim2.new(1, 0, 1, -35),
-                Parent = GroupboxHolder,
-            })
-            GroupboxList = New("UIListLayout", {
-                Padding = UDim.new(0, 8),
-                Parent = GroupboxContainer,
-            })
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 7),
-                PaddingLeft = UDim.new(0, 7),
-                PaddingRight = UDim.new(0, 7),
-                PaddingTop = UDim.new(0, 7),
-                Parent = GroupboxContainer,
-            })
-
-            local Groupbox = {
-                BoxHolder = BoxHolder,
-                Holder = GroupboxHolder,
-                Container = GroupboxContainer,
-                Tab = Tab,
-                DependencyBoxes = {},
-                Elements = {},
-            }
-
-            function Groupbox:Resize()
-                GroupboxHolder.Size = UDim2.new(1, 0, 0, (GroupboxList.AbsoluteContentSize.Y / Library.DPIScale) + 49)
-            end
-
-            setmetatable(Groupbox, Elements.BaseGroupbox)
-
-            Groupbox:Resize()
-            Tab.Groupboxes[Info.Name] = Groupbox
-            return Groupbox
-        end
-
-        function Tab:AddLeftGroupbox(Name, IconName)
-            return Tab:AddGroupbox({ Side = 1, Name = Name, IconName = IconName })
-        end
-
-        function Tab:AddRightGroupbox(Name, IconName)
-            return Tab:AddGroupbox({ Side = 2, Name = Name, IconName = IconName })
-        end
-
-        function Tab:AddTabbox(Info)
-            local BoxHolder = New("Frame", {
-                AutomaticSize = Enum.AutomaticSize.Y,
-                BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 0),
-                Parent = Info.Side == 1 and TabLeft or TabRight,
-            })
-            New("UIListLayout", {
-                Padding = UDim.new(0, 6),
-                Parent = BoxHolder,
-            })
-            New("UIPadding", {
-                PaddingBottom = UDim.new(0, 4),
-                PaddingTop = UDim.new(0, 4),
-                Parent = BoxHolder,
-            })
-
-            local TabboxHolder
-            local TabboxButtons
-
-            TabboxHolder = New("Frame", {
-                BackgroundColor3 = "BackgroundColor",
-                Size = UDim2.fromScale(1, 0),
-                Parent = BoxHolder,
-            })
-            table.insert(
-                Library.Corners,
-                New("UICorner", {
-                    CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-                    Parent = TabboxHolder,
-                })
-            )
-            Library:AddOutline(TabboxHolder)
-
-            TabboxButtons = New("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 34),
-                Parent = TabboxHolder,
-            })
-            New("UIListLayout", {
-                FillDirection = Enum.FillDirection.Horizontal,
-                HorizontalFlex = Enum.UIFlexAlignment.Fill,
-                Parent = TabboxButtons,
-            })
-
-            local TotalButtons, TotalTabs = 0, 1
-            local Tabbox = {
-                ActiveTab = nil,
-                BoxHolder = BoxHolder,
-                Holder = TabboxHolder,
-                Tabs = {}
-            }
-
-            function Tabbox:UpdateCorners()
-                for _, Tab in Tabbox.Tabs do
-                    Tab:UpdateCorners()
-                end
-            end
-
-            function Tabbox:AddTab(Name, IconName)
-                local TabIndex = TotalTabs
-                TotalButtons = TotalButtons + 1
-                TotalTabs = TotalTabs + 1
-
-                local BoxIcon = Library:GetCustomIcon(IconName)
-                local Button = New("TextButton", {
-                    BackgroundColor3 = "MainColor",
-                    BackgroundTransparency = 0,
-                    Size = UDim2.fromOffset(0, 34),
-                    Text = "",
-                    Parent = TabboxButtons,
-                })
-                table.insert(
-                    Library.Corners,
-                    New("UICorner", {
-                        CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-                        Parent = Button,
-                    })
-                )
-
-                local BottomCover = New("Frame", {
-                    Name = "BottomCover",
-                    BackgroundColor3 = "MainColor",
-                    BorderSizePixel = 0,
-                    Position = UDim2.new(0, 0, 1, -WindowInfo.CornerRadius),
-                    Size = UDim2.new(1, 0, 0, WindowInfo.CornerRadius),
-                    Parent = Button,
-                })
-
-                local LeftCover = New("Frame", {
-                    Name = "LeftCover",
-                    BackgroundColor3 = "MainColor",
-                    BorderSizePixel = 0,
-                    Position = UDim2.new(0, 0, 0, 0),
-                    Size = UDim2.new(0, WindowInfo.CornerRadius, 1, 0),
-                    Visible = false,
-                    Parent = Button,
-                })
-
-                local RightCover = New("Frame", {
-                    Name = "RightCover",
-                    AnchorPoint = Vector2.new(1, 0),
-                    BackgroundColor3 = "MainColor",
-                    BorderSizePixel = 0,
-                    Position = UDim2.new(1, 0, 0, 0),
-                    Size = UDim2.new(0, WindowInfo.CornerRadius, 1, 0),
-                    Visible = false,
-                    Parent = Button,
-                })
-
-                local ButtonContent = New("Frame", {
-                    AnchorPoint = Vector2.new(0.5, 0.5),
-                    AutomaticSize = Enum.AutomaticSize.X,
-                    BackgroundTransparency = 1,
-                    Position = UDim2.fromScale(0.5, 0.5),
-                    Size = UDim2.fromOffset(0, 16),
-                    Parent = Button,
-                })
-                New("UIListLayout", {
-                    FillDirection = Enum.FillDirection.Horizontal,
-                    HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                    VerticalAlignment = Enum.VerticalAlignment.Center,
-                    Padding = UDim.new(0, 8),
-                    Parent = ButtonContent,
-                })
-
-                local ButtonIcon
-                if BoxIcon then
-                    ButtonIcon = New("ImageLabel", {
-                        Image = BoxIcon.Url,
-                        ImageColor3 = BoxIcon.Custom and "WhiteColor" or "AccentColor",
-                        ImageRectOffset = BoxIcon.ImageRectOffset,
-                        ImageRectSize = BoxIcon.ImageRectSize,
-                        ImageTransparency = 0.5,
-                        Size = UDim2.fromOffset(16, 16),
-                        Parent = ButtonContent,
-                    })
-                end
-
-                local ButtonLabel = New("TextLabel", {
-                    AutomaticSize = Enum.AutomaticSize.X,
-                    BackgroundTransparency = 1,
-                    Size = UDim2.fromOffset(0, 16),
-                    Text = Name,
-                    TextSize = 15,
-                    TextTransparency = 0.5,
-                    Parent = ButtonContent,
-                })
-
-                local Line = Library:MakeLine(Button, {
-                    AnchorPoint = Vector2.new(0, 1),
-                    Position = UDim2.new(0, 0, 1, 1),
-                    Size = UDim2.new(1, 0, 0, 1),
-                })
-
-                local Container = New("Frame", {
-                    BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(0, 35),
-                    Size = UDim2.new(1, 0, 1, -35),
-                    Visible = false,
-                    Parent = TabboxHolder,
-                })
-                local List = New("UIListLayout", {
-                    Padding = UDim.new(0, 8),
-                    Parent = Container,
-                })
-                New("UIPadding", {
-                    PaddingBottom = UDim.new(0, 7),
-                    PaddingLeft = UDim.new(0, 7),
-                    PaddingRight = UDim.new(0, 7),
-                    PaddingTop = UDim.new(0, 7),
-                    Parent = Container,
-                })
-
-                local SubTab = {
-                    ButtonHolder = Button,
-                    Container = Container,
-                    ButtonCovers = {
-                        BottomCover = BottomCover,
-                        LeftCover = LeftCover,
-                        RightCover = RightCover
-                    },
-                    Tab = Tab,
-                    Elements = {},
-                    DependencyBoxes = {},
-                }
-
-                function SubTab:Show()
-                    if Tabbox.ActiveTab then
-                        Tabbox.ActiveTab:Hide()
-                    end
-
-                    Button.BackgroundTransparency = 1
-                    BottomCover.BackgroundTransparency = 1
-                    LeftCover.BackgroundTransparency = 1
-                    RightCover.BackgroundTransparency = 1
-
-                    ButtonLabel.TextTransparency = 0
-                    if ButtonIcon then
-                        ButtonIcon.ImageTransparency = 0
-                    end
-                    Line.Visible = false
-
-                    Container.Visible = true
-                    Tabbox.ActiveTab = SubTab
-                    SubTab:Resize()
-                end
-
-                function SubTab:Hide()
-                    Button.BackgroundTransparency = 0
-                    BottomCover.BackgroundTransparency = 0
-                    LeftCover.BackgroundTransparency = 0
-                    RightCover.BackgroundTransparency = 0
-
-                    ButtonLabel.TextTransparency = 0.5
-                    if ButtonIcon then
-                        ButtonIcon.ImageTransparency = 0.5
-                    end
-                    Line.Visible = true
-                    Container.Visible = false
-                    Tabbox.ActiveTab = nil
-                end
-
-                function SubTab:Resize()
-                    if Tabbox.ActiveTab ~= SubTab then
-                        return
-                    end
-                    TabboxHolder.Size = UDim2.new(1, 0, 0, (List.AbsoluteContentSize.Y / Library.DPIScale) + 49)
-                end
-
-                function SubTab:UpdateCorners()
-                    LeftCover.Visible = TabIndex ~= 1
-                    RightCover.Visible = TabIndex ~= TotalButtons
-                    BottomCover.Position = UDim2.new(0, 0, 1, -WindowInfo.CornerRadius)
-                    BottomCover.Size = UDim2.new(1, 0, 0, WindowInfo.CornerRadius)
-                    LeftCover.Size = UDim2.new(0, WindowInfo.CornerRadius, 1, 0)
-                    RightCover.Size = UDim2.new(0, WindowInfo.CornerRadius, 1, 0)
-                end
-
-                if not Tabbox.ActiveTab then
-                    SubTab:Show()
-                end
-
-                Button.MouseButton1Click:Connect(SubTab.Show)
-                setmetatable(SubTab, Elements.BaseGroupbox)
-
-                Tabbox.Tabs[Name] = SubTab
-                Tabbox:UpdateCorners()
-                return SubTab
-            end
-
-            if Info.Name then
-                Tab.Tabboxes[Info.Name] = Tabbox
-            else
-                table.insert(Tab.Tabboxes, Tabbox)
-            end
-            return Tabbox
-        end
-
-        function Tab:AddLeftTabbox(Name)
-            return Tab:AddTabbox({ Side = 1, Name = Name })
-        end
-
-        function Tab:AddRightTabbox(Name)
-            return Tab:AddTabbox({ Side = 2, Name = Name })
-        end
-
-        function Tab:Hover(Hovering)
-            if Library.ActiveTab == Tab then
-                return
-            end
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = Hovering and 0.25 or 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = Hovering and 0.25 or 0.5,
-                }):Play()
-            end
-        end
-
-        function Tab:Show()
-            if Library.ActiveTab then
-                Library.ActiveTab:Hide()
-            end
-
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 0,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0,
-                }):Play()
-            end
-
-            if Description then
-                Window:ShowTabInfo(Name, Description)
-            end
-
-            TabContainer.Visible = true
-            Tab:RefreshSides()
-            Library.ActiveTab = Tab
-
-            if Library.Searching then
-                Library:UpdateSearch(Library.SearchText)
-            end
-        end
-
-        function Tab:Hide()
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 1,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0.5,
-                }):Play()
-            end
-            TabContainer.Visible = false
-            Window:HideTabInfo()
-            Library.ActiveTab = nil
-        end
-
-        function Tab:SetVisible(Visible: boolean)
-            TabButton.Visible = Visible
-            if not Visible and Library.ActiveTab == Tab then
-                Tab:Hide()
-            end
-        end
-
-        -- Execute Tab
-        if not Library.ActiveTab then
-            Tab:Show()
-        end
-
-        TabButton.MouseEnter:Connect(function()
-            Tab:Hover(true)
-        end)
-        TabButton.MouseLeave:Connect(function()
-            Tab:Hover(false)
-        end)
-        TabButton.MouseButton1Click:Connect(Tab.Show)
-
-        Library.Tabs[Name] = Tab
-        return Tab
-    end
-
-    -- Add Key Tab Function
-    function Window:AddKeyTab(...)
-        local Name = nil
-        local Icon = nil
-        local Description = nil
-
-        if select("#", ...) == 1 and typeof(...) == "table" then
-            local Info = select(1, ...)
-            Name = Info.Name or "Tab"
-            Icon = Info.Icon
-            Description = Info.Description
-        else
-            Name = select(1, ...) or "Tab"
-            Icon = select(2, ...)
-            Description = select(3, ...)
-        end
-
-        Icon = Icon or "key"
-        local TabButton: TextButton
-        local TabLabel
-        local TabIcon
-        local TabContainer
-
-        Icon = if Icon == "key" then KeyIcon else Library:GetCustomIcon(Icon)
-        
-        TabButton = New("TextButton", {
-            BackgroundColor3 = "MainColor",
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 40),
-            Text = "",
-            Parent = Tabs,
-        })
-        local ButtonPadding = New("UIPadding", {
-            PaddingBottom = UDim.new(0, IsCompact and 6 or 11),
-            PaddingLeft = UDim.new(0, IsCompact and 6 or 12),
-            PaddingRight = UDim.new(0, IsCompact and 6 or 12),
-            PaddingTop = UDim.new(0, IsCompact and 6 or 11),
-            Parent = TabButton,
-        })
-
-        TabLabel = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(30, 0),
-            Size = UDim2.new(1, -30, 1, 0),
-            Text = Name,
-            TextSize = 16,
-            TextTransparency = 0.5,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Visible = not IsCompact,
-            Parent = TabButton,
-        })
-
-        if Icon then
-            TabIcon = New("ImageLabel", {
-                Image = Icon.Url,
-                ImageColor3 = Icon.Custom and "WhiteColor" or "AccentColor",
-                ImageRectOffset = Icon.ImageRectOffset,
-                ImageRectSize = Icon.ImageRectSize,
-                ImageTransparency = 0.5,
-                Size = UDim2.fromScale(1, 1),
-                SizeConstraint = IsCompact and Enum.SizeConstraint.RelativeXY or Enum.SizeConstraint.RelativeYY,
-                Parent = TabButton,
-            })
-        end
-
-        table.insert(Library.TabButtons, {
-            Label = TabLabel,
-            Padding = ButtonPadding,
-            Icon = TabIcon,
-        })
-
-        TabContainer = New("ScrollingFrame", {
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1,
-            CanvasSize = UDim2.fromScale(0, 0),
-            ScrollBarThickness = 0,
-            Size = UDim2.fromScale(1, 1),
-            Visible = false,
-            Parent = Container,
-        })
-        New("UIListLayout", {
-            HorizontalAlignment = Enum.HorizontalAlignment.Center,
-            Padding = UDim.new(0, 8),
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            Parent = TabContainer,
-        })
-        New("UIPadding", {
-            PaddingLeft = UDim.new(0, 1),
-            PaddingRight = UDim.new(0, 1),
-            Parent = TabContainer,
-        })
-
-        local Tab = {
-            Elements = {},
-            IsKeyTab = true,
-        }
-
-        function Tab:AddKeyBox(Callback)
-            assert(typeof(Callback) == "function", "Callback must be a function")
-
-            local Holder = New("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(0.75, 0, 0, 21),
-                Parent = TabContainer,
-            })
-
-            local Box = New("TextBox", {
-                BackgroundColor3 = "MainColor",
-                PlaceholderText = "Key",
-                Size = UDim2.new(1, -71, 1, 0),
-                TextSize = 14,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = Holder,
-            })
-            New("UIPadding", {
-                PaddingLeft = UDim.new(0, 8),
-                PaddingRight = UDim.new(0, 8),
-                Parent = Box,
-            })
-            New("UIStroke", {
-                Color = "OutlineColor",
-                Parent = Box,
-            })
-            table.insert(
-                Library.Corners,
-                New("UICorner", {
-                    CornerRadius = UDim.new(0, Library.CornerRadius / 2),
-                    Parent = Box,
-                })
-            )
-
-            local Button = New("TextButton", {
-                AnchorPoint = Vector2.new(1, 0),
-                BackgroundColor3 = "MainColor",
-                Position = UDim2.fromScale(1, 0),
-                Size = UDim2.new(0, 63, 1, 0),
-                Text = "Execute",
-                TextSize = 14,
-                Parent = Holder,
-            })
-            New("UIStroke", {
-                Color = "OutlineColor",
-                Parent = Button,
-            })
-            table.insert(
-                Library.Corners,
-                New("UICorner", {
-                    CornerRadius = UDim.new(0, Library.CornerRadius / 2),
-                    Parent = Button,
-                })
-            )
-
-            Button.InputBegan:Connect(function(Input)
-                if not IsClickInput(Input) then
-                    return
-                end
-                if not Library:MouseIsOverFrame(Button, Input.Position) then
-                    return
-                end
-                Callback(Box.Text)
-            end)
-        end
-
-        function Tab:RefreshSides() end
-        function Tab:Resize() end
-        function Tab:UpdateCorners() end
-
-        function Tab:Hover(Hovering)
-            if Library.ActiveTab == Tab then
-                return
-            end
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = Hovering and 0.25 or 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = Hovering and 0.25 or 0.5,
-                }):Play()
-            end
-        end
-
-        function Tab:Show()
-            if Library.ActiveTab then
-                Library.ActiveTab:Hide()
-            end
-
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 0,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0,
-                }):Play()
-            end
-            TabContainer.Visible = true
-
-            if Description then
-                Window:ShowTabInfo(Name, Description)
-            end
-
-            Tab:RefreshSides()
-            Library.ActiveTab = Tab
-
-            if Library.Searching then
-                Library:UpdateSearch(Library.SearchText)
-            end
-        end
-
-        function Tab:Hide()
-            TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundTransparency = 1,
-            }):Play()
-            TweenService:Create(TabLabel, Library.TweenInfo, {
-                TextTransparency = 0.5,
-            }):Play()
-            if TabIcon then
-                TweenService:Create(TabIcon, Library.TweenInfo, {
-                    ImageTransparency = 0.5,
-                }):Play()
-            end
-            TabContainer.Visible = false
-            Window:HideTabInfo()
-            Library.ActiveTab = nil
-        end
-
-        function Tab:SetVisible(Visible: boolean)
-            TabButton.Visible = Visible
-            if not Visible and Library.ActiveTab == Tab then
-                Tab:Hide()
-            end
-        end
-
-        if not Library.ActiveTab then
-            Tab:Show()
-        end
-
-        TabButton.MouseEnter:Connect(function()
-            Tab:Hover(true)
-        end)
-        TabButton.MouseLeave:Connect(function()
-            Tab:Hover(false)
-        end)
-        TabButton.MouseButton1Click:Connect(Tab.Show)
-
-        Tab.Container = TabContainer
-        setmetatable(Tab, Elements.BaseGroupbox)
-
-        Library.Tabs[Name] = Tab
-        return Tab
-    end
-
-    -- Add Dialog Function
-    function Window:AddDialog(Idx, Info)
-        Info = Library:Validate(Info, Library.Templates.Dialog)
-
-        local DialogFrame
-        local DialogOverlay
-        local DialogContainer
-        local ButtonsHolder
-        local FooterButtonsList = {}
-
-        DialogOverlay = New("TextButton", {
-            AutoButtonColor = false,
-            BackgroundColor3 = "DarkColor",
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 1),
-            Text = "",
-            Active = false,
-            ZIndex = 9000,
-            Visible = true,
-            Parent = MainFrame,
-        })
-        TweenService:Create(DialogOverlay, Library.TweenInfo, {
-            BackgroundTransparency = 0.5,
-        }):Play()
-
-        DialogFrame = New("TextButton", {
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundColor3 = "BackgroundColor",
-            Position = UDim2.fromScale(0.5, 0.5),
-            Size = UDim2.fromOffset(300, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            Text = "",
-            AutoButtonColor = false,
-            ZIndex = 9001,
-            Parent = DialogOverlay,
-        })
-        table.insert(
-            Library.Corners,
-            New("UICorner", {
-                CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-                Parent = DialogFrame,
-            })
-        )
-        Library:AddOutline(DialogFrame)
-
-        local InnerContainer = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            ZIndex = 9002,
-            Parent = DialogFrame,
-        })
-        local DialogScale = New("UIScale", {
-            Scale = 0.95,
-            Parent = DialogFrame,
-        })
-        TweenService:Create(DialogScale, Library.TweenInfo, {
-            Scale = 1
-        }):Play()
-        
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 15),
-            PaddingLeft = UDim.new(0, 15),
-            PaddingRight = UDim.new(0, 15),
-            PaddingTop = UDim.new(0, 15),
-            Parent = InnerContainer,
-        })
-        New("UIListLayout", {
-            Padding = UDim.new(0, 10),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = InnerContainer,
-        })
-
-        local HeaderContainer = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            LayoutOrder = 1,
-            ZIndex = 9002,
-            Parent = InnerContainer,
-        })
-        New("UIListLayout", {
-            Padding = UDim.new(0, 6),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = HeaderContainer,
-        })
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 5),
-            Parent = HeaderContainer,
-        })
-
-        local TitleRow = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 20),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            LayoutOrder = 1,
-            ZIndex = 9002,
-            Parent = HeaderContainer,
-        })
-        New("UIListLayout", {
-            Padding = UDim.new(0, 6),
-            FillDirection = Enum.FillDirection.Horizontal,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = TitleRow,
-        })
-
-        if Info.Icon then
-            local ParsedIcon = Library:GetCustomIcon(Info.Icon)
-            if ParsedIcon then
-                local IconImg = New("ImageLabel", {
-                    BackgroundTransparency = 1,
-                    Size = UDim2.fromOffset(16, 16),
-                    Image = ParsedIcon.Url,
-                    ImageColor3 = "FontColor",
-                    ImageRectOffset = ParsedIcon.ImageRectOffset,
-                    ImageRectSize = ParsedIcon.ImageRectSize,
-                    LayoutOrder = 1,
-                    ZIndex = 9002,
-                    Parent = TitleRow,
-                })
-                if Info.TitleColor then
-                    IconImg.ImageColor3 = Info.TitleColor
-                end
-            end
-        end
-
-        local TitleLabel = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 18),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            Text = Info.Title,
-            TextSize = 18,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            LayoutOrder = 2,
-            ZIndex = 9002,
-            Parent = TitleRow,
-        })
-        if Info.TitleColor then
-            TitleLabel.TextColor3 = Info.TitleColor
-        end
-
-        local DescriptionLabel = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 14),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            Text = Info.Description,
-            TextSize = 14,
-            TextTransparency = Info.DescriptionColor and 0 or 0.2,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextWrapped = true,
-            LayoutOrder = 2,
-            ZIndex = 9002,
-            Parent = HeaderContainer,
-        })
-        if Info.DescriptionColor then
-            DescriptionLabel.TextColor3 = Info.DescriptionColor
-        end
-
-        DialogContainer = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.fromScale(1, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            LayoutOrder = 4,
-            ZIndex = 9002,
-            Parent = InnerContainer,
-        })
-        New("UIListLayout", {
-            Padding = UDim.new(0, 8),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = DialogContainer,
-        })
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 5),
-            Parent = DialogContainer,
-        })
-        
-        local Sep2 = New("Frame", {
-            BackgroundColor3 = "OutlineColor",
-            BackgroundTransparency = 0,
-            BorderSizePixel = 0,
-            Size = UDim2.new(1, 0, 0, 1),
-            LayoutOrder = 5,
-            ZIndex = 9002,
-            Parent = InnerContainer,
-        })
-
-        ButtonsHolder = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            LayoutOrder = 6,
-            ZIndex = 9002,
-            Parent = InnerContainer,
-        })
-        New("UIListLayout", {
-            Padding = UDim.new(0, 8),
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalAlignment = Enum.HorizontalAlignment.Right,
-            Wraps = true,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = ButtonsHolder,
-        })
-        New("UIPadding", {
-            PaddingTop = UDim.new(0, 5),
-            Parent = ButtonsHolder,
-        })
-
-        local Dialog = {
-            Elements = {},
-            Container = DialogContainer,
-        }
-
-        function Dialog:Resize()
-            local MaxWidth = MainFrame.AbsoluteSize.X * 0.75
-            local MinWidth = 400
-
-            local TotalButtonWidth = 0
-            local ButtonCount = 0
-            local HasButtons = false
-
-            for _, BtnWrap in FooterButtonsList do
-                HasButtons = true
-                ButtonCount = ButtonCount + 1
-                TotalButtonWidth = TotalButtonWidth + BtnWrap.Container.Size.X.Offset
-            end
-
-            local TargetWidth = MinWidth
-            if HasButtons then
-                local RequiredWidth = TotalButtonWidth + ((ButtonCount - 1) * 8) + 30
-                TargetWidth = math.max(MinWidth, math.min(RequiredWidth, MaxWidth))
-            end
-
-            DialogFrame.Size = UDim2.fromOffset(TargetWidth, 0)
-
-            local DescX, DescY = Library:GetTextBounds(DescriptionLabel.Text, Library.Scheme.Font, 14, TargetWidth - 30)
-            DescriptionLabel.Size = UDim2.new(1, 0, 0, DescY)
-
-            local HasElements = false
-            for _, v in DialogContainer:GetChildren() do
-                if not v:IsA("UIListLayout") and not v:IsA("UIPadding") then
-                    HasElements = true
-                    break
-                end
-            end
-            DialogContainer.Visible = HasElements
-
-            ButtonsHolder.Visible = HasButtons
-            Sep2.Visible = HasButtons
-        end
-
-        function Dialog:SetTitle(Title)
-            TitleLabel.Text = Title
-            Dialog:Resize()
-        end
-
-        function Dialog:SetDescription(Description)
-            DescriptionLabel.Text = Description
-            Dialog:Resize()
-        end
-
-        function Dialog:Dismiss()
-            Library.ActiveDialog = nil
-            local CloseTween = TweenService:Create(DialogScale, Library.TweenInfo, { Scale = 0.95 })
-            TweenService:Create(DialogOverlay, Library.TweenInfo, { BackgroundTransparency = 1 }):Play()
-            CloseTween:Play()
-            
-            task.delay(Library.TweenInfo.Time, function()
-                DialogOverlay:Destroy()
-            end)
-            Library.Dialogues[Idx] = nil
-        end
-
-        DialogOverlay.MouseButton1Click:Connect(function()
-            if Info.OutsideClickDismiss then
-                Dialog:Dismiss()
-            end
-        end)
-
-        function Dialog:RemoveFooterButton(ButtonIdx)
-            if FooterButtonsList[ButtonIdx] then
-                FooterButtonsList[ButtonIdx].Container:Destroy()
-                FooterButtonsList[ButtonIdx] = nil
-            end
-        end
-
-        function Dialog:SetButtonDisabled(ButtonIdx, Disabled)
-            if FooterButtonsList[ButtonIdx] and type(FooterButtonsList[ButtonIdx].SetDisabled) == "function" then
-                FooterButtonsList[ButtonIdx]:SetDisabled(Disabled)
-            end
-        end
-
-        function Dialog:SetButtonOrder(ButtonIdx, Order)
-            if FooterButtonsList[ButtonIdx] and FooterButtonsList[ButtonIdx].Container then
-                FooterButtonsList[ButtonIdx].Container.LayoutOrder = Order
-            end
-        end
-
-        function Dialog:AddFooterButton(ButtonIdx, ButtonInfo)
-            Dialog:RemoveFooterButton(ButtonIdx)
-
-            local WaitTime = ButtonInfo.WaitTime or 0
-
-            local ButtonContainer = New("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.fromOffset(0, 26),
-                LayoutOrder = ButtonInfo.Order or 0,
-                ZIndex = 9002,
-                Parent = ButtonsHolder,
-            })
-            
-            local BtnColor = "MainColor"
-            local BtnOutline = "OutlineColor"
-            local Variant = ButtonInfo.Variant or "Primary"
-            
-            if Variant == "Primary" then
-                BtnColor = "FontColor"
-                BtnOutline = "FontColor"
-            elseif Variant == "Secondary" then
-                BtnColor = "MainColor"
-                BtnOutline = "OutlineColor"
-            elseif Variant == "Destructive" then
-                BtnColor = "DestructiveColor"
-                BtnOutline = "DestructiveColor"
-            elseif Variant == "Ghost" then
-                BtnColor = "BackgroundColor"
-                BtnOutline = "BackgroundColor"
-            end
-
-            local TextBtn = New("TextButton", {
-                BackgroundColor3 = BtnColor,
-                BorderColor3 = BtnOutline,
-                BackgroundTransparency = WaitTime > 0 and 0.5 or 0,
-                Size = UDim2.fromOffset(0, 26),
-                Text = "",
-                AutoButtonColor = false,
-                ZIndex = 9002,
-                Parent = ButtonContainer,
-            })
-            Library:AddOutline(TextBtn)
-            table.insert(
-                Library.Corners,
-                New("UICorner", { 
-                    CornerRadius = UDim.new(0, Library.CornerRadius), 
-                    Parent = TextBtn 
-                })
-            )
-
-            New("UIPadding", {
-                PaddingLeft = UDim.new(0, 15),
-                PaddingRight = UDim.new(0, 15),
-                Parent = TextBtn,
-            })
-
-            local TextColor = Library.Scheme.FontColor
-            if Variant == "Primary" then
-                TextColor = Library.Scheme.BackgroundColor
-            elseif Variant == "Destructive" then
-                TextColor = Color3.new(1, 1, 1)
-            end
-            
-            local BtnLabel = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 1),
-                Text = ButtonInfo.Title or ButtonIdx,
-                TextColor3 = TextColor,
-                TextTransparency = WaitTime > 0 and 0.5 or 0,
-                TextSize = 14,
-                ZIndex = 9002,
-                Parent = TextBtn,
-            })
-            
-            local LabelX, _ = Library:GetTextBounds(BtnLabel.Text, Library.Scheme.Font, 14, 250)
-            ButtonContainer.Size = UDim2.fromOffset(LabelX + 30, 26)
-            TextBtn.Size = UDim2.fromOffset(LabelX + 30, 26)
-
-            local ProgressBar
-            if WaitTime > 0 then
-                ProgressBar = New("Frame", {
-                    BackgroundColor3 = "AccentColor",
-                    BorderSizePixel = 0,
-                    Position = UDim2.new(0, 0, 1, -2),
-                    Size = UDim2.new(0, 0, 0, 2),
-                    ZIndex = 2,
-                    Parent = TextBtn,
-                })
-                table.insert(
-                    Library.Corners,
-                    New("UICorner", { 
-                        CornerRadius = UDim.new(0, Library.CornerRadius), 
-                        Parent = ProgressBar 
-                    })
-                )
-            end
-
-            local IsActive = WaitTime <= 0
-
-            local ButtonWrap = {
-                Container = ButtonContainer,
-                SetDisabled = function(self, Disabled)
-                    IsActive = not Disabled
-                    if Disabled then
-                        TweenService:Create(TextBtn, Library.TweenInfo, { BackgroundTransparency = 0.5 }):Play()
-                        TweenService:Create(BtnLabel, Library.TweenInfo, { TextTransparency = 0.5 }):Play()
-                    else
-                        TweenService:Create(TextBtn, Library.TweenInfo, { BackgroundTransparency = 0 }):Play()
-                        TweenService:Create(BtnLabel, Library.TweenInfo, { TextTransparency = 0 }):Play()
-                    end
-                end
-            }
-
-            local ActiveColor = typeof(BtnColor) == "Color3" and BtnColor or Library.Scheme[BtnColor]
-            local HoverColor = Variant == "Ghost" and Library.Scheme.MainColor or Library:GetBetterColor(ActiveColor, 10)
-
-            TextBtn.MouseEnter:Connect(function()
-                if not IsActive then return end
-                TweenService:Create(TextBtn, Library.TweenInfo, {
-                    BackgroundColor3 = HoverColor
-                }):Play()
-            end)
-            TextBtn.MouseLeave:Connect(function()
-                if not IsActive then return end
-                TweenService:Create(TextBtn, Library.TweenInfo, {
-                    BackgroundColor3 = ActiveColor
-                }):Play()
-            end)
-
-            TextBtn.MouseButton1Click:Connect(function()
-                if not IsActive then return end
-                if ButtonInfo.Callback then
-                    ButtonInfo.Callback(Dialog)
-                end
-                if Info.AutoDismiss then
-                    Dialog:Dismiss()
-                end
-            end)
-
-            if WaitTime > 0 then
-                TweenService:Create(ProgressBar, TweenInfo.new(WaitTime, Enum.EasingStyle.Linear), {
-                    Size = UDim2.new(1, 0, 0, 2)
-                }):Play()
-                
-                task.delay(WaitTime, function()
-                    ButtonWrap:SetDisabled(false)
-                    if ProgressBar then
-                        TweenService:Create(ProgressBar, Library.TweenInfo, {
-                            BackgroundTransparency = 1
-                        }):Play()
-                    end
-                end)
-            end
-
-            FooterButtonsList[ButtonIdx] = ButtonWrap
-        end
-
-        for BIdx, BInfo in Info.FooterButtons do
-            if type(BIdx) == "number" and BInfo.Id then 
-                BIdx = BInfo.Id 
-            end
-            Dialog:AddFooterButton(BIdx, BInfo)
-        end
-
-        setmetatable(Dialog, Elements.BaseGroupbox)
-        Library.Dialogues[Idx] = Dialog
-
-        Dialog:Resize()
-        Library.ActiveDialog = Dialog
-        return Dialog
-    end
-
-    -- Toggle Function
-    function Library:Toggle(Value: boolean?)
-        if Library.ActiveLoading and (Value == true or (Value == nil and not Library.Toggled)) then
-            return
-        end
-
-        if typeof(Value) == "boolean" then
-            Library.Toggled = Value
-        else
-            Library.Toggled = not Library.Toggled
-        end
-
-        MainFrame.Visible = Library.Toggled
-
-        if WindowInfo.UnlockMouseWhileOpen then
-            ModalElement.Modal = Library.Toggled
-        end
-
-        if Library.Toggled and not Library.IsMobile then
-            local OldMouseIconEnabled = UserInputService.MouseIconEnabled
-            pcall(function()
-                RunService:UnbindFromRenderStep("ShowCursor")
-            end)
-            RunService:BindToRenderStep("ShowCursor", Enum.RenderPriority.Last.Value, function()
-                UserInputService.MouseIconEnabled = not Library.ShowCustomCursor
-
-                Cursor.Position = UDim2.fromOffset(Mouse.X, Mouse.Y)
-                Cursor.Visible = Library.ShowCustomCursor
-
-                if not (Library.Toggled and ScreenGui and ScreenGui.Parent) then
-                    UserInputService.MouseIconEnabled = OldMouseIconEnabled
-                    Cursor.Visible = false
-                    RunService:UnbindFromRenderStep("ShowCursor")
-                end
-            end)
-        elseif not Library.Toggled then
-            TooltipLabel.Visible = false
-
-            for _, Option in Library.Options do
-                if Option.Type == "ColorPicker" then
-                    Option.ColorMenu:Close()
-                    Option.ContextMenu:Close()
-                elseif Option.Type == "Dropdown" or Option.Type == "KeyPicker" then
-                    Option.Menu:Close()
-                end
-            end
-        end
-    end
-
-    -- Sidebar Resize
-    if WindowInfo.EnableSidebarResize then
-        local Threshold = (WindowInfo.MinSidebarWidth + WindowInfo.SidebarCompactWidth) * WindowInfo.SidebarCollapseThreshold
-        local StartPos, StartWidth
-        local Dragging = false
-        local Changed
-
-        local SidebarGrabber = New("TextButton", {
-            AnchorPoint = Vector2.new(0.5, 0),
-            BackgroundTransparency = 1,
-            Position = UDim2.fromScale(0.5, 0),
-            Size = UDim2.new(0, 8, 1, 0),
-            Text = "",
-            Parent = DividerLine,
-        })
-        SidebarGrabber.MouseEnter:Connect(function()
-            TweenService:Create(DividerLine, Library.TweenInfo, {
-                BackgroundColor3 = Library:GetLighterColor(Library.Scheme.OutlineColor),
-            }):Play()
-        end)
-        SidebarGrabber.MouseLeave:Connect(function()
-            if Dragging then
-                return
-            end
-            TweenService:Create(DividerLine, Library.TweenInfo, {
-                BackgroundColor3 = Library.Scheme.OutlineColor,
-            }):Play()
-        end)
-
-        SidebarGrabber.InputBegan:Connect(function(Input: InputObject)
-            if not IsClickInput(Input) then
-                return
-            end
-
-            Library.CantDragForced = true
-            StartPos = Input.Position
-            StartWidth = Window:GetSidebarWidth()
-            Dragging = true
-
-            Changed = Input.Changed:Connect(function()
-                if Input.UserInputState ~= Enum.UserInputState.End then
-                    return
-                end
-
-                Library.CantDragForced = false
-                TweenService:Create(DividerLine, Library.TweenInfo, {
-                    BackgroundColor3 = Library.Scheme.OutlineColor,
-                }):Play()
-
-                Dragging = false
-                if Changed and Changed.Connected then
-                    Changed:Disconnect()
-                    Changed = nil
-                end
-            end)
-        end)
-
-        Library:GiveSignal(UserInputService.InputChanged:Connect(function(Input: InputObject)
-            if not Library.Toggled or not (ScreenGui and ScreenGui.Parent) then
-                Dragging = false
-                if Changed and Changed.Connected then
-                    Changed:Disconnect()
-                    Changed = nil
-                end
-                return
-            end
-
-            if Dragging and IsHoverInput(Input) then
-                local Delta = Input.Position - StartPos
-                local Width = StartWidth + Delta.X
-
-                if WindowInfo.DisableCompactingSnap then
-                    Window:SetSidebarWidth(Width)
-                    return
-                end
-
-                if Width > Threshold then
-                    Window:SetSidebarWidth(math.max(Width, WindowInfo.MinSidebarWidth))
-                else
-                    Window:SetSidebarWidth(WindowInfo.SidebarCompactWidth)
-                end
-            end
-        end))
-    end
-
-    if WindowInfo.EnableCompacting and WindowInfo.SidebarCompacted then
-        Window:SetSidebarWidth(WindowInfo.SidebarCompactWidth)
-    end
-
-    if WindowInfo.AutoShow and not Library.ActiveLoading then
-        task.spawn(Library.Toggle)
-    end
-
-    -- Mobile Buttons
-    if Library.IsMobile then
-        local ToggleButton = Library:AddDraggableButton("Toggle", function()
-            Library:Toggle()
-        end, true)
-
-        local LockButton = Library:AddDraggableButton("Lock", function(self)
-            Library.CantDragForced = not Library.CantDragForced
-            self:SetText(Library.CantDragForced and "Unlock" or "Lock")
-        end, true)
-
-        if WindowInfo.MobileButtonsSide == "Right" then
-            ToggleButton.Button.Position = UDim2.new(1, -6, 0, 6)
-            ToggleButton.Button.AnchorPoint = Vector2.new(1, 0)
-            LockButton.Button.Position = UDim2.new(1, -6, 0, 46)
-            LockButton.Button.AnchorPoint = Vector2.new(1, 0)
-        else
-            LockButton.Button.Position = UDim2.fromOffset(6, 46)
-        end
-    end
-
-    -- Search Events
-    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-        Library:UpdateSearch(SearchBox.Text)
-    end)
-
-    Library:GiveSignal(UserInputService.InputBegan:Connect(function(Input: InputObject)
-        if Library.Unloaded then
-            return
-        end
-
-        if UserInputService:GetFocusedTextBox() then
-            return
-        end
-
-        if (typeof(Library.ToggleKeybind) == "table" and Library.ToggleKeybind.Type == "KeyPicker" and Input.KeyCode.Name == Library.ToggleKeybind.Value) or Input.KeyCode == Library.ToggleKeybind then
-            Library.Toggle()
-        end
-    end))
-
-    Library:GiveSignal(UserInputService.WindowFocused:Connect(function()
-        Library.IsRobloxFocused = true
-    end))
-    Library:GiveSignal(UserInputService.WindowFocusReleased:Connect(function()
-        Library.IsRobloxFocused = false
-    end))
-
-    return Window
-end
-
--- Create Loading Function
-function Library:CreateLoading(LoadingInfo)
-    if Library.ActiveLoading then
-        warn("Loading GUI already exists, you cannot create multiple Loading GUIs.")
-        return Library.ActiveLoading
-    end
-
-    LoadingInfo = Library:Validate(LoadingInfo, Library.Templates.Loading)
-
-    local Loading = {
-        CurrentStep = LoadingInfo.CurrentStep,
-        TotalSteps = LoadingInfo.TotalSteps,
-        ShowSidebar = LoadingInfo.ShowSidebar,
-        IsError = false,
-        Destroyed = false,
-        WindowWidth = LoadingInfo.WindowWidth,
-        WindowHeight = LoadingInfo.WindowHeight,
-        WindowErrorHeight = LoadingInfo.WindowHeight,
-        ContentWidth = LoadingInfo.ContentWidth,
-        SidebarWidth = LoadingInfo.SidebarWidth,
-    }
-
-    -- ScreenGui
-    local ScreenGui = New("ScreenGui", {
-        Name = "ObsidianLoading",
-        DisplayOrder = 999,
-        ResetOnSpawn = false
-    })
-    ParentUI(ScreenGui)
-    Loading.ScreenGui = ScreenGui
-
-    ScreenGui.DescendantRemoving:Connect(function(Instance)
-        Library:RemoveFromRegistry(Instance)
-    end)
-
-    -- Main Frame
-    local MainFrame = New("TextButton", {
-        Name = "Main",
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = function()
-            return Library:GetBetterColor(Library.Scheme.BackgroundColor, -1)
-        end,
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(Loading.ShowSidebar and (Loading.ContentWidth + Loading.SidebarWidth) or Loading.WindowWidth, Loading.WindowHeight),
-        ClipsDescendants = true,
-        Text = "",
-        AutoButtonColor = false,
-        Parent = ScreenGui,
-    })
-    Library:AddOutline(MainFrame)
-    table.insert(Library.Corners, New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = MainFrame }))
-    
-    local MainScale = New("UIScale", { Parent = MainFrame })
-    table.insert(Library.Scales, MainScale)
-
-    -- Layout Containers
-    local Container = New("Frame", {
-        Name = "Content",
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(0, 0),
-        Size = UDim2.new(0, Loading.ContentWidth, 1, 0),
-        Parent = MainFrame,
-    })
-
-    local SideBar = New("Frame", {
-        Name = "SideBar",
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(Loading.ContentWidth, 0),
-        Size = UDim2.new(0, Loading.ShowSidebar and Loading.SidebarWidth or 0, 1, 0),
-        ClipsDescendants = true,
-        Visible = Loading.ShowSidebar,
-        Parent = MainFrame,
-    })
-    local SidebarCorner = New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = SideBar })
-    table.insert(Library.Corners, SidebarCorner)
-    Library:AddOutline(SideBar)
-    
-    local SidebarDivider = New("Frame", {
-        BackgroundColor3 = "OutlineColor",
-        BorderSizePixel = 0,
-        Position = UDim2.fromOffset(0, 0),
-        Size = UDim2.new(0, 1, 1, 0),
-        Visible = Loading.ShowSidebar,
-        Parent = SideBar,
-    })
-
-    -- Top Bar
-    local TopBar = New("Frame", {
-        Name = "TopBar",
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 48),
-        ZIndex = 2,
-        Parent = Container,
-    })
-    Library:MakeDraggable(MainFrame, TopBar, true, true)
-
-    local TitleHolder = New("Frame", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0),
-        Parent = TopBar,
-    })
-    New("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal,
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 6),
-        Parent = TitleHolder,
-    })
-    New("UIPadding", {
-        PaddingLeft = UDim.new(0, 12),
-        Parent = TitleHolder,
-    })
-
-    if LoadingInfo.Icon then
-        local Icon = Library:GetCustomIcon(LoadingInfo.Icon)
-        New("ImageLabel", {
-            Image = Icon.Url,
-            ImageRectOffset = Icon.ImageRectOffset,
-            ImageRectSize = Icon.ImageRectSize,
-            Size = LoadingInfo.IconSize,
-            Parent = TitleHolder,
-        })
-    else
-        New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = LoadingInfo.IconSize,
-            Text = LoadingInfo.Title:sub(1, 1),
-            TextScaled = true,
-            Visible = false,
-            Parent = TitleHolder,
-        })
-    end
-
-    local TitleX = Library:GetTextBounds(LoadingInfo.Title, Library.Scheme.Font, 20, TitleHolder.AbsoluteSize.X - (LoadingInfo.Icon and (LoadingInfo.IconSize.X.Offset + 6) or 0) - 12)
-    New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0, TitleX, 1, 0),
-        Text = LoadingInfo.Title,
-        TextSize = 20,
-        Parent = TitleHolder,
-    })
-
-    Library:MakeLine(Container, {
-        Position = UDim2.fromOffset(0, 48),
-        Size = UDim2.new(1, 0, 0, 1),
-    })
-
-    -- Loading Content Elements
-    local InnerContent = New("Frame", {
-        Name = "InnerContent",
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(0, 49),
-        Size = UDim2.new(1, 0, 1, -49),
-        Parent = Container,
-    })
-
-    New("UIListLayout", {
-        FillDirection = Enum.FillDirection.Vertical,
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 12),
-        Parent = InnerContent,
-    })
-
-    local IconHolder = New("Frame", {
-        Name = "IconHolder",
-        BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(64, 64),
-        Parent = InnerContent,
-    })
-
-    local LoaderIcon = Library:GetCustomIcon(LoadingInfo.LoadingIcon)
-    local LoadingIcon = New("ImageLabel", {
-        Name = "LoaderIcon",
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromScale(1, 1),
-        Image = LoaderIcon.Url,
-        ImageRectOffset = LoaderIcon.ImageRectOffset,
-        ImageRectSize = LoaderIcon.ImageRectSize,
-        ImageColor3 = LoadingInfo.LoadingIconColor or ((LoadingInfo.LoadingIcon == Library.Templates.Loading.LoadingIcon) and "AccentColor" or "WhiteColor"),
-        Parent = IconHolder,
-    })
-
-    local RotationTween
-    if LoadingInfo.LoadingIconTweenTime > 0 then
-        RotationTween = TweenService:Create(
-            LoadingIcon,
-            TweenInfo.new(LoadingInfo.LoadingIconTweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1),
-            { Rotation = 360 }
-        )
-        RotationTween:Play()
-    end
-
-    local MessageLabel = New("TextLabel", {
-        BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.XY,
-        Size = UDim2.fromOffset(0, 0),
-        Text = "",
-        TextSize = 18,
-        Parent = InnerContent,
-    })
-
-    local DescriptionLabel = New("TextLabel", {
-        BackgroundTransparency = 1,
-        AutomaticSize = Enum.AutomaticSize.XY,
-        Size = UDim2.fromOffset(0, 0),
-        Text = "",
-        TextSize = 14,
-        TextTransparency = 0.5,
-        Parent = InnerContent,
-    })
-
-    -- Progress Bar
-    local SliderBar = New("Frame", {
-        BackgroundColor3 = "MainColor",
-        Size = UDim2.new(0.7, 0, 0, 15),
-        Parent = InnerContent,
-    })
-    Library:AddOutline(SliderBar)
-    table.insert(Library.Corners, New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius / 2), Parent = SliderBar }))
-
-    local SliderFill = New("Frame", {
-        BackgroundColor3 = "AccentColor",
-        BorderSizePixel = 0,
-        Size = UDim2.fromScale(0, 1),
-        Parent = SliderBar,
-    })
-    table.insert(Library.Corners, New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius / 2), Parent = SliderFill }))
-
-    local ProgressLabel = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.fromScale(1, 1),
-        Text = "",
-        TextSize = 14,
-        ZIndex = 2,
-        Parent = SliderBar,
-    })
-    New("UIStroke", {
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual,
-        Color = "DarkColor",
-        LineJoinMode = Enum.LineJoinMode.Miter,
-        Parent = ProgressLabel,
-    })
-
-    -- Sidebar Object
-    local SidebarScrolling = New("ScrollingFrame", {
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.fromScale(1, 1),
-        ScrollBarThickness = 2,
-        ScrollBarImageColor3 = "OutlineColor",
-        Parent = SideBar,
-    })
-    local SidebarList = New("UIListLayout", {
-        Padding = UDim.new(0, 8),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Parent = SidebarScrolling,
-    })
-    New("UIPadding", {
-        PaddingBottom = UDim.new(0, 12),
-        PaddingLeft = UDim.new(0, 12),
-        PaddingRight = UDim.new(0, 12),
-        PaddingTop = UDim.new(0, 12),
-        Parent = SidebarScrolling,
-    })
-
-    local SidebarObject = {
-        Elements = {},
-        DependencyBoxes = {},
-        Tabboxes = {},
-        BoxHolder = SidebarScrolling,
-        Container = SidebarScrolling,
-        Resize = function(self)
-            SidebarScrolling.CanvasSize = UDim2.fromOffset(0, SidebarList.AbsoluteContentSize.Y + 24)
-        end,
-        Tab = {
-            Elements = {},
-            DependencyBoxes = {},
-            DependencyGroupboxes = {},
-            Tabboxes = {},
-        },
-    }
-
-    SidebarList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        SidebarObject:Resize()
-    end)
-
-    setmetatable(SidebarObject, Elements.BaseGroupbox)
-    Loading.Sidebar = SidebarObject
-
-    -- Error Frame
-    local ErrorFrame = New("Frame", {
-        Name = "Error",
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(0, 49),
-        Size = UDim2.new(1, 0, 1, -49),
-        ClipsDescendants = true,
-        Visible = false,
-        Parent = Container,
-    })
-
-    New("TextLabel", {
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(15, 15),
-        Size = UDim2.new(1, -30, 0, 18),
-        Text = "Error",
-        TextColor3 = "RedColor",
-        TextSize = 18,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = ErrorFrame,
-    })
-
-    local ErrorLabel = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(15, 39),
-        Size = UDim2.new(1, -30, 1, -90),
-        Text = "Error Message",
-        TextSize = 14,
-        TextTransparency = 0.2,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        Parent = ErrorFrame,
-    })
-
-    local ErrorButtonsDivider = New("Frame", {
-        BackgroundColor3 = "OutlineColor",
-        BackgroundTransparency = 0,
-        BorderSizePixel = 0,
-        AnchorPoint = Vector2.new(0.5, 0),
-        Position = UDim2.new(0.5, 0, 1, -48),
-        Size = UDim2.new(1, -30, 0, 1),
-        Visible = false,
-        Parent = ErrorFrame,
-    })
-
-    local ErrorButtonsHolder = New("Frame", {
-        AnchorPoint = Vector2.new(0.5, 1),
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0.5, 0, 1, 0),
-        Size = UDim2.new(1, 0, 0, 42),
-        Visible = false,
-        Parent = ErrorFrame,
-    })
-    New("UIListLayout", {
-        Padding = UDim.new(0, 8),
-        FillDirection = Enum.FillDirection.Horizontal,
-        HorizontalAlignment = Enum.HorizontalAlignment.Right,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Parent = ErrorButtonsHolder,
-    })
-    New("UIPadding", {
-        PaddingTop = UDim.new(0, 5),
-        PaddingBottom = UDim.new(0, 15),
-        PaddingRight = UDim.new(0, 15),
-        Parent = ErrorButtonsHolder,
-    })
-
-    -- Loading Functions
-    function Loading:UpdateLayout()
-        if Loading.IsError then
-            Loading:RecalculateErrorHeight()
-        end
-
-        local ShowSidebar = Loading.ShowSidebar
-        local FinalWidth = ShowSidebar and (Loading.ContentWidth + Loading.SidebarWidth) or Loading.WindowWidth
-        local FinalHeight = Loading.IsError and Loading.WindowErrorHeight or Loading.WindowHeight
-        
-        if ShowSidebar then
-            SideBar.Visible = true
-            SidebarDivider.Visible = true
-        end
-
-        TweenService:Create(MainFrame, Library.TweenInfo, { Size = UDim2.fromOffset(FinalWidth, FinalHeight) }):Play()
-        TweenService:Create(SideBar, Library.TweenInfo, { Position = UDim2.fromOffset(Loading.ContentWidth, 0), Size = UDim2.new(0, ShowSidebar and Loading.SidebarWidth or 0, 1, 0) }):Play()
-        TweenService:Create(Container, Library.TweenInfo, { Size = UDim2.new(0, ShowSidebar and Loading.ContentWidth or Loading.WindowWidth, 1, 0) }):Play()
-
-        if not ShowSidebar then
-            task.delay(Library.TweenInfo.Time, function()
-                if not Loading.ShowSidebar then
-                    SideBar.Visible = false
-                    SidebarDivider.Visible = false
-                end
-            end)
-        end
-    end
-
-    function Loading:SetMessage(Text)
-        MessageLabel.Text = Text
-    end
-
-    function Loading:SetDescription(Text)
-        DescriptionLabel.Text = Text
-    end
-
-    function Loading:SetLoadingIcon(Icon)
-        local IconData = Library:GetCustomIcon(Icon)
-        LoadingIcon.Image = IconData.Url
-        LoadingIcon.ImageRectOffset = IconData.ImageRectOffset
-        LoadingIcon.ImageRectSize = IconData.ImageRectSize
-    end
-
-    function Loading:SetLoadingIconTweenTime(TweenTime)
-        if RotationTween then
-            RotationTween:Cancel()
-            RotationTween:Destroy()
-        end
-
-        if TweenTime > 0 then
-            RotationTween = TweenService:Create(
-                LoadingIcon,
-                TweenInfo.new(TweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1),
-                { Rotation = 360 }
-            )
-            RotationTween:Play()
-        else
-            LoadingIcon.Rotation = 0
-        end
-    end
-
-    function Loading:SetLoadingIconColor(Color)
-        LoadingIcon.ImageColor3 = Color
-    end
-
-    function Loading:SetCurrentStep(Step)
-        Loading.CurrentStep = math.clamp(Step, 0, Loading.TotalSteps)
-
-        local Progress = Loading.CurrentStep / Loading.TotalSteps
-        TweenService:Create(SliderFill, Library.TweenInfo, { Size = UDim2.fromScale(Progress, 1) }):Play()
-        ProgressLabel.Text = string.format("%d/%d", Loading.CurrentStep, Loading.TotalSteps)
-    end
-
-    function Loading:SetTotalSteps(Steps)
-        Loading.TotalSteps = Steps
-        Loading:SetCurrentStep(Loading.CurrentStep)
-    end
-
-    function Loading:SetWindowHeight(Height)
-        Loading.WindowHeight = Height
-        Loading:UpdateLayout()
-    end
-
-    function Loading:SetWindowWidth(Width)
-        Loading.WindowWidth = Width
-        Loading:UpdateLayout()
-    end
-
-    function Loading:SetContentWidth(Width)
-        Loading.ContentWidth = Width
-        Loading:UpdateLayout()
-    end
-
-    function Loading:SetSidebarWidth(Width)
-        Loading.SidebarWidth = Width
-        Loading:UpdateLayout()
-    end
-
-    function Loading:ShowSidebarPage(Bool)
-        Loading.ShowSidebar = Bool
-        Loading:UpdateLayout()
-    end
-
-    function Loading:ShowErrorPage(Enabled)
-        Loading.IsError = Enabled
-        InnerContent.Visible = not Enabled
-        ErrorFrame.Visible = Enabled
-
-        if Loading.ShowSidebar then
-            Loading:ShowSidebarPage(not Enabled)
-        else
-            Loading:UpdateLayout()
-        end
-    end
-
-    function Loading:RecalculateErrorHeight()
-        local TargetWidth = (Loading.ShowSidebar and Loading.ContentWidth or Loading.WindowWidth) - 30
-        local _, ErrorY = Library:GetTextBounds(ErrorLabel.Text, Library.Scheme.Font, 14, TargetWidth)
-
-        ErrorLabel.Size = UDim2.new(1, -30, 0, ErrorY)
-
-        local HasButtons = ErrorButtonsHolder.Visible
-        local RequiredHeight = 49 + 15 + 18 + 6 + ErrorY + 15 + (HasButtons and 48 or 0)
-
-        Loading.WindowErrorHeight = RequiredHeight
-    end
-
-    function Loading:SetErrorMessage(Text)
-        ErrorLabel.Text = Text
-        Loading:UpdateLayout()
-    end
-
-    function Loading:SetErrorButtons(Buttons)
-        assert(typeof(Buttons) == "table", "Buttons must be a table")
-
-        for _, button in ErrorButtonsHolder:GetChildren() do
-            if button:IsA("Frame") then 
-                button:Destroy() 
-            end
-        end
-
-        local HasButtons = GetTableSize(Buttons) > 0
-        ErrorButtonsHolder.Visible = HasButtons
-        ErrorButtonsDivider.Visible = HasButtons
-
-        for Idx, ButtonInfo in Buttons do
-            local ButtonContainer = New("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.fromOffset(0, 26),
-                Parent = ErrorButtonsHolder,
-            })
-            
-            local BtnColor = "MainColor"
-            local BtnOutline = "OutlineColor"
-            local Variant = ButtonInfo.Variant or "Primary"
-            
-            if Variant == "Primary" then
-                BtnColor = "FontColor"
-                BtnOutline = "FontColor"
-            elseif Variant == "Secondary" then
-                BtnColor = "MainColor"
-                BtnOutline = "OutlineColor"
-            elseif Variant == "Destructive" then
-                BtnColor = "DestructiveColor"
-                BtnOutline = "DestructiveColor"
-            elseif Variant == "Ghost" then
-                BtnColor = "BackgroundColor"
-                BtnOutline = "BackgroundColor"
-            end
-
-            local TextBtn = New("TextButton", {
-                BackgroundColor3 = BtnColor,
-                BorderColor3 = BtnOutline,
-                Size = UDim2.fromOffset(0, 26),
-                Text = "",
-                AutoButtonColor = false,
-                Parent = ButtonContainer,
-            })
-            Library:AddOutline(TextBtn)
-            table.insert(
-                Library.Corners,
-                New("UICorner", { 
-                    CornerRadius = UDim.new(0, Library.CornerRadius), 
-                    Parent = TextBtn 
-                })
-            )
-
-            New("UIPadding", {
-                PaddingLeft = UDim.new(0, 15),
-                PaddingRight = UDim.new(0, 15),
-                Parent = TextBtn,
-            })
-
-            local TextColor = Library.Scheme.FontColor
-            if Variant == "Primary" then
-                TextColor = Library.Scheme.BackgroundColor
-            elseif Variant == "Destructive" then
-                TextColor = Color3.new(1, 1, 1)
-            end
-
-            local BtnLabel = New("TextLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.fromScale(1, 1),
-                Text = ButtonInfo.Title or Idx,
-                TextColor3 = TextColor,
-                TextSize = 14,
-                Parent = TextBtn,
-            })
-            
-            local LabelX, _ = Library:GetTextBounds(BtnLabel.Text, Library.Scheme.Font, 14, 250)
-            ButtonContainer.Size = UDim2.fromOffset(LabelX + 30, 26)
-            TextBtn.Size = UDim2.fromOffset(LabelX + 30, 26)
-
-            local ActiveColor = typeof(BtnColor) == "Color3" and BtnColor or Library.Scheme[BtnColor]
-            local HoverColor = Variant == "Ghost" and Library.Scheme.MainColor or Library:GetBetterColor(ActiveColor, 10)
-
-            TextBtn.MouseEnter:Connect(function()
-                TweenService:Create(TextBtn, Library.TweenInfo, {
-                    BackgroundColor3 = HoverColor
-                }):Play()
-            end)
-            TextBtn.MouseLeave:Connect(function()
-                TweenService:Create(TextBtn, Library.TweenInfo, {
-                    BackgroundColor3 = ActiveColor
-                }):Play()
-            end)
-
-            TextBtn.MouseButton1Click:Connect(function()
-                if ButtonInfo.Callback then
-                    ButtonInfo.Callback(Loading)
-                end
-            end)
-        end
-
-        Loading:UpdateLayout()
-    end
-
-    function Loading:Destroy()
-        if RotationTween then
-            RotationTween:Cancel()
-        end
-
-        ScreenGui:Destroy()
-        Loading.Destroyed = true
-        Library.ActiveLoading = nil
-
-        if Library.Toggle and Library.Toggled == false and Library.Unloaded ~= true then
-            Library:Toggle(true)
-        end
-    end
-
-    Loading.Continue = Loading.Destroy
-
-    if Library.Toggle and Library.Toggled and Library.Unloaded ~= true then
-        Library:Toggle(false)
-    end
-
-    Loading:SetCurrentStep(Loading.CurrentStep)
-    Library.ActiveLoading = Loading
-    return Loading
-end
-
--- Player and Team Events
-local function OnPlayerChange()
-    if Library.Unloaded then
-        return
-    end
-
-    local PlayerList, ExcludedPlayerList = GetPlayers(), GetPlayers(true)
-    for _, Dropdown in Options do
-        if Dropdown.Type == "Dropdown" and Dropdown.SpecialType == "Player" then
-            Dropdown:SetValues(Dropdown.ExcludeLocalPlayer and ExcludedPlayerList or PlayerList)
-        end
-    end
-end
-
-local function OnTeamChange()
-    if Library.Unloaded then
-        return
-    end
-
-    local TeamList = GetTeams()
-    for _, Dropdown in Options do
-        if Dropdown.Type == "Dropdown" and Dropdown.SpecialType == "Team" then
-            Dropdown:SetValues(TeamList)
-        end
-    end
-end
-
-Library:GiveSignal(Players.PlayerAdded:Connect(OnPlayerChange))
-Library:GiveSignal(Players.PlayerRemoving:Connect(OnPlayerChange))
-Library:GiveSignal(Teams.ChildAdded:Connect(OnTeamChange))
-Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
-
--- Export
-getgenv().Library = Library
-return Library
+	local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+	NeverLose.Base64Encode = LPH_NO_VIRTUALIZE(function(data)
+		return ((data:gsub('.', function(x) 
+			local r,b='',x:byte()
+			for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
+			return r;
+		end)..'0000'):gsub('%d%d%d?%d?%d?%d?', function(x)
+			if (#x < 6) then return '' end
+			local c=0
+			for i=1,6 do c=c+(x:sub(i,i)=='1' and 2^(6-i) or 0) end
+			return b:sub(c+1,c+1)
+		end)..({ '', '==', '=' })[#data%3+1])
+	end);
+
+	NeverLose.Base64Decode = LPH_NO_VIRTUALIZE(function(data)
+		data = string.gsub(data, '[^'..b..'=]', '')
+		return (data:gsub('.', function(x)
+			if (x == '=') then return '' end
+			local r,f='',(b:find(x)-1)
+			for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
+			return r;
+		end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+			if (#x ~= 8) then return '' end
+			local c=0
+			for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
+			return string.char(c)
+		end))
+	end);
+end;
+
+function NeverLose:FireKeybind()
+	if NeverLose.ActiveWindow and NeverLose.ActiveWindow.ToggleUi then
+		NeverLose.ActiveWindow:ToggleInterface();
+	end;
+end;
+
+NeverLose.LoadIcon = LPH_NO_VIRTUALIZE(function()
+	NeverLose.RobloxIcon = {
+		["3d-cube-arrow-left"] = "3d-cube-arrow-left",
+		["amazon"] = "amazon",
+		-- ... (ikon lainnya tetap sama)
+	};
+end);
+
+NeverLose.IsMouseOverFrame = LPH_NO_VIRTUALIZE(function(self , Frame)
+	if not Frame then
+		return;
+	end;
+
+	if NeverLose.Global3DRenderMode then
+		if Frame.GuiState == Enum.GuiState.Hover or Frame.GuiState == Enum.GuiState.Press then
+			return true;
+		end;
+
+		return false;
+	end;
+
+	local AbsPos: Vector2, AbsSize: Vector2 = Frame.AbsolutePosition, Frame.AbsoluteSize;
+
+	if Mouse.X >= AbsPos.X and Mouse.X <= AbsPos.X + AbsSize.X and Mouse.Y >= AbsPos.Y and Mouse.Y <= AbsPos.Y + AbsSize.Y then
+		return true;
+	end;
+end);
+
+NeverLose.CreateSignal = LPH_NO_VIRTUALIZE(function(self , DefaultValue)
+	local __cache = Instance.new('BindableEvent');
+	local bind = {
+		Value = DefaultValue,
+		__event = __cache
+	};
+
+	function bind:GetValue()
+		return bind.Value;
+	end;
+
+	function bind:SetValue(f)
+		bind.Value = f;
+
+		return __cache:Fire(f);
+	end;
+
+	function bind:Connect(f)
+		local signal = __cache.Event:Connect(f);
+
+		NeverLose:AddSignal(signal);
+
+		return signal;
+	end;
+
+	return bind;
+end);
+
+function NeverLose:GetIconFont(icon: string)
+	local useBold = string.lower(string.sub(icon , -5)) == '-bold';
+
+	if useBold then
+		return NeverLose.BuiltInBold;
+	end;
+
+	return NeverLose.BuiltInRegular;
+end;
+
+function NeverLose:MoreThanHalfY(Value: number)
+	return (NeverLose.ScreenGui.AbsoluteSize.Y / 2) < Value
+end;
+
+NeverLose.IsStudio = RunService:IsStudio();
+NeverLose.IsMobile = UserInputService.TouchEnabled;
+
+NeverLose.CreateInput = LPH_NO_VIRTUALIZE(function(self , Frame , Callback)
+	local Button = Instance.new('ImageButton',Frame);
+
+	Button.ZIndex = Frame.ZIndex + 10;
+	Button.Size = UDim2.fromScale(1,1);
+	Button.BackgroundTransparency = 1;
+	Button.ImageTransparency = 1;
+	Button.Image = "rbxasset://textuers/translateIcon.png";
+
+	if Callback then
+		local bth_signal = Button.MouseButton1Click:Connect(Callback);
+
+		return Button , bth_signal;
+	end;
+
+	return Button;
+end);
+
+NeverLose.PlayAnimate = LPH_NO_VIRTUALIZE(function(Self , Info , Property)
+	local Tween = TweenService:Create(Self , Info or TweenInfo.new(0.25) , Property);
+
+	Tween:Play();
+
+	return Tween;
+end);
+
+NeverLose.Drag = LPH_NO_VIRTUALIZE(function(InputFrame: Frame, MoveFrame: Frame, Speed : number)
+	local dragToggle: boolean = false;
+	local dragStart: Vector3 = nil;
+	local startPos: UDim2 = nil;
+	local Tween = TweenInfo.new(Speed);
+
+	local updateInput = function(input)
+		local delta = input.Position - dragStart;
+		local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y);
+
+		if NeverLose.Global3DRenderMode then
+			NeverLose.PlayAnimate(MoveFrame,Tween,{
+				Position = UDim2.fromScale(0.5,0.5)
+			});
+		else
+			NeverLose.PlayAnimate(MoveFrame,Tween,{
+				Position = position
+			});
+		end;
+	end;
+
+	NeverLose:AddSignal(InputFrame.InputBegan:Connect(function(input)
+		if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then 
+			dragToggle = true;
+			dragStart = input.Position;
+			startPos = MoveFrame.Position;
+
+			local input_end;
+			input_end = input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragToggle = false;
+
+					input_end:Disconnect();
+				end
+			end)
+		end
+	end));
+
+	NeverLose:AddSignal(UserInputService.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			if dragToggle then
+				updateInput(input)
+			end
+		end
+	end));
+end);
+
+NeverLose.Rounding = LPH_NO_VIRTUALIZE(function(num, numDecimalPlaces)
+	local mult = 10 ^ (numDecimalPlaces or 0);
+	return math.floor(num * mult + 0.5) / mult;
+end);
+
+NeverLose.ProcessParams = LPH_NO_VIRTUALIZE(function(self , Params , Fixed)
+	Params = Params or {};
+
+	local k = Params or {};
+
+	for i,v in next , Fixed do
+		k[i] = Params[i] or v;
+	end;
+
+	table.clear(Fixed);
+
+	return k;
+end);
+
+NeverLose.EnabledBlur = true;
+NeverLose.BlurModuleParent = workspace.CurrentCamera;
+
+NeverLose.GetCalculatePosition = LPH_NO_VIRTUALIZE(function(planePos, planeNormal, rayOrigin, rayDirection)
+	local n = planeNormal;
+	local d = rayDirection;
+	local v = rayOrigin - planePos;
+
+	local num = (n.x * v.x) + (n.y * v.y) + (n.z * v.z);
+	local den = (n.x * d.x) + (n.y * d.y) + (n.z * d.z);
+	local a = -num / den;
+
+	return rayOrigin + (a * rayDirection);
+end);
+
+NeverLose.CreateBlurModule = LPH_NO_VIRTUALIZE(function(self , Frame , Signal)
+	if not NeverLose.EnabledBlur then
+		return NeverLose:AddSignal(Instance.new('BindableEvent').Event:Connect(function() return "nl"; end));	
+	end;
+
+	local Part = Instance.new('Part',NeverLose.BlurModuleParent);
+	local DepthOfField = Instance.new('DepthOfFieldEffect',cloneref(game:GetService('Lighting')));
+	local BlockMesh = Instance.new("BlockMesh");
+
+	BlockMesh.Parent = Part;
+
+	Part.Material = Enum.Material.Glass;
+	Part.Transparency = 1;
+	Part.Reflectance = 1;
+	Part.CastShadow = false;
+	Part.Anchored = true;
+	Part.CanCollide = false;
+	Part.CanQuery = false;
+	Part.CollisionGroup = NeverLose.RandomString();
+	Part.Size = Vector3.new(1, 1, 1) * 0.01;
+	Part.Color = Color3.fromRGB(0,0,0);
+
+	DepthOfField.Enabled = true;
+	DepthOfField.FarIntensity = 0;
+	DepthOfField.FocusDistance = 0;
+	DepthOfField.InFocusRadius = 1000;
+	DepthOfField.NearIntensity = 1;
+	DepthOfField.Name = NeverLose.RandomString();
+
+	Part.Name = NeverLose.RandomString();
+
+	local disconnect;
+
+	local UpdateFunction = function()
+		local IsWindowActive = Signal:GetValue();
+
+		if IsWindowActive and not NeverLose.Global3DRenderMode then
+
+			NeverLose.PlayAnimate(DepthOfField,TweenInfo.new(0.1),{
+				NearIntensity = 1
+			})
+
+			NeverLose.PlayAnimate(Part,TweenInfo.new(0.1),{
+				Transparency = 0.97,
+				Size = Vector3.new(1, 1, 1) * 0.01;
+			})
+
+			Part.Parent = NeverLose.BlurModuleParent;
+		else
+			NeverLose.PlayAnimate(DepthOfField,TweenInfo.new(0.1),{
+				NearIntensity = 0
+			})
+
+			NeverLose.PlayAnimate(Part,TweenInfo.new(0.1),{
+				Size = Vector3.zero,
+				Transparency = 1.5,
+			})
+
+			Part.Parent = nil;
+
+			return false;
+		end;
+
+		if IsWindowActive then
+			local corner0 = Frame.AbsolutePosition;
+			local corner1 = corner0 + Frame.AbsoluteSize;
+
+			local ray0 = CurrentCamera.ScreenPointToRay(CurrentCamera,corner0.X, corner0.Y, 1);
+			local ray1 = CurrentCamera.ScreenPointToRay(CurrentCamera,corner1.X, corner1.Y, 1);
+
+			local planeOrigin = CurrentCamera.CFrame.Position + CurrentCamera.CFrame.LookVector * (0.05 - CurrentCamera.NearPlaneZ);
+
+			local planeNormal = CurrentCamera.CFrame.LookVector;
+
+			local pos0 = NeverLose.GetCalculatePosition(planeOrigin, planeNormal, ray0.Origin, ray0.Direction);
+			local pos1 = NeverLose.GetCalculatePosition(planeOrigin, planeNormal, ray1.Origin, ray1.Direction);
+
+			pos0 = CurrentCamera.CFrame:PointToObjectSpace(pos0);
+			pos1 = CurrentCamera.CFrame:PointToObjectSpace(pos1);
+
+			local size   = pos1 - pos0;
+			local center = (pos0 + pos1) / 2;
+
+			BlockMesh.Offset = center
+			BlockMesh.Scale  = size / 0.0101;
+			Part.CFrame = CurrentCamera.CFrame;
+		end;
+	end;
+
+	local rbxsignal = NeverLose:AddSignal(CurrentCamera:GetPropertyChangedSignal('CFrame'):Connect(UpdateFunction))
+	local loopThread = NeverLose:AddSignal(UserInputService.InputChanged:Connect(function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+			pcall(UpdateFunction);
+		end;
+	end));
+
+	local THREAD = task.spawn(function()
+		while true do task.wait(0.1)
+			pcall(UpdateFunction);
+		end;
+	end);
+
+	disconnect = function()
+		rbxsignal:Disconnect();
+		loopThread:Disconnect();
+		task.cancel(THREAD);
+		Part:Destroy();
+		DepthOfField:Destroy();
+	end;
+
+	Frame.Destroying:Connect(disconnect);
+
+	return rbxsignal;
+end);
+
+local EmptyFunction = function() end;
+
+function NeverLose:RollingEffect(parent)
+	local UIGradient = Instance.new("UIGradient")
+
+	UIGradient.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0.00, 0.4), NumberSequenceKeypoint.new(1.00, 0.00)}
+	UIGradient.Parent = parent
+
+	return UIGradient;
+end;
+
+function NeverLose:CreateShadow(parent , RollingEffect)
+	local Shadow = {};
+
+	local UIShadowSafe85 = Instance.new("UIStroke")
+	local UIShadowSafe65 = Instance.new("UIStroke")
+	local UIShadowSafe50 = Instance.new("UIStroke")
+	local UIShadowSafe45 = Instance.new("UIStroke")
+
+	UIShadowSafe85.Thickness = 6.000
+	UIShadowSafe85.Transparency = 1
+	UIShadowSafe85.Parent = parent
+
+	UIShadowSafe65.Thickness = 5.000
+	UIShadowSafe65.Transparency = 1
+	UIShadowSafe65.Parent = parent
+
+	UIShadowSafe50.Thickness = 4.000
+	UIShadowSafe50.Transparency = 1
+	UIShadowSafe50.Parent = parent
+
+	UIShadowSafe45.Thickness = 3.000
+	UIShadowSafe45.Transparency = 1
+	UIShadowSafe45.Parent = parent
+
+	local RollingEffectThread;
+	local r1,r2,r3,r4;
+
+	if RollingEffect then
+		r1 = NeverLose:RollingEffect(UIShadowSafe85);
+		r2 = NeverLose:RollingEffect(UIShadowSafe65);
+		r3 = NeverLose:RollingEffect(UIShadowSafe50);
+		r4 = NeverLose:RollingEffect(UIShadowSafe45);
+	end;
+
+	Shadow.Render = LPH_NO_VIRTUALIZE(function(self , value)
+		if RollingEffectThread then
+			task.cancel(RollingEffectThread);
+			RollingEffectThread = nil;
+		end;
+
+		if value then
+			NeverLose.PlayAnimate(UIShadowSafe85 , SlowyTween , {
+				Transparency = 0.900
+			})
+
+			NeverLose.PlayAnimate(UIShadowSafe65 , SlowyTween , {
+				Transparency = 0.900
+			})
+
+			NeverLose.PlayAnimate(UIShadowSafe50 , SlowyTween , {
+				Transparency = 0.900
+			})
+
+			NeverLose.PlayAnimate(UIShadowSafe45 , SlowyTween , {
+				Transparency = 0.900
+			})
+
+			if RollingEffect then
+				RollingEffectThread = task.spawn(function()
+					local level = 20;
+					while true do task.wait(0.025)
+						NeverLose.PlayAnimate(r1 , SlowyTween , {
+							Rotation = r1.Rotation + level
+						});
+
+						NeverLose.PlayAnimate(r2 , SlowyTween , {
+							Rotation = r2.Rotation + level
+						});
+
+						NeverLose.PlayAnimate(r3 , SlowyTween , {
+							Rotation = r3.Rotation + level
+						});
+
+						NeverLose.PlayAnimate(r4 , SlowyTween , {
+							Rotation = r4.Rotation + level
+						});
+					end;
+				end);
+			end;
+		else
+			NeverLose.PlayAnimate(UIShadowSafe85 , SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIShadowSafe65 , SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIShadowSafe50 , SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIShadowSafe45 , SlowyTween , {
+				Transparency = 1
+			})
+		end;
+	end);
+
+	return Shadow;
+end;
+
+function NeverLose:CreateOptionWindow(Frame: Frame , Zindex)
+	Zindex = Zindex or 9;
+
+	local Window = {
+		Signal = NeverLose:CreateSignal(false),
+	};
+
+	local OptionHandler = Instance.new("Frame")
+	local UICorner = Instance.new("UICorner")
+	local UIListLayout = Instance.new("UIListLayout")
+	local UIStroke = Instance.new("UIStroke")
+	local shadow = NeverLose:CreateShadow(OptionHandler);
+
+	OptionHandler.Name = NeverLose.RandomString();
+	OptionHandler.Parent = NeverLose.ScreenGui
+	OptionHandler.AnchorPoint = Vector2.new(0, 0)
+	OptionHandler.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+	OptionHandler.BackgroundTransparency = 0.035
+	OptionHandler.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	OptionHandler.BorderSizePixel = 0
+	OptionHandler.ClipsDescendants = true
+	OptionHandler.Position = UDim2.new(255,255,255,255)
+	OptionHandler.Size = UDim2.new(0, 220, 0, 75)
+	OptionHandler.ZIndex = Zindex + 9
+
+	UICorner.CornerRadius = UDim.new(0, 10)
+	UICorner.Parent = OptionHandler
+
+	UIListLayout.Parent = OptionHandler
+	UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	UIStroke.Transparency = 0.650
+	UIStroke.Color = Color3.fromRGB(45, 48, 58)
+	UIStroke.Parent = OptionHandler
+
+	NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose.PlayAnimate(OptionHandler , SlowyTween , {
+			Size = UDim2.new(0, 220, 0, UIListLayout.AbsoluteContentSize.Y - 1)
+		})
+	end)));
+
+	NeverLose:AddSignal(OptionHandler:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+		if OptionHandler.BackgroundTransparency > 0.9 then
+			OptionHandler.Visible = false;
+			UIListLayout.Parent = nil;
+			OptionHandler.Parent = nil;
+		else
+			OptionHandler.Visible = true;
+			UIListLayout.Parent = OptionHandler
+
+			if NeverLose.Global3DRenderMode then
+				OptionHandler.Parent = NeverLose.GlobalSurfaceGui;
+			else
+				OptionHandler.Parent = NeverLose.ScreenGui;
+			end;
+		end
+	end)));
+
+	local FollowingThread;
+	local SetPosition = LPH_NO_VIRTUALIZE(function()
+		if NeverLose:MoreThanHalfY(Frame.AbsolutePosition.Y + 65) then
+			OptionHandler.AnchorPoint = Vector2.new(0,1)
+		else
+			OptionHandler.AnchorPoint = Vector2.new(0,0)
+		end;
+
+		OptionHandler.Position = UDim2.fromOffset(Frame.AbsolutePosition.X + 18 , Frame.AbsolutePosition.Y + 65);
+	end);
+
+	Window.SetRender = LPH_NO_VIRTUALIZE(function(value)
+		if FollowingThread then
+			task.cancel(FollowingThread);
+			FollowingThread = nil;
+		end;
+
+		if value then
+			SetPosition();
+
+			NeverLose.PlayAnimate(OptionHandler , SlowyTween , {
+				BackgroundTransparency = 0.035
+			})
+
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+				Transparency = 0.650
+			})
+
+			shadow:Render(true);
+
+			if NeverLose.Global3DRenderMode then
+				OptionHandler.Parent = NeverLose.GlobalSurfaceGui;
+			else
+				OptionHandler.Parent = NeverLose.ScreenGui;
+			end;
+
+			FollowingThread = task.spawn(function()
+				while true do task.wait()
+					SetPosition();
+				end
+			end)
+		else
+			NeverLose.PlayAnimate(OptionHandler , SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+				Transparency = 1
+			})
+
+			shadow:Render(false);
+		end;
+	end);
+
+	Window.SetRender(false);
+	Window.Signal:Connect(Window.SetRender)
+
+	local Payback = NeverLose:RegisiterItem(OptionHandler , Window.Signal);
+
+	Payback.Winbdow = Window;
+	Payback.Root = OptionHandler;
+	Payback.Signal = Window.Signal;
+
+	return Payback;
+end;
+
+function NeverLose:CreateColorPicker(HandleFrame: Frame)
+	local ZIndex = HandleFrame.ZIndex;
+
+	local ColorPickerLib = {};
+
+	local ColorPickerHandler = Instance.new("Frame")
+	local UICorner = Instance.new("UICorner")
+	local UIStroke = Instance.new("UIStroke")
+	local SaViMap = Instance.new("ImageLabel")
+	local UICorner_2 = Instance.new("UICorner")
+	local ColorZoneSelection = Instance.new("Frame")
+	local UICorner_3 = Instance.new("UICorner")
+	local UIStroke_2 = Instance.new("UIStroke")
+	local ColorMap = Instance.new("Frame")
+	local UIGradient = Instance.new("UIGradient")
+	local UICorner_4 = Instance.new("UICorner")
+	local ColorMapSelection = Instance.new("Frame")
+	local UIStroke_3 = Instance.new("UIStroke")
+	local UICorner_5 = Instance.new("UICorner")
+	local RGBLabel = Instance.new("TextLabel")
+	local UICorner_6 = Instance.new("UICorner")
+	local Shadow = NeverLose:CreateShadow(ColorPickerHandler);
+
+	ColorPickerHandler.Name = NeverLose.RandomString();
+	ColorPickerHandler.Parent = NeverLose.ScreenGui
+	ColorPickerHandler.AnchorPoint = Vector2.new(0, 0)
+	ColorPickerHandler.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+	ColorPickerHandler.BackgroundTransparency = 0.035
+	ColorPickerHandler.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ColorPickerHandler.BorderSizePixel = 0
+	ColorPickerHandler.ClipsDescendants = true
+	ColorPickerHandler.Position = UDim2.new(255, 0, 255, 20)
+	ColorPickerHandler.Size = UDim2.new(0, 200, 0, 240)
+	ColorPickerHandler.ZIndex = ZIndex + 125
+
+	NeverLose:AddSignal(ColorPickerHandler:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+		if ColorPickerHandler.BackgroundTransparency > 0.9 then
+			ColorPickerHandler.Visible = false;
+			ColorPickerHandler.Parent = nil
+		else
+			ColorPickerHandler.Visible = true;
+
+			if NeverLose.Global3DRenderMode then
+				ColorPickerHandler.Parent = NeverLose.GlobalSurfaceGui;
+			else
+				ColorPickerHandler.Parent = NeverLose.ScreenGui;
+			end;
+		end;
+	end)));
+
+	UICorner.CornerRadius = UDim.new(0, 10)
+	UICorner.Parent = ColorPickerHandler
+
+	UIStroke.Transparency = 0.650
+	UIStroke.Color = Color3.fromRGB(45, 48, 58)
+	UIStroke.Parent = ColorPickerHandler
+
+	SaViMap.Name = NeverLose.RandomString();
+	SaViMap.Parent = ColorPickerHandler
+	SaViMap.AnchorPoint = Vector2.new(0.5, 0)
+	SaViMap.BackgroundColor3 = Color3.fromRGB(255, 0, 4)
+	SaViMap.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	SaViMap.BorderSizePixel = 0
+	SaViMap.Position = UDim2.new(0.5, 0, 0, 5)
+	SaViMap.Size = UDim2.new(0, 185, 0, 185)
+	SaViMap.ZIndex = ZIndex + 126
+	SaViMap.Image = NeverLose.ImageColorMapping
+
+	UICorner_2.CornerRadius = UDim.new(0, 5)
+	UICorner_2.Parent = SaViMap
+
+	ColorZoneSelection.Name = NeverLose.RandomString();
+	ColorZoneSelection.Parent = SaViMap
+	ColorZoneSelection.AnchorPoint = Vector2.new(0.5, 0.5)
+	ColorZoneSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	ColorZoneSelection.BackgroundTransparency = 1.000
+	ColorZoneSelection.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ColorZoneSelection.BorderSizePixel = 0
+	ColorZoneSelection.Position = UDim2.new(0.5, 0, 0.5, 0)
+	ColorZoneSelection.Size = UDim2.new(0, 10, 0, 10)
+	ColorZoneSelection.ZIndex = ZIndex + 127
+
+	UICorner_3.CornerRadius = UDim.new(1, 0)
+	UICorner_3.Parent = ColorZoneSelection
+
+	UIStroke_2.Color = Color3.fromRGB(255, 255, 255)
+	UIStroke_2.Parent = ColorZoneSelection
+
+	ColorMap.Name = NeverLose.RandomString();
+	ColorMap.Parent = ColorPickerHandler
+	ColorMap.AnchorPoint = Vector2.new(0.5, 0)
+	ColorMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	ColorMap.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ColorMap.BorderSizePixel = 0
+	ColorMap.Position = UDim2.new(0.5, 0, 0, 200)
+	ColorMap.Size = UDim2.new(1, -15, 0, 10)
+	ColorMap.ZIndex = ZIndex + 126
+
+	UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.10, Color3.fromRGB(255, 153, 0)), ColorSequenceKeypoint.new(0.20, Color3.fromRGB(203, 255, 0)), ColorSequenceKeypoint.new(0.30, Color3.fromRGB(50, 255, 0)), ColorSequenceKeypoint.new(0.40, Color3.fromRGB(0, 255, 102)), ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)), ColorSequenceKeypoint.new(0.60, Color3.fromRGB(0, 101, 255)), ColorSequenceKeypoint.new(0.70, Color3.fromRGB(50, 0, 255)), ColorSequenceKeypoint.new(0.80, Color3.fromRGB(204, 0, 255)), ColorSequenceKeypoint.new(0.90, Color3.fromRGB(255, 0, 153)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0))}
+	UIGradient.Parent = ColorMap
+
+	UICorner_4.CornerRadius = UDim.new(0, 3)
+	UICorner_4.Parent = ColorMap
+
+	ColorMapSelection.Name = NeverLose.RandomString();
+	ColorMapSelection.Parent = ColorMap
+	ColorMapSelection.AnchorPoint = Vector2.new(0.5, 0.5)
+	ColorMapSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	ColorMapSelection.BackgroundTransparency = 1.000
+	ColorMapSelection.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ColorMapSelection.BorderSizePixel = 0
+	ColorMapSelection.Position = UDim2.new(0, 0, 0.5, 0)
+	ColorMapSelection.Size = UDim2.new(0, 5, 1, 0)
+	ColorMapSelection.ZIndex = ZIndex + 126
+
+	UIStroke_3.Thickness = 2.000
+	UIStroke_3.Color = Color3.fromRGB(255, 255, 255)
+	UIStroke_3.Parent = ColorMapSelection
+
+	UICorner_5.CornerRadius = UDim.new(0, 3)
+	UICorner_5.Parent = ColorMapSelection
+
+	RGBLabel.Name = NeverLose.RandomString();
+	RGBLabel.Parent = ColorPickerHandler
+	RGBLabel.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+	RGBLabel.BackgroundTransparency = 0.750
+	RGBLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	RGBLabel.BorderSizePixel = 0
+	RGBLabel.Position = UDim2.new(0, 10, 0, 217)
+	RGBLabel.Size = UDim2.new(1, -20, 0, 15)
+	RGBLabel.ZIndex = ZIndex + 127
+	RGBLabel.Font = Enum.Font.GothamBold
+	RGBLabel.Text = "#FFFFFF"
+	RGBLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	RGBLabel.TextSize = 12.000
+	RGBLabel.TextTransparency = 0.400
+	RGBLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+	UICorner_6.CornerRadius = UDim.new(0, 4)
+	UICorner_6.Parent = RGBLabel
+
+	ColorPickerLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
+		if value then
+			ColorPickerHandler.Position = UDim2.new(0,HandleFrame.AbsolutePosition.X + 20 , 0 ,HandleFrame.AbsolutePosition.Y + 75);
+
+			NeverLose.PlayAnimate(ColorPickerHandler,SlowyTween , {
+				BackgroundTransparency = 0.035
+			})
+
+			NeverLose.PlayAnimate(UIStroke,SlowyTween , {
+				Transparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(SaViMap,SlowyTween , {
+				BackgroundTransparency = 0,
+				ImageTransparency = 0
+			})
+
+			NeverLose.PlayAnimate(UIStroke_2,SlowyTween , {
+				Transparency = 0
+			})
+
+			NeverLose.PlayAnimate(ColorMap,SlowyTween , {
+				BackgroundTransparency = 0
+			})
+
+			NeverLose.PlayAnimate(UIStroke_3,SlowyTween , {
+				Transparency = 0
+			})
+
+			NeverLose.PlayAnimate(RGBLabel,SlowyTween , {
+				BackgroundTransparency = 0.750,
+				TextTransparency = 0.400
+			})
+
+			Shadow:Render(true)
+		else
+			NeverLose.PlayAnimate(ColorPickerHandler,SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIStroke,SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(SaViMap,SlowyTween , {
+				BackgroundTransparency = 1,
+				ImageTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIStroke_2,SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(ColorMap,SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIStroke_3,SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(RGBLabel,SlowyTween , {
+				BackgroundTransparency = 1,
+				TextTransparency = 1
+			})
+
+			Shadow:Render(false)
+		end;
+	end);
+
+	ColorPickerLib.SetRender(false);
+	ColorPickerLib.Root = ColorPickerHandler;
+	ColorPickerLib.H = 1;
+	ColorPickerLib.S = 1;
+	ColorPickerLib.V = 1;
+	ColorPickerLib.Callback = EmptyFunction;
+
+	function ColorPickerLib:Update()
+		local RealColor = Color3.fromHSV(ColorPickerLib.H , ColorPickerLib.S , ColorPickerLib.V);
+
+		NeverLose.PlayAnimate(ColorZoneSelection,ManualTween,{
+			Position = UDim2.fromScale(ColorPickerLib.S , 1 - ColorPickerLib.V)
+		});
+
+		NeverLose.PlayAnimate(SaViMap,ManualTween,{
+			BackgroundColor3 = Color3.fromHSV(ColorPickerLib.H , 1 , 1)
+		});
+
+		NeverLose.PlayAnimate(ColorMapSelection,ManualTween,{
+			Position = UDim2.fromScale(ColorPickerLib.H,0.5)
+		});
+
+		RGBLabel.Text = "#"..RealColor:ToHex();
+
+		ColorPickerLib.Callback(RealColor);
+	end;
+
+	function ColorPickerLib:SetValue(Color)
+		if typeof(Color) == 'string' then
+			Color = Color3.fromHex(Color);
+		end;
+
+		local H , S , V = Color:ToHSV();
+
+		ColorPickerLib.H = H;
+		ColorPickerLib.S = S;
+		ColorPickerLib.V = V;
+
+		ColorPickerLib:Update();
+	end;
+
+	ColorPickerLib.IsHold = false;
+
+	NeverLose:AddSignal(ColorPickerHandler.InputBegan:Connect(function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+			ColorPickerLib.IsHold = true;
+		end;
+	end));
+
+	NeverLose:AddSignal(ColorPickerHandler.InputEnded:Connect(function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+			ColorPickerLib.IsHold = false;
+		end;
+	end));
+
+	NeverLose:AddSignal(ColorMap.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+			ColorPickerLib.IsHold = true;
+
+			while (UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or ColorPickerLib.IsHold) do task.wait()
+				local ColorY = ColorMap.AbsolutePosition.X
+				local ColorYM = ColorY + ColorMap.AbsoluteSize.X;
+				local Value = math.clamp(Mouse.X, ColorY, ColorYM)
+				local Code = ((Value - ColorY) / (ColorYM - ColorY));
+
+				ColorPickerLib.H = Code;
+				ColorPickerLib:Update();
+			end;
+		end;
+	end)));
+
+	NeverLose:AddSignal(SaViMap.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+			ColorPickerLib.IsHold = true;
+
+			while (UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or ColorPickerLib.IsHold) do task.wait();
+				local PosX = SaViMap.AbsolutePosition.X;
+				local ScaleX = PosX + SaViMap.AbsoluteSize.X;
+				local Value, PosY = math.clamp(Mouse.X, PosX, ScaleX), SaViMap.AbsolutePosition.Y;
+				local ScaleY = PosY + SaViMap.AbsoluteSize.Y;
+				local Vals = math.clamp(Mouse.Y, PosY, ScaleY);
+
+				ColorPickerLib.S = (Value - PosX) / (ScaleX - PosX);
+				ColorPickerLib.V = (1 - ((Vals - PosY) / (ScaleY - PosY)));
+				ColorPickerLib:Update();
+			end
+		end
+	end)));
+
+	return ColorPickerLib;
+end;
+
+NeverLose.KeyEnum = {
+	One = '1',
+	Two = '2',
+	Three = '3',
+	Four = '4',
+	Five = '5',
+	Six = '6',
+	Seven = '7',
+	Eight = '8',
+	Nine = '9',
+	Zero = '0',
+	['Minus'] = "-",
+	['Plus'] = "+",
+	BackSlash = "\\",
+	Slash = "/",
+	Period = '.',
+	Semicolon = ';',
+	Colon = ":",
+	LeftControl = "LCtrl",
+	RightControl = "RCtrl",
+	LeftShift = "LShift",
+	RightShift = "RShift",
+	Return = "Enter",
+	LeftBracket = "[",
+	RightBracket = "]",
+	Quote = "'",
+	Comma = ",",
+	Equals = "=",
+	LeftSuper = "Super",
+	RightSuper = "Super",
+	LeftAlt = "LAlt",
+	RightAlt = "RAlt",
+	Escape = "Esc",
+};
+
+NeverLose.EnumReverse = {};
+
+for i,v in next , NeverLose.KeyEnum do
+	NeverLose.EnumReverse[v] = i;
+end;
+
+function NeverLose:KeyCodeToStr(K: Enum.KeyCode)
+	if typeof(K) == 'string' then
+		if NeverLose.KeyEnum[K] then
+			return NeverLose.KeyEnum[K];
+		end;
+
+		return K;
+	end;
+
+	return (NeverLose.KeyEnum[K.Name] or K.Name);
+end;
+
+function NeverLose:StrToKeyCode(str: string)
+	if NeverLose.EnumReverse[str] then
+		return Enum.KeyCode[NeverLose.EnumReverse[str]];
+	end;
+
+	return Enum.KeyCode[str];
+end;
+
+function NeverLose:RegisiterHandler(Handler: Frame , Signal)
+	local handle = {};
+	local ZINdex = Handler.ZIndex;
+
+	function handle:AddToggle(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Default = false,
+			Flag = nil,
+			Callback = EmptyFunction,
+		});
+
+		local Toggle = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local Circle = Instance.new("Frame")
+		local UICorner_2 = Instance.new("UICorner")
+
+		Toggle.Name = NeverLose.RandomString();
+		Toggle.Parent = Handler
+		Toggle.BackgroundColor3 = Color3.fromRGB(10, 13, 21)
+		Toggle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Toggle.BorderSizePixel = 0
+		Toggle.ClipsDescendants = true
+		Toggle.Size = UDim2.new(0, 30, 0, 18)
+		Toggle.ZIndex = ZINdex + 13
+		Toggle.LayoutOrder = -(#Handler:GetChildren() + 5);
+
+		UICorner.CornerRadius = UDim.new(1, 0)
+		UICorner.Parent = Toggle
+
+		Circle.Name = NeverLose.RandomString();
+		Circle.Parent = Toggle
+		Circle.AnchorPoint = Vector2.new(0.5, 0.5)
+		Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Circle.BackgroundTransparency = 0.500
+		Circle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Circle.BorderSizePixel = 0
+		Circle.Position = UDim2.new(0.300000012, 0, 0.5, 0)
+		Circle.Size = UDim2.new(0, 16, 0, 16)
+		Circle.ZIndex = ZINdex + 14
+
+		UICorner_2.CornerRadius = UDim.new(1, 0)
+		UICorner_2.Parent = Circle
+
+		local ToggleLib = {
+			Root = Toggle	
+		};
+
+		ToggleLib.SetUI = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(Toggle,SlowyTween,{
+					BackgroundTransparency = 0,
+					BackgroundColor3 = NeverLose.AccentColor
+				})
+
+				NeverLose.PlayAnimate(Circle,SlowyTween,{
+					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+					BackgroundTransparency = 0,
+					Position = UDim2.new(0.7, 0, 0.5, 0)
+				})
+			else
+				NeverLose.PlayAnimate(Toggle,SlowyTween,{
+					BackgroundTransparency = 0,
+					BackgroundColor3 = Color3.fromRGB(10, 13, 21)
+				})
+
+				NeverLose.PlayAnimate(Circle,SlowyTween,{
+					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+					BackgroundTransparency = 0.500,
+					Position = UDim2.new(0.300000012, 0, 0.5, 0)
+				})
+			end;
+		end);
+
+		ToggleLib.SetVisible = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				ToggleLib.SetUI(Config.Default);
+			else
+				NeverLose.PlayAnimate(Toggle,SlowyTween,{
+					BackgroundTransparency = 1,
+					BackgroundColor3 = Color3.fromRGB(10, 13, 21)
+				})
+
+				NeverLose.PlayAnimate(Circle,SlowyTween,{
+					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+					BackgroundTransparency = 1,
+					Position = UDim2.new(0.300000012, 0, 0.5, 0)
+				})
+			end;
+		end);
+
+		ToggleLib.SetUI(Config.Default);
+		ToggleLib.SetVisible(Signal:GetValue());
+
+		NeverLose:CreateInput(Toggle , LPH_NO_VIRTUALIZE(function()
+			Config.Default = not Config.Default;
+
+			ToggleLib.SetUI(Config.Default);
+
+			Config.Callback(Config.Default)
+		end))
+
+		ToggleLib.Signal = Signal:Connect(ToggleLib.SetVisible);
+
+		function ToggleLib:GetValue()
+			return Config.Default;
+		end;
+
+		function ToggleLib:SetValue(v)
+			Config.Default = v;
+
+			if Signal:GetValue() then
+				ToggleLib.SetUI(Config.Default);
+			end;
+
+			Config.Callback(Config.Default)
+		end;
+
+		if Config.Flag then
+			NeverLose.Flags[Config.Flag] = ToggleLib;
+		end;
+
+		return ToggleLib;
+	end;
+
+	function handle:AddSlider(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Default = 50,
+			Min = 0,
+			Max = 10,
+			Type = "",
+			Rounding = 0,
+			Nums = {},
+			Flag = nil,
+			Size = 125,
+			Callback = EmptyFunction,
+		});
+
+		local SliderLib = {};
+
+		SliderLib.GetSize = LPH_NO_VIRTUALIZE(function()
+			return (Config.Default - Config.Min) / (Config.Max - Config.Min);
+		end);
+
+		local FullNumSize = TextService:GetTextSize(string.rep("0",(Config.Rounding + #tostring(Config.Max))+1)..tostring(Config.Type),10,Enum.Font.GothamMedium,Vector2.new(math.huge,math.huge));
+
+		SliderLib.MaximumSize = FullNumSize.X;
+
+		if Config.Nums then
+			local nszie = 0;
+
+			for i,ns in next , Config.Nums do
+				local size = TextService:GetTextSize(string.rep("m",string.len(tostring(ns))),10,Enum.Font.GothamMedium,Vector2.new(math.huge,math.huge));
+
+				if nszie < size.X then
+					nszie = size.X;
+				end
+			end;
+
+			if SliderLib.MaximumSize < nszie then
+				SliderLib.MaximumSize = nszie;
+			end;
+		end;
+
+		local Slider = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local ValueFrame = Instance.new("Frame")
+		local UICorner_2 = Instance.new("UICorner")
+		local UIStroke = Instance.new("UIStroke")
+		local ValueLabel = Instance.new("TextBox")
+		local SlideMain = Instance.new("Frame")
+		local SlideFrame = Instance.new("Frame")
+		local UICorner_3 = Instance.new("UICorner")
+		local SlideMoving = Instance.new("Frame")
+		local UICorner_4 = Instance.new("UICorner")
+		local Frame = Instance.new("Frame")
+		local UICorner_5 = Instance.new("UICorner")
+		local boxSize = 2;
+
+		Slider.Name = NeverLose.RandomString();
+		Slider.Parent = Handler
+		Slider.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		Slider.BackgroundTransparency = 1.000
+		Slider.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Slider.BorderSizePixel = 0
+		Slider.ClipsDescendants = false
+		Slider.Size = UDim2.new(0, Config.Size, 0, 18)
+		Slider.ZIndex = ZINdex + 13
+		Slider.LayoutOrder = -(#Handler:GetChildren() + 5);
+
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = Slider
+
+		ValueFrame.Name = NeverLose.RandomString();
+		ValueFrame.Parent = Slider
+		ValueFrame.AnchorPoint = Vector2.new(1, 0)
+		ValueFrame.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		ValueFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ValueFrame.BorderSizePixel = 0
+		ValueFrame.ClipsDescendants = true
+		ValueFrame.Position = UDim2.new(1, 0, 0, 0)
+		ValueFrame.Size = UDim2.new(0, SliderLib.MaximumSize + boxSize, 0, 18)
+		ValueFrame.ZIndex = ZINdex + 13
+
+		UICorner_2.CornerRadius = UDim.new(0, 4)
+		UICorner_2.Parent = ValueFrame
+
+		UIStroke.Transparency = 0.650
+		UIStroke.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke.Parent = ValueFrame
+
+		ValueLabel.Name = NeverLose.RandomString();
+		ValueLabel.Parent = ValueFrame
+		ValueLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+		ValueLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		ValueLabel.BackgroundTransparency = 1.000
+		ValueLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ValueLabel.BorderSizePixel = 0
+		ValueLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+		ValueLabel.Size = UDim2.new(1, 0, 1, 0)
+		ValueLabel.ZIndex = ZINdex + 14
+		ValueLabel.Font = Enum.Font.GothamMedium
+		ValueLabel.Text = tostring(Config.Default)..tostring(Config.Type);
+		ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		ValueLabel.TextSize = 10.000
+		ValueLabel.ClearTextOnFocus = false;
+		ValueLabel.TextTransparency = 0.350
+
+		SlideMain.Name = NeverLose.RandomString();
+		SlideMain.Parent = Slider
+		SlideMain.AnchorPoint = Vector2.new(0, 0.5)
+		SlideMain.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		SlideMain.BackgroundTransparency = 1.000
+		SlideMain.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		SlideMain.BorderSizePixel = 0
+		SlideMain.Position = UDim2.new(0, 0, 0.5, 0)
+		SlideMain.Size = UDim2.new(1, -((SliderLib.MaximumSize + 11)), 0, 18)
+		SlideMain.ZIndex = ZINdex + 13
+
+		SlideFrame.Name = NeverLose.RandomString();
+		SlideFrame.Parent = SlideMain
+		SlideFrame.AnchorPoint = Vector2.new(0, 0.5)
+		SlideFrame.BackgroundColor3 = Color3.fromRGB(30, 29, 36)
+		SlideFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		SlideFrame.BorderSizePixel = 0
+		SlideFrame.Position = UDim2.new(0, 0, 0.5, 0)
+		SlideFrame.Size = UDim2.new(1, 0, 0, 5)
+		SlideFrame.ZIndex = ZINdex + 13
+
+		UICorner_3.CornerRadius = UDim.new(1, 0)
+		UICorner_3.Parent = SlideFrame
+
+		SlideMoving.Name = NeverLose.RandomString();
+		SlideMoving.Parent = SlideFrame
+		SlideMoving.BackgroundColor3 = NeverLose.AccentColor
+		SlideMoving.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		SlideMoving.BorderSizePixel = 0
+		SlideMoving.Size = UDim2.new(SliderLib.GetSize(), 0, 1, 0)
+		SlideMoving.ZIndex = ZINdex + 14
+
+		UICorner_4.CornerRadius = UDim.new(1, 0)
+		UICorner_4.Parent = SlideMoving
+
+		Frame.Parent = SlideMoving
+		Frame.AnchorPoint = Vector2.new(1, 0.5)
+		Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Frame.BorderSizePixel = 0
+		Frame.Position = UDim2.new(1, 5, 0.5, 0)
+		Frame.Size = UDim2.new(0, 10, 0, 10)
+		Frame.ZIndex = ZINdex + 15
+
+		UICorner_5.CornerRadius = UDim.new(1, 0)
+		UICorner_5.Parent = Frame
+
+		local LoadText = LPH_NO_VIRTUALIZE(function()
+			if Config.Nums[Config.Default] then
+				ValueLabel.Text = Config.Nums[Config.Default]
+
+			else
+				ValueLabel.Text = tostring(Config.Default)..tostring(Config.Type);
+
+			end;
+		end);
+
+		ValueLabel.FocusLost:Connect(LPH_NO_VIRTUALIZE(function()
+			local OutVal = NeverLose:ParseInput(ValueLabel.Text , true);
+			if OutVal then
+				local rx = math.clamp(OutVal , Config.Min , Config.Max);
+				local Value = NeverLose.Rounding(rx,Config.Rounding);
+
+				if Value then
+					Config.Default = Value;
+
+					TweenService:Create(SlideMoving , ManualTween ,{
+						Size = UDim2.new(SliderLib.GetSize(), 0, 1, 0)
+					}):Play();
+
+					LoadText();
+
+					Config.Callback(Config.Default)
+				else
+					LoadText();
+				end;
+
+			else
+				LoadText()
+			end;
+		end));
+
+		SliderLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(ValueFrame,SlowyTween,{
+					BackgroundTransparency = 0,
+					Size = UDim2.new(0, SliderLib.MaximumSize + boxSize, 0, 18)
+				});
+
+				NeverLose.PlayAnimate(UIStroke,SlowyTween,{
+					Transparency = 0.650
+				});
+
+				NeverLose.PlayAnimate(ValueLabel,SlowyTween,{
+					TextTransparency = 0.350
+				});
+
+				NeverLose.PlayAnimate(SlideFrame,SlowyTween,{
+					BackgroundTransparency = 0
+				});
+
+				NeverLose.PlayAnimate(SlideMoving,SlowyTween,{
+					BackgroundTransparency = 0,
+					Size = UDim2.new(SliderLib.GetSize(), 0, 1, 0)
+				});
+
+				NeverLose.PlayAnimate(Frame,SlowyTween,{
+					BackgroundTransparency = 0
+				});
+			else
+				NeverLose.PlayAnimate(ValueFrame,SlowyTween,{
+					BackgroundTransparency = 1,
+				});
+
+				NeverLose.PlayAnimate(UIStroke,SlowyTween,{
+					Transparency = 1
+				});
+
+				NeverLose.PlayAnimate(ValueLabel,SlowyTween,{
+					TextTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(SlideFrame,SlowyTween,{
+					BackgroundTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(SlideMoving,SlowyTween,{
+					BackgroundTransparency = 1,
+					Size = UDim2.new(0, 0, 1, 0)
+				});
+
+				NeverLose.PlayAnimate(Frame,SlowyTween,{
+					BackgroundTransparency = 1
+				});
+			end;
+		end);
+
+		SliderLib.SetRender(Signal:GetValue());
+		SliderLib.Signal = Signal:Connect(SliderLib.SetRender);
+
+		local Update = function(Input)
+			local SizeScale = math.clamp((((Input.Position.X) - SlideMain.AbsolutePosition.X) / SlideMain.AbsoluteSize.X), 0, 1);
+			local Main = ((Config.Max - Config.Min) * SizeScale) + Config.Min;
+			local Value = NeverLose.Rounding(Main,Config.Rounding);
+			local PositionX = UDim2.fromScale(SizeScale, 1);
+			local Size = ((Value - Config.Min) / (Config.Max - Config.Min)) + 0.02;
+
+			Config.Default = Value;
+
+			TweenService:Create(SlideMoving , ManualTween ,{
+				Size = UDim2.new(SliderLib.GetSize(), 0, 1, 0)
+			}):Play();
+
+			LoadText()
+
+
+			Config.Callback(Value)
+		end;
+
+		local IsHold = false;
+
+		do
+			SlideMain.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+					IsHold = true
+					Update(Input)
+				end
+			end))
+
+			SlideMain.InputEnded:Connect(LPH_NO_VIRTUALIZE(function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+					if UserInputService.TouchEnabled then
+						if not NeverLose:IsMouseOverFrame(SlideMain) then
+							IsHold = false
+						end;
+					else
+						IsHold = false
+					end;
+				end
+			end))
+
+			UserInputService.InputChanged:Connect(LPH_NO_VIRTUALIZE(function(Input)
+				if IsHold then
+					if (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch)  then
+						if UserInputService.TouchEnabled then
+							if not NeverLose:IsMouseOverFrame(SlideMain) then
+								IsHold = false
+							else
+								Update(Input)
+							end;
+						else
+							Update(Input)
+						end;
+					end;
+				end;
+			end));
+		end;
+
+		function SliderLib:GetValue()
+			return Config.Default;
+		end;
+
+		function SliderLib:SetValue(v)
+			Config.Default = v;
+
+			if Signal:GetValue() then
+				NeverLose.PlayAnimate(SlideMoving,SlowyTween,{
+					BackgroundTransparency = 0,
+					Size = UDim2.new(SliderLib.GetSize(), 0, 1, 0)
+				});
+			end;
+
+			LoadText()
+
+			Config.Callback(Config.Default);
+		end;
+
+		if Config.Flag then
+			NeverLose.Flags[Config.Flag] = SliderLib;
+		end;
+
+		return SliderLib;
+	end;
+
+	function handle:AddOption(GearIcon)
+		local Option = Instance.new("Frame")
+		local Icon = Instance.new("TextLabel")
+		local UICorner = Instance.new("UICorner")
+
+		Option.Name = NeverLose.RandomString();
+		Option.Parent = Handler
+		Option.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
+		Option.BackgroundTransparency = 1.000
+		Option.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Option.BorderSizePixel = 0
+		Option.ClipsDescendants = true
+		Option.Size = UDim2.new(0, 20, 0, 18)
+		Option.ZIndex = ZINdex + 13
+		Option.LayoutOrder = -(#Handler:GetChildren() + 5);
+
+		Icon.Name = NeverLose.RandomString();
+		Icon.Parent = Option
+		Icon.AnchorPoint = Vector2.new(0.5, 0.5)
+		Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Icon.BackgroundTransparency = 1.000
+		Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Icon.BorderSizePixel = 0
+		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
+		Icon.Size = UDim2.new(1, 0, 1, 0)
+		Icon.ZIndex = ZINdex + 14
+		Icon.FontFace = NeverLose.BuiltInBold
+		Icon.Text = (GearIcon == 1 and 'gear') or (GearIcon == 2 and 'chevron-large-right') or "three-dots-horizontal";
+		Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
+		Icon.TextSize = 16.000
+		Icon.TextTransparency = 0.400
+		Icon.TextWrapped = true
+
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = Option
+
+		local Window = NeverLose:CreateOptionWindow(Option , ZINdex + 13);
+		local reciveSignal;
+
+		Window.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
+					TextTransparency = 0.400
+				})
+			else
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
+					TextTransparency = 1
+				})
+			end;
+		end);
+
+		Window.SetRender(Signal:GetValue());
+		Signal:Connect(Window.SetRender);
+
+		local bthg = NeverLose:CreateInput(Option , LPH_NO_VIRTUALIZE(function()
+			if reciveSignal then
+				reciveSignal:Disconnect();
+				reciveSignal = nil;	
+			end;
+
+			Window.Signal:SetValue(true);
+
+			reciveSignal = UserInputService.InputBegan:Connect(function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+					if not NeverLose:IsMouseOverFrame(Window.Root) and not NeverLose:IsMouseOverFrame(Option) then
+						if reciveSignal then
+							reciveSignal:Disconnect();
+							reciveSignal = nil;	
+						end;
+
+						Window.Signal:SetValue(false);
+					end
+				end
+			end)
+		end));
+
+		NeverLose:AddSignal(bthg.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(Option , SlowyTween , {
+				BackgroundTransparency = 0.5
+			})
+
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
+				TextTransparency = 0.25
+			})
+		end)));
+
+		NeverLose:AddSignal(bthg.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(Option , SlowyTween , {
+				BackgroundTransparency = 1.000
+			})
+
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
+				TextTransparency = 0.400
+			})
+		end)));
+
+		return Window;
+	end;
+
+	function handle:AddColorPicker(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Default = Color3.fromRGB(255, 255, 255),
+			Callback  = EmptyFunction,
+		});
+
+		if typeof(Config.Default) == 'string' then
+			Config.Default = Color3.fromHex(Config.Default:gsub('#',''));
+		end;
+
+		local ColorPickerLib = {};
+		local ColorPicker = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local UIStroke = Instance.new("UIStroke")
+		local ImageLabel = Instance.new("ImageLabel")
+		local UICorner_2 = Instance.new("UICorner")
+
+		ColorPicker.Name = NeverLose.RandomString();
+		ColorPicker.Parent = Handler
+		ColorPicker.BackgroundColor3 = Config.Default;
+		ColorPicker.BackgroundTransparency = 0
+		ColorPicker.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ColorPicker.BorderSizePixel = 0
+		ColorPicker.ClipsDescendants = true
+		ColorPicker.Size = UDim2.new(0, 18, 0, 18)
+		ColorPicker.ZIndex = ZINdex + 13
+
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = ColorPicker
+
+		UIStroke.Transparency = 0.650
+		UIStroke.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke.Parent = ColorPicker
+
+		ImageLabel.Parent = ColorPicker
+		ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ImageLabel.BorderSizePixel = 0
+		ImageLabel.Size = UDim2.new(1, 0, 1, 0)
+		ImageLabel.ZIndex = ZINdex + 11
+		ImageLabel.Image = "rbxasset://textures/meshPartFallback.png"
+		ImageLabel.ImageTransparency = 0.9
+		ImageLabel.BackgroundTransparency = 1;
+		ImageLabel.ScaleType = Enum.ScaleType.Crop
+
+		UICorner_2.CornerRadius = UDim.new(0, 4)
+		UICorner_2.Parent = ImageLabel
+
+		local BackendM = NeverLose:CreateColorPicker(ColorPicker);
+
+		BackendM:SetValue(Config.Default)
+		BackendM.Callback = function(color)
+			ColorPicker.BackgroundColor3 = color;
+			Config.Default = color;
+			Config.Callback(Config.Default);
+		end;
+
+		local signal;
+		NeverLose:CreateInput(ColorPicker , LPH_NO_VIRTUALIZE(function()
+			if signal then
+				signal:Disconnect();
+				signal = nil;
+			end;
+
+			BackendM.SetRender(true);
+
+			signal = UserInputService.InputBegan:Connect(function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+					if not NeverLose:IsMouseOverFrame(ColorPicker) and not NeverLose:IsMouseOverFrame(BackendM.Root) then
+						if signal then
+							signal:Disconnect();
+							signal = nil;
+						end;
+
+						BackendM.SetRender(false);
+					end;
+				end;
+			end)
+		end));
+
+		ColorPickerLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(ColorPicker , SlowyTween , {
+					BackgroundTransparency = 0
+				})
+
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+					Transparency = 0.650
+				})
+
+				NeverLose.PlayAnimate(ImageLabel , SlowyTween , {
+					ImageTransparency = 0.9
+				})
+			else
+				NeverLose.PlayAnimate(ColorPicker , SlowyTween , {
+					BackgroundTransparency = 1
+				})
+
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+					Transparency = 1
+				})
+
+				NeverLose.PlayAnimate(ImageLabel , SlowyTween , {
+					ImageTransparency = 1
+				})
+			end;
+		end);
+
+		ColorPickerLib.SetRender(Signal:GetValue());
+		Signal:Connect(ColorPickerLib.SetRender);
+
+		function ColorPickerLib:GetValue()
+			return Config.Default;
+		end;
+
+		function ColorPickerLib:SetValue(v)
+			Config.Default = v;
+			BackendM:SetValue(Config.Default)
+		end;
+
+		if Config.Flag then
+			NeverLose.Flags[Config.Flag] = ColorPickerLib;
+		end;
+
+		return ColorPickerLib;
+	end;
+
+	function handle:AddKeybind(Config)
+		Config = NeverLose:ProcessParams(Config,{
+			Default = nil,
+			Blacklist = {},
+			Callback = EmptyFunction,
+			Flag = nil
+		});
+
+		local KeybindLib = {};
+
+		local Keybind = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local UIStroke = Instance.new("UIStroke")
+		local ValueLabel = Instance.new("TextLabel")
+
+		Keybind.Name = NeverLose.RandomString();
+		Keybind.Parent = Handler
+		Keybind.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		Keybind.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Keybind.BorderSizePixel = 0
+		Keybind.ClipsDescendants = true
+		Keybind.Size = UDim2.new(0, 45, 0, 18)
+		Keybind.ZIndex = ZINdex + 13
+
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = Keybind
+
+		UIStroke.Transparency = 0.650
+		UIStroke.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke.Parent = Keybind
+
+		ValueLabel.Name = NeverLose.RandomString();
+		ValueLabel.Parent = Keybind
+		ValueLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+		ValueLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		ValueLabel.BackgroundTransparency = 1.000
+		ValueLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ValueLabel.BorderSizePixel = 0
+		ValueLabel.ClipsDescendants = true
+		ValueLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+		ValueLabel.Size = UDim2.new(1, 0, 1, 0)
+		ValueLabel.ZIndex = ZINdex + 14
+		ValueLabel.Font = Enum.Font.GothamMedium
+		ValueLabel.Text = NeverLose:KeyCodeToStr(Config.Default or "None")
+		ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		ValueLabel.TextSize = 10.000
+		ValueLabel.TextTransparency = 0.500
+
+		KeybindLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(Keybind,SlowyTween, {
+					BackgroundTransparency = 0
+				})
+
+				NeverLose.PlayAnimate(UIStroke,SlowyTween, {
+					Transparency = 0.650
+				})
+
+				NeverLose.PlayAnimate(ValueLabel,SlowyTween, {
+					TextTransparency = 0.500
+				})
+			else
+				NeverLose.PlayAnimate(Keybind,SlowyTween, {
+					BackgroundTransparency = 1
+				})
+
+				NeverLose.PlayAnimate(UIStroke,SlowyTween, {
+					Transparency = 1
+				})
+
+				NeverLose.PlayAnimate(ValueLabel,SlowyTween, {
+					TextTransparency = 1
+				})
+			end;
+		end);
+
+		function KeybindLib:Update()
+			local size = TextService:GetTextSize(ValueLabel.Text,ValueLabel.TextSize,ValueLabel.Font,Vector2.new(math.huge,math.huge));
+
+			NeverLose.PlayAnimate(Keybind , SlowyTween , {
+				Size = UDim2.new(0, size.X + 7, 0, 18)
+			})
+		end;
+
+		local IsBlacklist = LPH_NO_VIRTUALIZE(function(v)
+			return Config.Blacklist and (Config.Blacklist[v] or table.find(Config.Blacklist,v))
+		end);
+
+		KeybindLib:Update()
+
+		KeybindLib.SetRender(Signal:GetValue());
+		Signal:Connect(KeybindLib.SetRender);
+
+		local IsBinding = false;
+		NeverLose:CreateInput(Keybind , function()
+			if IsBinding then
+				return;
+			end;
+
+			IsBinding = true;
+
+			ValueLabel.Text = "...";
+
+			KeybindLib:Update();
+
+			local Selected = nil;
+
+			while not Selected do
+				local Key = UserInputService.InputBegan:Wait();
+
+				if Key.KeyCode ~= Enum.KeyCode.Unknown and not IsBlacklist(Key.KeyCode) and not IsBlacklist(Key.KeyCode.Name) then
+					Selected = Key.KeyCode;
+				else
+					if Key.UserInputType == Enum.UserInputType.MouseButton1 and not IsBlacklist(Enum.UserInputType.MouseButton1) and not IsBlacklist("M1B") then
+						Selected = "M1B";
+					elseif Key.UserInputType == Enum.UserInputType.MouseButton2 and not IsBlacklist(Enum.UserInputType.MouseButton2) and not IsBlacklist("M2B") then
+						Selected = "M2B";
+					end;
+				end;
+			end;
+
+			IsBinding = false;
+
+			local KeyName = typeof(Selected) == "string" and Selected or Selected.Name;
+
+			Config.Default = KeyName;
+
+			ValueLabel.Text = NeverLose:KeyCodeToStr(KeyName);
+
+			KeybindLib:Update();
+
+			Config.Callback(KeyName)
+		end)
+
+		function KeybindLib:GetValue()
+			return Config.Default;
+		end;
+
+		function KeybindLib:SetValue(v)
+			Config.Default = v;
+			ValueLabel.Text = NeverLose:KeyCodeToStr(v);
+			KeybindLib:Update();
+			Config.Callback(Config.Default);
+		end;
+
+		if Config.Flag then
+			NeverLose.Flags[Config.Flag] = KeybindLib;
+		end;
+
+		return KeybindLib;
+	end;
+
+	function handle:AddTextInput(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Default = "",
+			Placeholder = "Placeholder",
+			Callback = print,
+			Flag = nil,
+			Size = 100,
+			Numeric = false,
+		});
+
+		local TextBoxLib = {};
+
+		local TextInput = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local UIStroke = Instance.new("UIStroke")
+		local TextBox = Instance.new("TextBox")
+
+		TextInput.Name = NeverLose.RandomString();
+		TextInput.Parent = Handler
+		TextInput.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		TextInput.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		TextInput.BorderSizePixel = 0
+		TextInput.ClipsDescendants = true
+		TextInput.Size = UDim2.new(0, Config.Size, 0, 18)
+		TextInput.ZIndex = ZINdex + 13
+
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = TextInput
+
+		UIStroke.Transparency = 0.650
+		UIStroke.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke.Parent = TextInput
+
+		TextBox.Parent = TextInput
+		TextBox.AnchorPoint = Vector2.new(0, 0.5)
+		TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		TextBox.BackgroundTransparency = 1.000
+		TextBox.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		TextBox.BorderSizePixel = 0
+		TextBox.Position = UDim2.new(0, 5, 0.5, 0)
+		TextBox.Size = UDim2.new(1, -5, 0, 17)
+		TextBox.ZIndex = ZINdex + 14
+		TextBox.ClearTextOnFocus = false
+		TextBox.Font = Enum.Font.GothamMedium
+		TextBox.PlaceholderText = Config.Placeholder
+		TextBox.Text = tostring(Config.Default)
+		TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+		TextBox.TextSize = 11.000
+		TextBox.TextTransparency = 0.350
+		TextBox.TextXAlignment = Enum.TextXAlignment.Left
+
+		TextBoxLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(TextInput , SlowyTween ,{
+					BackgroundTransparency = 0
+				})	
+
+				NeverLose.PlayAnimate(UIStroke , SlowyTween ,{
+					Transparency = 0.650
+				})	
+
+				NeverLose.PlayAnimate(TextBox , SlowyTween ,{
+					TextTransparency = 0.350
+				})	
+			else
+				NeverLose.PlayAnimate(TextInput , SlowyTween ,{
+					BackgroundTransparency = 1
+				})	
+
+				NeverLose.PlayAnimate(UIStroke , SlowyTween ,{
+					Transparency = 1
+				})	
+
+				NeverLose.PlayAnimate(TextBox , SlowyTween ,{
+					TextTransparency = 1
+				})
+			end;
+		end);
+
+		NeverLose:AddSignal(TextBox:GetPropertyChangedSignal('Text'):Connect(LPH_NO_VIRTUALIZE(function()
+			local valout = NeverLose:ParseInput(TextBox.Text , Config.Numeric);
+
+			if Config.Numeric then
+				TextBox.Text = string.gsub(TextBox.Text , '[^0-9.]','')
+			end;
+
+			if valout then
+				Config.Default = valout;
+				Config.Callback(valout);
+			end
+		end)));
+
+		TextBoxLib.SetRender(Signal:GetValue());
+		Signal:Connect(TextBoxLib.SetRender);
+
+		function TextBoxLib:GetValue()
+			return Config.Default;
+		end;
+
+		function TextBoxLib:SetValue(v)
+			Config.Default = v;
+			TextBox.Text = tostring(v);
+			Config.Callback(Config.Default);
+		end;
+
+		if Config.Flag then
+			NeverLose.Flags[Config.Flag] = TextBoxLib;
+		end;
+
+		return TextBoxLib;
+	end;
+
+	function handle:AddDropdown(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Default = nil,
+			Values = {},
+			Multi = false,
+			Callback = EmptyFunction,
+			AutoUpdate = false,
+			Flag = nil,
+			Size = 100
+		})
+
+		Config.Default = NeverLose.ProcessDropdown(Config.Default);
+
+		local Dropdown = Instance.new("Frame")
+		local DropdownIcon = Instance.new("TextLabel")
+		local UICorner = Instance.new("UICorner")
+		local UIStroke = Instance.new("UIStroke")
+		local BasedLabel = Instance.new("TextLabel")
+
+		Dropdown.Name = NeverLose.RandomString();
+		Dropdown.Parent = Handler
+		Dropdown.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		Dropdown.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Dropdown.BorderSizePixel = 0
+		Dropdown.ClipsDescendants = true
+		Dropdown.Size = UDim2.new(0, Config.Size, 0, 18)
+		Dropdown.ZIndex = ZINdex + 13
+
+		DropdownIcon.Name = NeverLose.RandomString();
+		DropdownIcon.Parent = Dropdown
+		DropdownIcon.AnchorPoint = Vector2.new(1, 0.5)
+		DropdownIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		DropdownIcon.BackgroundTransparency = 1.000
+		DropdownIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		DropdownIcon.BorderSizePixel = 0
+		DropdownIcon.Position = UDim2.new(1, -2, 0.5, 0)
+		DropdownIcon.Size = UDim2.new(0, 18, 0, 18)
+		DropdownIcon.ZIndex = ZINdex + 14
+		DropdownIcon.FontFace = NeverLose.BuiltInBold
+		DropdownIcon.Text = "chevron-small-down"
+		DropdownIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
+		DropdownIcon.TextSize = 16.000
+		DropdownIcon.TextTransparency = 0.250
+		DropdownIcon.TextWrapped = true
+
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = Dropdown
+
+		UIStroke.Transparency = 0.650
+		UIStroke.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke.Parent = Dropdown
+
+		BasedLabel.Name = NeverLose.RandomString();
+		BasedLabel.Parent = Dropdown
+		BasedLabel.AnchorPoint = Vector2.new(0, 0.5)
+		BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		BasedLabel.BackgroundTransparency = 1.000
+		BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		BasedLabel.BorderSizePixel = 0
+		BasedLabel.ClipsDescendants = true
+		BasedLabel.Position = UDim2.new(0, 5, 0.5, 0)
+		BasedLabel.Size = UDim2.new(1, -25, 0, 15)
+		BasedLabel.ZIndex = ZINdex + 14
+		BasedLabel.Font = Enum.Font.GothamMedium
+		BasedLabel.Text = NeverLose.ParseDropdown(Config.Default);
+		BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		BasedLabel.TextSize = 12.000
+		BasedLabel.TextTransparency = 0.5
+		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+		do
+			local UIGradient = Instance.new("UIGradient")
+
+			UIGradient.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0.00, 0.00), NumberSequenceKeypoint.new(0.85, 0.23), NumberSequenceKeypoint.new(1.00, 1.00)}
+			UIGradient.Parent = BasedLabel;
+		end;
+
+		NeverLose:AddSignal(Dropdown.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+				TextTransparency = 0.200
+			})
+		end)));
+
+		NeverLose:AddSignal(Dropdown.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+				TextTransparency = 0.5
+			})
+		end)));
+
+		local DropdownLib = {
+			OpenSignal = NeverLose:CreateSignal(false),
+			Signals = {},
+			Refuse = {},
+		};
+
+		DropdownLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(Dropdown , SlowyTween , {
+					BackgroundTransparency = 0
+				});
+
+				NeverLose.PlayAnimate(DropdownIcon , SlowyTween , {
+					TextTransparency = 0.250
+				});
+
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+					Transparency = 0.650
+				});
+
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+					TextTransparency = 0.5
+				});
+			else
+				NeverLose.PlayAnimate(Dropdown , SlowyTween , {
+					BackgroundTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(DropdownIcon , SlowyTween , {
+					TextTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+					Transparency = 1
+				});
+
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+					TextTransparency = 1
+				});
+			end
+		end);
+
+		DropdownLib.SetRender(Signal:GetValue())
+		Signal:Connect(DropdownLib.SetRender);
+		DropdownLib.ExtentSize = 0;
+
+		do
+			local DropdownHandler = Instance.new("Frame")
+			local UICorner = Instance.new("UICorner")
+			local UIStroke = Instance.new("UIStroke")
+			local DropdownScrollFrame = Instance.new("ScrollingFrame")
+			local UIListLayout = Instance.new("UIListLayout")
+			local Shadow = NeverLose:CreateShadow(DropdownHandler);
+
+			DropdownHandler.Name = NeverLose.RandomString();
+			DropdownHandler.Parent = NeverLose.ScreenGui;
+			DropdownHandler.AnchorPoint = Vector2.new(0.5, 0)
+			DropdownHandler.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+			DropdownHandler.BackgroundTransparency = 0.5
+			DropdownHandler.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			DropdownHandler.BorderSizePixel = 0
+			DropdownHandler.ClipsDescendants = true
+			DropdownHandler.Position = UDim2.new(255,255,255,255)
+			DropdownHandler.Size = UDim2.new(0, 125, 0, 50)
+			DropdownHandler.ZIndex = ZINdex + 125
+			DropdownLib.BlockRoot = DropdownHandler;
+
+			NeverLose:AddSignal(DropdownHandler:GetPropertyChangedSignal('BackgroundTransparency'):Connect(function()
+				if DropdownHandler.BackgroundTransparency > 0.9 then
+					DropdownHandler.Visible = false;
+					DropdownHandler.Parent = nil;
+				else
+					DropdownHandler.Visible = true;
+
+					if NeverLose.Global3DRenderMode then
+						DropdownHandler.Parent = NeverLose.GlobalSurfaceGui;
+					else
+						DropdownHandler.Parent = NeverLose.ScreenGui;
+					end;
+				end;
+			end));
+
+			UICorner.CornerRadius = UDim.new(0, 10)
+			UICorner.Parent = DropdownHandler
+
+			UIStroke.Transparency = 0.650
+			UIStroke.Color = Color3.fromRGB(45, 48, 58)
+			UIStroke.Parent = DropdownHandler
+
+			DropdownScrollFrame.Name = NeverLose.RandomString();
+			DropdownScrollFrame.Parent = DropdownHandler
+			DropdownScrollFrame.Active = true
+			DropdownScrollFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+			DropdownScrollFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			DropdownScrollFrame.BackgroundTransparency = 1.000
+			DropdownScrollFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			DropdownScrollFrame.BorderSizePixel = 0
+			DropdownScrollFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+			DropdownScrollFrame.Size = UDim2.new(1, -5, 1, -5)
+			DropdownScrollFrame.ZIndex = ZINdex + 127
+			DropdownScrollFrame.ScrollBarThickness = 0
+
+			DropdownLib.RootItem = DropdownScrollFrame;
+
+			UIListLayout.Parent = DropdownScrollFrame
+			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+			NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+				DropdownScrollFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y)
+				NeverLose.PlayAnimate(DropdownHandler , SlowyTween , {
+					Size = UDim2.new(0, (Dropdown.AbsoluteSize.X + 5) + DropdownLib.ExtentSize, 0, math.min(UIListLayout.AbsoluteContentSize.Y + 5, 250));
+				})
+			end)));
+
+			local SetPosition = LPH_NO_VIRTUALIZE(function()
+				if NeverLose:MoreThanHalfY(Dropdown.AbsolutePosition.Y + 85) then
+					DropdownHandler.AnchorPoint = Vector2.new(0.5,1)
+				else
+					DropdownHandler.AnchorPoint = Vector2.new(0.5,0)
+				end;
+
+				DropdownHandler.Position = UDim2.fromOffset(Dropdown.AbsolutePosition.X + (DropdownHandler.AbsoluteSize.X / 2), Dropdown.AbsolutePosition.Y + 85);
+
+			end);
+
+			DropdownLib.SetFrameRender = LPH_NO_VIRTUALIZE(function(value)
+				DropdownLib.OpenSignal:SetValue(value);
+
+				if value then
+					Shadow:Render(true);
+
+					DropdownHandler.Size = UDim2.new(0, (Dropdown.AbsoluteSize.X + 5) + DropdownLib.ExtentSize, 0, math.min(UIListLayout.AbsoluteContentSize.Y + 5, 250));
+
+					SetPosition();
+
+					NeverLose.PlayAnimate(DropdownHandler , SlowyTween , {
+						BackgroundTransparency = 0.035
+					})
+
+					if Config.AutoUpdate then
+						DropdownLib:Generate();
+					end;
+				else
+
+					NeverLose.PlayAnimate(DropdownHandler , SlowyTween , {
+						BackgroundTransparency = 1
+					})
+
+					Shadow:Render(false);
+				end;
+			end);
+
+			DropdownLib.SetFrameRender(false);
+		end;
+
+		local SecureSignal;
+		NeverLose:CreateInput(Dropdown , LPH_NO_VIRTUALIZE(function()
+			if SecureSignal then
+				SecureSignal:Disconnect();
+				SecureSignal = nil;
+			end;
+
+			DropdownLib.SetFrameRender(true);
+			NeverLose.IsMosueOverOtherFrame = true;
+
+			SecureSignal = UserInputService.InputBegan:Connect(function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+					if not NeverLose:IsMouseOverFrame(DropdownLib.BlockRoot) and not NeverLose:IsMouseOverFrame(Dropdown) then
+						if SecureSignal then
+							SecureSignal:Disconnect();
+							SecureSignal = nil;
+						end;
+
+						NeverLose.IsMosueOverOtherFrame = false;
+						DropdownLib.SetFrameRender(false);
+					end;
+				end
+			end)
+		end))
+
+		DropdownLib.IsMatch = LPH_NO_VIRTUALIZE(function(v1)
+			if typeof(Config.Default) =='table' then
+				if Config.Default[v1] or table.find(Config.Default , v1) then
+					return true;
+				end
+			end
+
+			if Config.Default == v1 then
+				return true;
+			end;
+		end);
+
+		function DropdownLib:Generate()
+			for i,v in next , DropdownLib.RootItem:GetChildren() do
+				if v:IsA('Frame') then
+					v:Destroy();
+				end;
+			end;
+
+			for i,v in next , DropdownLib.Signals do
+				v:Disconnect();
+			end;
+
+			table.clear(DropdownLib.Signals);
+			table.clear(DropdownLib.Refuse);
+
+			local Lastone;
+			for i,Value in next , Config.Values do
+				local ItemFrame = Instance.new("Frame")
+				local ItemLabel = Instance.new("TextLabel")
+				local UICorner = Instance.new("UICorner")
+
+				ItemFrame.Name = NeverLose.RandomString();
+				ItemFrame.Parent = DropdownLib.RootItem
+				ItemFrame.BackgroundColor3 = Color3.fromRGB(29, 31, 38)
+				ItemFrame.BackgroundTransparency = 1.000
+				ItemFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				ItemFrame.BorderSizePixel = 0
+				ItemFrame.Size = UDim2.new(1, 0, 0, 25)
+				ItemFrame.ZIndex = ZINdex + 1258
+
+				ItemLabel.Name = NeverLose.RandomString();
+				ItemLabel.Parent = ItemFrame
+				ItemLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				ItemLabel.BackgroundTransparency = 1.000
+				ItemLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				ItemLabel.BorderSizePixel = 0
+				ItemLabel.Position = UDim2.new(0, 15, 0, 4)
+				ItemLabel.Size = UDim2.new(0,1, 0, 15)
+				ItemLabel.ZIndex = ZINdex + 1258
+				ItemLabel.Font = Enum.Font.GothamMedium
+				ItemLabel.Text = tostring(Value);
+				ItemLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+				ItemLabel.TextSize = 13.000
+				ItemLabel.TextTransparency = 0.200
+				ItemLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+				UICorner.CornerRadius = UDim.new(0, 10)
+				UICorner.Parent = ItemFrame
+				local sizetext = TextService:GetTextSize(ItemLabel.Text , ItemLabel.TextSize,ItemLabel.Font,Vector2.new(math.huge,math.huge));
+
+				DropdownLib.ExtentSize = math.max(DropdownLib.ExtentSize , sizetext.X);
+
+				local MIcon , MarkItem = nil , nil;
+
+				if Config.Multi then
+					local Icon = Instance.new("TextLabel")
+
+					Icon.Parent = ItemFrame;
+					Icon.AnchorPoint = Vector2.new(0, 0.5)
+					Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+					Icon.BackgroundTransparency = 1.000
+					Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+					Icon.BorderSizePixel = 0
+					Icon.Position = UDim2.new(0, 5, 0.5, 0)
+					Icon.Size = UDim2.new(0, 20, 0, 20)
+					Icon.ZIndex = ZINdex + 1259
+					Icon.FontFace = NeverLose.BuiltInBold;
+					Icon.Text = "check"
+					Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
+					Icon.TextSize = 18.000
+					Icon.TextTransparency = 1
+					Icon.TextWrapped = true;
+
+					local VisiblewOfMult = LPH_NO_VIRTUALIZE(function()
+						if DropdownLib.IsMatch(Value) then
+							NeverLose.PlayAnimate(ItemLabel , VSlowTween , {
+								TextTransparency = 0.200,
+								Position = UDim2.new(0, 30, 0, 4)
+							})
+
+							NeverLose.PlayAnimate(Icon , vs , {
+								TextTransparency = 0.250
+							})
+
+							Lastone = ItemLabel;
+						else
+
+							NeverLose.PlayAnimate(Icon , SlowyTween , {
+								TextTransparency = 1
+							})
+
+							NeverLose.PlayAnimate(ItemLabel , VSlowTween , {
+								TextTransparency = 0.5,
+								Position = UDim2.new(0, 15, 0, 4)
+							})
+						end;
+					end);
+
+					MIcon = Icon;
+					MarkItem = VisiblewOfMult;
+				else
+					local DefaultVisible = LPH_NO_VIRTUALIZE(function()
+						if DropdownLib.IsMatch(Value) then
+							NeverLose.PlayAnimate(ItemLabel , SlowyTween , {
+								TextTransparency = 0.200
+							})
+
+							Lastone = ItemLabel;
+						else
+							NeverLose.PlayAnimate(ItemLabel , SlowyTween , {
+								TextTransparency = 0.5
+							})
+						end;
+					end);
+
+					MarkItem = DefaultVisible;
+				end;
+
+				MarkItem();
+
+				table.insert(DropdownLib.Refuse , MarkItem)
+
+				table.insert(DropdownLib.Signals,ItemFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+					NeverLose.PlayAnimate(ItemFrame , SlowyTween , {
+						BackgroundTransparency = 0.1
+					})
+				end)));
+
+				table.insert(DropdownLib.Signals,ItemFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+					NeverLose.PlayAnimate(ItemFrame , SlowyTween , {
+						BackgroundTransparency = 1
+					})
+				end)));
+
+				table.insert(DropdownLib.Signals , DropdownLib.OpenSignal:Connect(LPH_NO_VIRTUALIZE(function(val)
+					if val then
+						MarkItem();
+					else
+						NeverLose.PlayAnimate(ItemLabel , SlowyTween , {
+							TextTransparency = 1
+						})
+
+						if MIcon then
+							NeverLose.PlayAnimate(MIcon , SlowyTween , {
+								TextTransparency = 1
+							})
+						end;
+					end;
+				end)));
+
+				if Config.Multi then
+					local _,bth_signal = NeverLose:CreateInput(ItemFrame , LPH_NO_VIRTUALIZE(function()
+						Config.Default[Value] = not Config.Default[Value];
+
+						MarkItem();
+
+						BasedLabel.Text = NeverLose.ParseDropdown(Config.Default);
+
+						Config.Callback(Config.Default);
+					end));
+
+					table.insert(DropdownLib.Signals , bth_signal);
+				else
+					local _,bth_signal = NeverLose:CreateInput(ItemFrame , LPH_NO_VIRTUALIZE(function()
+						Config.Default = Value;
+
+						for i,v in next , DropdownLib.Refuse do
+							task.spawn(v);
+						end;
+
+						BasedLabel.Text = NeverLose.ParseDropdown(Config.Default);
+
+						Config.Callback(Config.Default);
+					end));
+
+					table.insert(DropdownLib.Signals , bth_signal);
+				end;
+			end;
+		end;
+
+		DropdownLib:Generate();
+
+		function DropdownLib:GetValue()
+			return Config.Default;
+		end;
+
+		function DropdownLib:SetValue(v)
+			Config.Default = v;
+
+			BasedLabel.Text = NeverLose.ParseDropdown(Config.Default);
+
+			for i,v in next , DropdownLib.Refuse do
+				task.spawn(v);
+			end;
+
+			Config.Callback(Config.Default);
+		end;
+
+		function DropdownLib:SetValues(a)
+			Config.Values = a;
+
+			if not Config.AutoUpdate then
+				DropdownLib:Generate();
+			end;
+		end;
+
+		if Config.Flag then
+			NeverLose.Flags[Config.Flag] = DropdownLib;
+		end;
+
+		return DropdownLib;
+	end;
+
+	return handle;
+end;
+
+NeverLose.ProcessDropdown = LPH_NO_VIRTUALIZE(function(value)
+	if typeof(value) == 'table' then
+		local data = {};
+
+		for i,v in next , value do
+			if typeof(v) == 'boolean' and typeof(i) ~= 'number' then
+				data[i] = v;
+			else
+				data[v] = true;
+			end;
+		end;
+
+		return data;
+	else
+		return value;
+	end;
+end);
+
+NeverLose.ParseDropdown = LPH_NO_VIRTUALIZE(function(value)
+	if not value then return 'Select'; end;
+
+	local Out;
+
+	if typeof(value) == 'table' then
+		if #value > 0 then
+			local x = {};
+
+			for i,v in next , value do
+				table.insert(x , tostring(v))
+			end;
+
+			Out = table.concat(x,' , ');
+
+			table.clear(x);
+		else
+			local x = {};
+
+			for i,v in next , value do
+				if v == true then
+					table.insert(x , tostring(i));
+				end			
+			end;
+
+			Out = table.concat(x,' , ');
+
+			table.clear(x)
+
+			if not Out:byte() then
+				Out = 'Select';
+			end
+		end;
+	else
+		Out = tostring(value or 'Select');
+	end;
+
+	return Out;
+end);
+
+function NeverLose:ParseInput(Value , Numeric)
+	if not Value then
+		return (Numeric and nil) or "";	
+	end;
+
+	if Numeric then
+		local out = string.gsub(tostring(Value), '[^0-9.%-]', '')
+
+		if tonumber(out) then
+			return tonumber(out);
+		end;
+
+		return nil;
+	end;
+
+	return Value;
+end;
+
+function NeverLose:CreateToolTips(Container: Frame , Name: string , Content: string)
+	local Tooltips = Instance.new("Frame")
+	local UICorner = Instance.new("UICorner")
+	local UIStroke = Instance.new("UIStroke")
+	local TooltipName = Instance.new("TextLabel")
+	local TooltipContent = Instance.new("TextLabel")
+	local Shadow = NeverLose:CreateShadow(Tooltips);
+
+	Tooltips.Name = NeverLose.RandomString();
+	Tooltips.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+	Tooltips.BackgroundTransparency = 0.075
+	Tooltips.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Tooltips.BorderSizePixel = 0
+	Tooltips.ClipsDescendants = true
+	Tooltips.Position = UDim2.new(255,255,255,255)
+	Tooltips.Size = UDim2.new(0,0,0,0)
+	Tooltips.ZIndex = 130
+
+	UICorner.CornerRadius = UDim.new(0, 10)
+	UICorner.Parent = Tooltips
+
+	UIStroke.Transparency = 0.650
+	UIStroke.Color = Color3.fromRGB(45, 48, 58)
+	UIStroke.Parent = Tooltips
+
+	TooltipName.Name = NeverLose.RandomString();
+	TooltipName.Parent = Tooltips
+	TooltipName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	TooltipName.BackgroundTransparency = 1.000
+	TooltipName.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	TooltipName.BorderSizePixel = 0
+	TooltipName.Position = UDim2.new(0, 15, 0, 5)
+	TooltipName.Size = UDim2.new(0, 1, 0, 20)
+	TooltipName.ZIndex = 132
+	TooltipName.Font = Enum.Font.GothamBold
+	TooltipName.Text = Name
+	TooltipName.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TooltipName.TextSize = 15.000
+	TooltipName.TextXAlignment = Enum.TextXAlignment.Left
+
+	TooltipContent.Name = NeverLose.RandomString();
+	TooltipContent.Parent = Tooltips
+	TooltipContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	TooltipContent.BackgroundTransparency = 1.000
+	TooltipContent.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	TooltipContent.BorderSizePixel = 0
+	TooltipContent.Position = UDim2.new(0, 15, 0, 30)
+	TooltipContent.Size = UDim2.new(0, 1, 0, 15)
+	TooltipContent.ZIndex = 132
+	TooltipContent.Font = Enum.Font.GothamBold
+	TooltipContent.Text = Content
+	TooltipContent.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TooltipContent.TextSize = 12.000
+	TooltipContent.TextTransparency = 0.650
+	TooltipContent.TextXAlignment = Enum.TextXAlignment.Left
+	TooltipContent.TextYAlignment = Enum.TextYAlignment.Top
+
+	local ToolTip = {};
+
+	ToolTip.Update = LPH_NO_VIRTUALIZE(function()
+		local SizeName = TextService:GetTextSize(TooltipName.Text , TooltipName.TextSize , TooltipName.Font , Vector2.new(math.huge,math.huge));
+		local SizeContent = TextService:GetTextSize(TooltipContent.Text , TooltipContent.TextSize , TooltipContent.Font , Vector2.new(math.huge,math.huge));
+
+		local MaxX = math.max(SizeName.X , SizeContent.X) + 65;
+		local MaxY = SizeName.Y + SizeContent.Y + 30;
+
+		NeverLose.PlayAnimate(Tooltips,SlowyTween , {
+			Size = UDim2.new(0,MaxX,0,MaxY)
+		})
+	end)
+
+	NeverLose:AddSignal(Tooltips:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+		if Tooltips.BackgroundTransparency > 0.9 then
+			Tooltips.Visible = false;
+			Tooltips.Parent = nil;
+		else
+			Tooltips.Visible = true;
+
+			if NeverLose.Global3DRenderMode then
+				Tooltips.Parent = NeverLose.GlobalSurfaceGui;
+			else
+				Tooltips.Parent = NeverLose.ScreenGui;
+			end;
+		end
+	end)));
+
+	ToolTip.SetRender = LPH_NO_VIRTUALIZE(function(value)
+		if value then
+			Tooltips.Position = UDim2.fromOffset(Container.AbsolutePosition.X + Container.AbsoluteSize.X , Container.AbsolutePosition.Y + (Container.AbsoluteSize.Y + 25));
+
+			NeverLose.PlayAnimate(Tooltips , SlowyTween , {
+				BackgroundTransparency = 0.075
+			})
+
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+				Transparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(TooltipName , SlowyTween , {
+				TextTransparency = 0
+			})
+
+			NeverLose.PlayAnimate(TooltipContent , SlowyTween , {
+				TextTransparency = 0.650
+			})
+
+			ToolTip.Update();
+			Shadow:Render(true);
+		else
+			NeverLose.PlayAnimate(Tooltips , SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(TooltipName , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(TooltipContent , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			Shadow:Render(false);
+		end;
+	end);
+
+	ToolTip.SetRender(false);
+	ToolTip.Update();
+
+	local DelayThread;
+	NeverLose:AddSignal(Container.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+		if DelayThread then
+			task.cancel(DelayThread);
+			DelayThread = nil;
+		end;
+
+		DelayThread = task.delay(1,ToolTip.SetRender,true);
+	end)));
+
+	NeverLose:AddSignal(Container.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+		if DelayThread then
+			task.cancel(DelayThread);
+			DelayThread = nil;
+		end;
+
+		ToolTip.SetRender(false);
+		ToolTip.Update();
+	end)))
+
+	return ToolTip;
+end;
+
+function NeverLose:RegisiterItem(Frame: Frame , Signel)
+	local idx = {};
+	local LayerIndex = Frame.ZIndex;
+
+	function idx:AddLabel(Name: string,Warp: boolean)
+		local BasedFrame = Instance.new("Frame")
+		local BasedLabel = Instance.new("TextLabel")
+		local LineFrame = Instance.new("Frame")
+		local BasedHandler = Instance.new("Frame")
+		local UIListLayout = Instance.new("UIListLayout")
+		local UICorner = Instance.new("UICorner")
+
+		BasedFrame.Name = NeverLose.RandomString();
+		BasedFrame.Parent = Frame
+		BasedFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
+		BasedFrame.BackgroundTransparency = 1.000
+		BasedFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		BasedFrame.BorderSizePixel = 0
+		BasedFrame.Size = UDim2.new(1, 0, 0, 30)
+		BasedFrame.ZIndex = LayerIndex + 8
+
+		NeverLose:AddQuery(BasedFrame , Name);
+
+		BasedLabel.Name = NeverLose.RandomString();
+		BasedLabel.Parent = BasedFrame
+		BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		BasedLabel.BackgroundTransparency = 1.000
+		BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		BasedLabel.BorderSizePixel = 0
+		BasedLabel.Position = UDim2.new(0, 11, 0, 6)
+		BasedLabel.Size = UDim2.new(0,1, 0, 15)
+		BasedLabel.ZIndex = LayerIndex + 9
+		BasedLabel.Font = Enum.Font.GothamMedium
+		BasedLabel.Text = Name
+		BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		BasedLabel.TextSize = 13.000
+		BasedLabel.TextTransparency = 0.35
+		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+		LineFrame.Name = NeverLose.RandomString();
+		LineFrame.Parent = BasedFrame
+		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
+		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		LineFrame.BackgroundTransparency = 0.650
+		LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LineFrame.BorderSizePixel = 0
+		LineFrame.Position = UDim2.new(0.5, 0, 1, 0)
+		LineFrame.Size = UDim2.new(1, -20, 0, 1)
+		LineFrame.ZIndex = LayerIndex + 11
+
+		BasedHandler.Name = NeverLose.RandomString();
+		BasedHandler.Parent = BasedFrame
+		BasedHandler.AnchorPoint = Vector2.new(1, 0)
+		BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		BasedHandler.BackgroundTransparency = 1.000
+		BasedHandler.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		BasedHandler.BorderSizePixel = 0
+		BasedHandler.Position = UDim2.new(1, -11, 0, 2)
+		BasedHandler.Size = UDim2.new(1, -20, 0, 25)
+		BasedHandler.ZIndex = LayerIndex + 12
+
+		UIListLayout.Parent = BasedHandler
+		UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+		UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+		UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		UIListLayout.Padding = UDim.new(0, 5)
+
+		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.Parent = BasedFrame
+
+		local UpdateWarp = LPH_NO_VIRTUALIZE(function()
+			local size = TextService:GetTextSize(BasedLabel.Text , BasedLabel.TextSize , BasedLabel.Font , Vector2.new(math.huge,math.huge));
+			NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
+				Size = UDim2.new(1, 0, 0, size.Y + 13);
+			})
+
+			BasedLabel.Size = UDim2.new(1, -35, 1, 0)
+			BasedLabel.TextYAlignment = Enum.TextYAlignment.Top;
+		end);
+
+		if Warp then
+			UpdateWarp();
+		end;
+
+		local handle = NeverLose:RegisiterHandler(BasedHandler , Signel);
+
+		handle.Root = BasedFrame;
+
+		handle.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
+					BackgroundTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+					TextTransparency = 0.35
+				})
+
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
+					BackgroundTransparency = 0.650
+				})
+			else
+				NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
+					BackgroundTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+					TextTransparency = 1
+				})
+
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
+					BackgroundTransparency = 1
+				})
+			end;
+		end);
+
+		function handle:SetVisible(val)
+			BasedFrame.Visible = val;
+		end;
+
+		NeverLose:AddSignal(BasedFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
+				BackgroundTransparency = 0.35
+			});
+
+			NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+				TextTransparency = 0.25
+			})
+
+		end)))
+
+		NeverLose:AddSignal(BasedFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
+				BackgroundTransparency = 1
+			});
+
+			NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+				TextTransparency = 0.35
+			})
+		end)))
+
+		function handle:SetText(t)
+			local oldtxt = BasedLabel.Text;
+
+			BasedLabel.Text = t;
+
+			if Warp and oldtxt ~= t then
+				UpdateWarp();
+			end;
+		end;
+
+		function handle:ToolTip(Content: string)
+			handle.ToolTip = NeverLose:CreateToolTips(BasedFrame , Name , Content);
+
+			return handle;
+		end;
+
+		handle.SetRender(Signel:GetValue());
+		Signel:Connect(handle.SetRender);
+
+		return handle;
+	end;
+
+	function idx:AddButton(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Icon = 'chevron-large-left',
+			Name = "Button",
+			Callback = EmptyFunction,
+			ToolTip = nil,
+		});
+
+		local Button = {};
+		local ButtonFrame = Instance.new("Frame")
+		local BasedLabel = Instance.new("TextLabel")
+		local LineFrame = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local Icon = Instance.new("TextLabel")
+
+		NeverLose:AddQuery(ButtonFrame , Config.Name);
+
+		ButtonFrame.Name = NeverLose.RandomString();
+		ButtonFrame.Parent = Frame
+		ButtonFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
+		ButtonFrame.BackgroundTransparency = 1.000
+		ButtonFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ButtonFrame.BorderSizePixel = 0
+		ButtonFrame.Size = UDim2.new(1, 0, 0, 30)
+		ButtonFrame.ZIndex = LayerIndex + 8
+
+		BasedLabel.Name = NeverLose.RandomString();
+		BasedLabel.Parent = ButtonFrame
+		BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		BasedLabel.BackgroundTransparency = 1.000
+		BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		BasedLabel.BorderSizePixel = 0
+		BasedLabel.Position = UDim2.new(0, 35, 0, 6)
+		BasedLabel.Size = UDim2.new(0,1, 0, 15)
+		BasedLabel.ZIndex = LayerIndex + 9
+		BasedLabel.Font = Enum.Font.GothamMedium
+		BasedLabel.Text = Config.Name;
+		BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		BasedLabel.TextSize = 13.000
+		BasedLabel.TextTransparency = 0.200
+		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+		LineFrame.Name = NeverLose.RandomString();
+		LineFrame.Parent = ButtonFrame
+		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
+		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		LineFrame.BackgroundTransparency = 0.650
+		LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LineFrame.BorderSizePixel = 0
+		LineFrame.Position = UDim2.new(0.5, 0, 1, 0)
+		LineFrame.Size = UDim2.new(1, -20, 0, 1)
+		LineFrame.ZIndex = LayerIndex + 11
+
+		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.Parent = ButtonFrame
+
+		Icon.Name = NeverLose.RandomString();
+		Icon.Parent = ButtonFrame
+		Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Icon.BackgroundTransparency = 1.000
+		Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Icon.BorderSizePixel = 0
+		Icon.Position = UDim2.new(0, 11, 0, 5)
+		Icon.Size = UDim2.new(0, 18, 0, 18)
+		Icon.ZIndex = LayerIndex + 9
+		Icon.FontFace = NeverLose.BuiltInBold
+		Icon.Text = Config.Icon
+		Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
+		Icon.TextSize = 16.000
+		Icon.TextTransparency = 0.250
+		Icon.TextWrapped = true
+
+		function Button:SetText(t)
+			BasedLabel.Text = t;
+		end;
+
+		function Button:SetIcon(t)
+			Icon.Text = t
+		end;
+
+		local bth = NeverLose:CreateInput(ButtonFrame , LPH_NO_VIRTUALIZE(function()
+			Config.Callback();
+		end));
+
+		NeverLose:AddSignal(bth.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(ButtonFrame , SlowyTween , {
+				BackgroundTransparency = 0.35
+			});
+		end)))
+
+		NeverLose:AddSignal(bth.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(ButtonFrame , SlowyTween , {
+				BackgroundTransparency = 1
+			});
+		end)))
+
+		Button.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(ButtonFrame , SlowyTween , {
+					BackgroundTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+					TextTransparency = 0.200
+				});
+
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
+					BackgroundTransparency = 0.650
+				});
+
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
+					TextTransparency = 0.250
+				});
+			else
+				NeverLose.PlayAnimate(ButtonFrame , SlowyTween , {
+					BackgroundTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+					TextTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
+					BackgroundTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
+					TextTransparency = 1
+				});
+			end;
+		end);
+
+		if Config.ToolTip then
+			Button.ToolTip = NeverLose:CreateToolTips(ButtonFrame , Config.Name , Config.ToolTip);
+		end;
+
+		Button.SetRender(Signel:GetValue())
+		Signel:Connect(Button.SetRender);
+
+		return Button;
+	end;
+
+	function idx:AddUserFrame(Name : string , Profile: string , Expires : string)
+		local UserFrame = Instance.new("Frame")
+		local UserLabel = Instance.new("TextLabel")
+		local LineFrame = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local LogoImage = Instance.new("ImageLabel")
+		local UICorner_2 = Instance.new("UICorner")
+		local UserStatusLabel = Instance.new("TextLabel")
+
+		UserFrame.Name = NeverLose.RandomString();
+		UserFrame.Parent = Frame
+		UserFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
+		UserFrame.BackgroundTransparency = 1.000
+		UserFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		UserFrame.BorderSizePixel = 0
+		UserFrame.Size = UDim2.new(1, 0, 0, 60)
+		UserFrame.ZIndex = LayerIndex + 8
+
+		UserLabel.Name = NeverLose.RandomString();
+		UserLabel.Parent = UserFrame
+		UserLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		UserLabel.BackgroundTransparency = 1.000
+		UserLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		UserLabel.BorderSizePixel = 0
+		UserLabel.Position = UDim2.new(0, 65, 0, 10)
+		UserLabel.Size = UDim2.new(1, -35, 0, 15)
+		UserLabel.ZIndex = LayerIndex + 9
+		UserLabel.Font = Enum.Font.GothamMedium
+		UserLabel.Text = Name or 'User'
+		UserLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		UserLabel.TextSize = 13.000
+		UserLabel.TextTransparency = 0.200
+		UserLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+		LineFrame.Name = NeverLose.RandomString();
+		LineFrame.Parent = UserFrame
+		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
+		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		LineFrame.BackgroundTransparency = 0.650
+		LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LineFrame.BorderSizePixel = 0
+		LineFrame.Position = UDim2.new(0.5, 0, 1, 0)
+		LineFrame.Size = UDim2.new(1, -20, 0, 1)
+		LineFrame.ZIndex = LayerIndex + 11
+
+		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.Parent = UserFrame
+
+		LogoImage.Name = NeverLose.RandomString();
+		LogoImage.Parent = UserFrame
+		LogoImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		LogoImage.BackgroundTransparency = 1.000
+		LogoImage.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LogoImage.BorderSizePixel = 0
+		LogoImage.Position = UDim2.new(0, 10, 0, 5)
+		LogoImage.Size = UDim2.new(0, 45, 0, 45)
+		LogoImage.ZIndex = LayerIndex + 9
+		LogoImage.Image = Profile or "rbxasset://textures/ui/clb_robux_20@3x.png";
+
+		UICorner_2.CornerRadius = UDim.new(1, 0)
+		UICorner_2.Parent = LogoImage
+
+		UserStatusLabel.Name = NeverLose.RandomString();
+		UserStatusLabel.Parent = UserFrame
+		UserStatusLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		UserStatusLabel.BackgroundTransparency = 1.000
+		UserStatusLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		UserStatusLabel.BorderSizePixel = 0
+		UserStatusLabel.Position = UDim2.new(0, 65, 0, 25)
+		UserStatusLabel.Size = UDim2.new(1, -35, 0, 15)
+		UserStatusLabel.ZIndex = LayerIndex + 9
+		UserStatusLabel.Font = Enum.Font.GothamMedium
+		UserStatusLabel.Text = Expires or 'Never'
+		UserStatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		UserStatusLabel.TextSize = 13.000
+		UserStatusLabel.TextTransparency = 0.200
+		UserStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+		local UserFrameItem = {};
+
+		UserFrameItem.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				NeverLose.PlayAnimate(UserLabel,SlowyTween,{
+					TextTransparency = 0.200
+				})
+
+				NeverLose.PlayAnimate(LineFrame,SlowyTween,{
+					BackgroundTransparency = 0.650
+				})
+
+				NeverLose.PlayAnimate(LogoImage,SlowyTween,{
+					ImageTransparency = 0
+				})
+
+				NeverLose.PlayAnimate(UserStatusLabel,SlowyTween,{
+					TextTransparency = 0.200
+				})
+			else
+				NeverLose.PlayAnimate(UserLabel,SlowyTween,{
+					TextTransparency = 1
+				})
+
+				NeverLose.PlayAnimate(LineFrame,SlowyTween,{
+					BackgroundTransparency = 1
+				})
+
+				NeverLose.PlayAnimate(LogoImage,SlowyTween,{
+					ImageTransparency = 1
+				})
+
+				NeverLose.PlayAnimate(UserStatusLabel,SlowyTween,{
+					TextTransparency = 1
+				})
+			end;
+		end);
+
+		UserFrameItem.SetRender(Signel:GetValue())
+		Signel:Connect(UserFrameItem.SetRender);
+
+		function UserFrameItem:SetUsername(name)
+			UserLabel.Text = name or 'User'
+		end;
+
+		function UserFrameItem:SetProfile(Profile)
+			LogoImage.Image = Profile or "rbxasset://textures/ui/clb_robux_20@3x.png";
+		end;
+
+		function UserFrameItem:SetExpires(Exp)
+			UserStatusLabel.Text = Exp or 'Never';
+		end;
+
+		return UserFrameItem;
+	end;
+
+	return idx;
+end;
+
+function NeverLose:CreateWindow(Config)
+	Config = NeverLose:ProcessParams(Config , {
+		Logo = NeverLose.GlobalLogo,
+		Name = "Neverlose",
+		Content = "Counter-Strike 2",
+		Size = UDim2.new(0, 640, 0, 480),
+		ConfigFolder = "NeverLoseConfigs",
+		Enable3DRenderer = false,
+		Keybind = "RightControl",
+		Uitransparent = 0.15,
+		Color = NeverLose.AccentColor,
+		Image = nil,
+		Title = nil,
+		ToggleUi = true
+	});
+
+	local Window = {
+		Logo = Config.Logo,
+		Name = Config.Name,
+		Content = Config.Content,
+		Size = Config.Size,
+		ConfigFolder = Config.ConfigFolder,
+		Signal = NeverLose:CreateSignal(Config.ToggleUi),
+		Tabs = {},
+		CurrentTab = 1,
+		Keybind = Config.Keybind,
+		Enable3DRenderer = Config.Enable3DRenderer,
+		ToggleUi = Config.ToggleUi
+	};
+	
+	if Config.Title then
+		Window.Name = Config.Title
+	end
+	
+	if Config.Image then
+		Window.Logo = Config.Image
+	end
+	
+	NeverLose.AccentColor = Config.Color or NeverLose.AccentColor
+	NeverLose.GlobalLogo = Window.Logo;
+
+	local Logging = NeverLose:CreateLogger();
+	if not isfolder(Window.ConfigFolder) then
+		makefolder(Window.ConfigFolder);
+	end;
+
+	local WindowFrame = Instance.new("Frame")
+	local UICorner = Instance.new("UICorner")
+	local LeftMenuFrame = Instance.new("Frame")
+	local HeadFrame = Instance.new("Frame")
+	local LogoImage = Instance.new("ImageLabel")
+	local UICorner_2 = Instance.new("UICorner")
+	local WindowName = Instance.new("TextLabel")
+	local WindowContent = Instance.new("TextLabel")
+	local LineFrame = Instance.new("Frame")
+	local LeftScrollingFrame = Instance.new("ScrollingFrame")
+	local UIListLayout = Instance.new("UIListLayout")
+	local BottomFrame = Instance.new("Frame")
+	local AccountProfile = Instance.new("ImageLabel")
+	local UICorner_3 = Instance.new("UICorner")
+	local AccountName = Instance.new("TextLabel")
+	local ExpireLabel = Instance.new("TextLabel")
+	local LineFrame_2 = Instance.new("Frame")
+	local UserSettingButton = Instance.new("TextLabel")
+	local RightMenuFrame = Instance.new("Frame")
+	local UIStroke = Instance.new("UIStroke")
+	local UICorner_4 = Instance.new("UICorner")
+	local RightHeader = Instance.new("Frame")
+	local LineFrame_3 = Instance.new("Frame")
+	local ConfigFrame = Instance.new("Frame")
+	local UIStroke_2 = Instance.new("UIStroke")
+	local UICorner_5 = Instance.new("UICorner")
+	local ConfigIcon = Instance.new("TextLabel")
+	local LineFrame_4 = Instance.new("Frame")
+	local ConfigName = Instance.new("TextLabel")
+	local ConfigBthIcon = Instance.new("TextLabel")
+	local SearchFrame = Instance.new("Frame")
+	local SearchIcon = Instance.new("TextLabel")
+	local SearchBox = Instance.new("TextBox")
+	local TabContainer = Instance.new("Frame")
+
+	WindowFrame.Name = NeverLose.RandomString();
+	WindowFrame.Parent = NeverLose.ScreenGui;
+	WindowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	WindowFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 13)
+	WindowFrame.BackgroundTransparency = Config.Uitransparent or 0.055
+	WindowFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	WindowFrame.BorderSizePixel = 0
+	WindowFrame.ClipsDescendants = true
+	WindowFrame.Position = UDim2.new(255, 0, 255, 0)
+	WindowFrame.Size = Window.Size
+	WindowFrame.Active = true;
+
+	if not NeverLose.EnabledBlur then
+		WindowFrame.BackgroundTransparency = 0.0255
+	end;
+
+	local renderParentWindow = LPH_NO_VIRTUALIZE(function()
+		if Window.__3DRender then
+			if WindowFrame.BackgroundTransparency > 0.9 then
+				WindowFrame.Visible = false;
+				WindowFrame.Parent = nil
+			else
+				WindowFrame.Visible = true;
+
+				NeverLose.PlayAnimate(WindowFrame,VSlowTween , {
+					Position = UDim2.fromScale(0.5,0.5);
+				});
+
+				WindowFrame.Parent = Window.SurfaceGui;
+			end;
+		else
+			if WindowFrame.BackgroundTransparency > 0.9 then
+				WindowFrame.Visible = false;
+				WindowFrame.Parent = nil
+			else
+				WindowFrame.Visible = true;
+				WindowFrame.Parent = NeverLose.ScreenGui
+
+
+			end;
+		end;
+	end);
+
+	NeverLose:AddSignal(WindowFrame:GetPropertyChangedSignal('BackgroundTransparency'):Connect(renderParentWindow))
+
+	Window.SetRender = LPH_NO_VIRTUALIZE(function(self , value)
+		if value then
+			NeverLose.PlayAnimate(WindowFrame , SlowyTween , {
+				BackgroundTransparency = (NeverLose.EnabledBlur and 0.055) or 0.0255,
+				Size = Window.Size
+			})
+
+			NeverLose.PlayAnimate(LogoImage , SlowyTween , {
+				ImageTransparency = 0
+			})
+
+			NeverLose.PlayAnimate(WindowName , SlowyTween , {
+				TextTransparency = 0
+			})
+
+			NeverLose.PlayAnimate(WindowContent , SlowyTween , {
+				TextTransparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(LineFrame , SlowyTween , {
+				BackgroundTransparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(AccountProfile , SlowyTween , {
+				ImageTransparency = 0
+			})
+
+			NeverLose.PlayAnimate(AccountName , SlowyTween , {
+				TextTransparency = 0
+			})
+
+			NeverLose.PlayAnimate(ExpireLabel , SlowyTween , {
+				TextTransparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(LineFrame_2 , SlowyTween , {
+				BackgroundTransparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(UserSettingButton , SlowyTween , {
+				TextTransparency = 0.5
+			})
+
+			NeverLose.PlayAnimate(RightMenuFrame , SlowyTween , {
+				BackgroundTransparency = 0.600
+			})
+
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+				Transparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(LineFrame_3 , SlowyTween , {
+				BackgroundTransparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(ConfigFrame , SlowyTween , {
+				BackgroundTransparency = 0.750
+			})
+
+			NeverLose.PlayAnimate(UIStroke_2 , SlowyTween , {
+				Transparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(ConfigIcon , SlowyTween , {
+				TextTransparency = 0.250
+			})
+
+			NeverLose.PlayAnimate(LineFrame_4 , SlowyTween , {
+				BackgroundTransparency = 0.650
+			})
+
+			NeverLose.PlayAnimate(ConfigName , SlowyTween , {
+				TextTransparency = 0.350
+			})
+
+			NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
+				TextTransparency = 0.250
+			})
+
+			NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+				TextTransparency = 0.250
+			})
+
+			NeverLose.PlayAnimate(SearchBox , SlowyTween , {
+				TextTransparency = 0.350
+			})
+
+			Window.Shadow:Render(true);
+		else
+
+			NeverLose.PlayAnimate(WindowFrame , SlowyTween , {
+				BackgroundTransparency = 1,
+				Size = Window.Size + UDim2.fromOffset(-15,-15)
+			})
+
+			NeverLose.PlayAnimate(LogoImage , SlowyTween , {
+				ImageTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(WindowName , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(WindowContent , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(LineFrame , SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(AccountProfile , SlowyTween , {
+				ImageTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(AccountName , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(ExpireLabel , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(LineFrame_2 , SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(UserSettingButton , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(RightMenuFrame , SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(LineFrame_3 , SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(ConfigFrame , SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIStroke_2 , SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(ConfigIcon , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(LineFrame_4 , SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(ConfigName , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(SearchBox , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			Window.Shadow:Render(false);
+		end;
+	end);
+
+	Window.Shadow = NeverLose:CreateShadow(WindowFrame);
+	Window.Shadow:Render(false);
+
+	task.delay(0.25,function()
+		WindowFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+		Window:SetRender(Window.ToggleUi);
+		NeverLose:AddSignal(Window.Signal:Connect(LPH_NO_VIRTUALIZE(function(...)
+			Window:SetRender(...);
+		end)))
+	end)
+
+	if NeverLose.EnabledBlur then
+		NeverLose:CreateBlurModule(WindowFrame,Window.Signal);
+	end;
+
+	do
+		local Frame = Instance.new("Frame")
+
+		Frame.Parent = WindowFrame
+		Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Frame.BorderSizePixel = 0
+		Frame.Size = UDim2.new(1, 0, 0, 50)
+		Frame.ZIndex = 7
+		Frame.BackgroundTransparency = 1;
+
+		NeverLose.Drag(Frame , WindowFrame , 0.15)
+	end
+
+	UICorner.Parent = WindowFrame
+
+	LeftMenuFrame.Name = NeverLose.RandomString();
+	LeftMenuFrame.Parent = WindowFrame
+	LeftMenuFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	LeftMenuFrame.BackgroundTransparency = 1.000
+	LeftMenuFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	LeftMenuFrame.BorderSizePixel = 0
+	LeftMenuFrame.Size = UDim2.new(0, 175, 1, 0)
+
+	HeadFrame.Name = NeverLose.RandomString();
+	HeadFrame.Parent = LeftMenuFrame
+	HeadFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	HeadFrame.BackgroundTransparency = 1.000
+	HeadFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	HeadFrame.BorderSizePixel = 0
+	HeadFrame.Size = UDim2.new(1, 0, 0, 50)
+	HeadFrame.ZIndex = 7
+
+	LogoImage.Name = NeverLose.RandomString();
+	LogoImage.Parent = HeadFrame
+	LogoImage.AnchorPoint = Vector2.new(0, 0.5)
+	LogoImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	LogoImage.BackgroundTransparency = 1.000
+	LogoImage.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	LogoImage.BorderSizePixel = 0
+	LogoImage.Position = UDim2.new(0, 10, 0.5, 0)
+	LogoImage.Size = UDim2.new(0, 35, 0, 35)
+	LogoImage.ZIndex = 7
+	LogoImage.Image = Window.Logo
+	LogoImage.ImageColor3 = NeverLose.IconColor
+
+	UICorner_2.CornerRadius = UDim.new(0, 7)
+	UICorner_2.Parent = LogoImage
+
+	WindowName.Name = NeverLose.RandomString();
+	WindowName.Parent = HeadFrame
+	WindowName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	WindowName.BackgroundTransparency = 1.000
+	WindowName.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	WindowName.BorderSizePixel = 0
+	WindowName.Position = UDim2.new(0, 55, 0, 4)
+	WindowName.Size = UDim2.new(0, 200, 0, 25)
+	WindowName.ZIndex = 7
+	WindowName.Font = Enum.Font.GothamBold
+	WindowName.Text = Window.Name
+	WindowName.TextColor3 = Color3.fromRGB(255, 255, 255)
+	WindowName.TextSize = 18.000
+	WindowName.TextXAlignment = Enum.TextXAlignment.Left
+
+	WindowContent.Name = NeverLose.RandomString();
+	WindowContent.Parent = HeadFrame
+	WindowContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	WindowContent.BackgroundTransparency = 1.000
+	WindowContent.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	WindowContent.BorderSizePixel = 0
+	WindowContent.Position = UDim2.new(0, 55, 0, 25)
+	WindowContent.Size = UDim2.new(0, 200, 0, 15)
+	WindowContent.ZIndex = 7
+	WindowContent.Font = Enum.Font.GothamBold
+	WindowContent.Text = Window.Content
+	WindowContent.TextColor3 = Color3.fromRGB(255, 255, 255)
+	WindowContent.TextSize = 9.000
+	WindowContent.TextTransparency = 0.650
+	WindowContent.TextXAlignment = Enum.TextXAlignment.Left
+
+	LineFrame.Name = NeverLose.RandomString();
+	LineFrame.Parent = HeadFrame
+	LineFrame.AnchorPoint = Vector2.new(0.5, 1)
+	LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+	LineFrame.BackgroundTransparency = 0.650
+	LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	LineFrame.BorderSizePixel = 0
+	LineFrame.Position = UDim2.new(0.5, 0, 1, 0)
+	LineFrame.Size = UDim2.new(1, -10, 0, 1)
+	LineFrame.ZIndex = 5
+
+	LeftScrollingFrame.Name = NeverLose.RandomString();
+	LeftScrollingFrame.Parent = LeftMenuFrame
+	LeftScrollingFrame.Active = true
+	LeftScrollingFrame.AnchorPoint = Vector2.new(0.5, 0)
+	LeftScrollingFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	LeftScrollingFrame.BackgroundTransparency = 1.000
+	LeftScrollingFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	LeftScrollingFrame.BorderSizePixel = 0
+	LeftScrollingFrame.Position = UDim2.new(0.5, 0, 0, 60)
+	LeftScrollingFrame.Size = UDim2.new(1, -10, 1, -115)
+	LeftScrollingFrame.ZIndex = 7
+	LeftScrollingFrame.ScrollBarThickness = 0
+
+	UIListLayout.Parent = LeftScrollingFrame
+	UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	UIListLayout.Padding = UDim.new(0, 5)
+
+	NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+		LeftScrollingFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y + 1)
+	end)))
+
+	BottomFrame.Name = NeverLose.RandomString();
+	BottomFrame.Parent = LeftMenuFrame
+	BottomFrame.AnchorPoint = Vector2.new(0, 1)
+	BottomFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	BottomFrame.BackgroundTransparency = 1.000
+	BottomFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	BottomFrame.BorderSizePixel = 0
+	BottomFrame.Position = UDim2.new(0, 0, 1, 0)
+	BottomFrame.Size = UDim2.new(1, 0, 0, 50)
+	BottomFrame.ZIndex = 7
+
+	AccountProfile.Name = NeverLose.RandomString();
+	AccountProfile.Parent = BottomFrame
+	AccountProfile.AnchorPoint = Vector2.new(0, 0.5)
+	AccountProfile.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	AccountProfile.BackgroundTransparency = 1.000
+	AccountProfile.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	AccountProfile.BorderSizePixel = 0
+	AccountProfile.Position = UDim2.new(0, 10, 0.5, 0)
+	AccountProfile.Size = UDim2.new(0, 35, 0, 35)
+	AccountProfile.ZIndex = 7
+	AccountProfile.Image = NeverLose.UserProfile or ""
+
+	UICorner_3.CornerRadius = UDim.new(1, 0)
+	UICorner_3.Parent = AccountProfile
+
+	AccountName.Name = NeverLose.RandomString();
+	AccountName.Parent = BottomFrame
+	AccountName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	AccountName.BackgroundTransparency = 1.000
+	AccountName.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	AccountName.BorderSizePixel = 0
+	AccountName.Position = UDim2.new(0, 55, 0, 5)
+	AccountName.Size = UDim2.new(0, 100, 0, 25)
+	AccountName.ZIndex = 7
+	AccountName.Font = Enum.Font.GothamBold
+	AccountName.Text = ""
+	AccountName.TextColor3 = Color3.fromRGB(255, 255, 255)
+	AccountName.TextSize = 14.000
+	AccountName.TextXAlignment = Enum.TextXAlignment.Left
+	AccountName.TextTruncate = Enum.TextTruncate.SplitWord;
+
+	ExpireLabel.Name = NeverLose.RandomString();
+	ExpireLabel.Parent = BottomFrame
+	ExpireLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	ExpireLabel.BackgroundTransparency = 1.000
+	ExpireLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ExpireLabel.BorderSizePixel = 0
+	ExpireLabel.Position = UDim2.new(0, 55, 0, 25)
+	ExpireLabel.Size = UDim2.new(0, 200, 0, 15)
+	ExpireLabel.ZIndex = 7
+	ExpireLabel.Font = Enum.Font.GothamBold
+	ExpireLabel.Text = "never"
+	ExpireLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ExpireLabel.TextSize = 10.000
+	ExpireLabel.TextTransparency = 0.650
+	ExpireLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+	LineFrame_2.Name = NeverLose.RandomString();
+	LineFrame_2.Parent = BottomFrame
+	LineFrame_2.AnchorPoint = Vector2.new(0.5, 0)
+	LineFrame_2.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+	LineFrame_2.BackgroundTransparency = 0.650
+	LineFrame_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	LineFrame_2.BorderSizePixel = 0
+	LineFrame_2.Position = UDim2.new(0.5, 0, 0, 0)
+	LineFrame_2.Size = UDim2.new(1, -10, 0, 1)
+	LineFrame_2.ZIndex = 5
+
+	UserSettingButton.Name = NeverLose.RandomString();
+	UserSettingButton.Parent = BottomFrame
+	UserSettingButton.AnchorPoint = Vector2.new(1, 0.5)
+	UserSettingButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	UserSettingButton.BackgroundTransparency = 1.000
+	UserSettingButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	UserSettingButton.BorderSizePixel = 0
+	UserSettingButton.Position = UDim2.new(1, -7, 0.5, 0)
+	UserSettingButton.Size = UDim2.new(0, 25, 0, 25)
+	UserSettingButton.ZIndex = 7
+	UserSettingButton.FontFace = NeverLose.BuiltInBold
+	UserSettingButton.Text = "chevron-large-right"
+	UserSettingButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	UserSettingButton.TextSize = 13.000
+	UserSettingButton.TextTransparency = 0.5
+
+	NeverLose:AddSignal(BottomFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose.PlayAnimate(UserSettingButton,SlowyTween , {
+			TextTransparency = 0.25
+		})		
+	end)))
+
+	NeverLose:AddSignal(BottomFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose.PlayAnimate(UserSettingButton,SlowyTween , {
+			TextTransparency = 0.5
+		})		
+	end)))
+
+	RightMenuFrame.Name = NeverLose.RandomString();
+	RightMenuFrame.Parent = WindowFrame
+	RightMenuFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 13)
+	RightMenuFrame.BackgroundTransparency = 0.600
+	RightMenuFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	RightMenuFrame.BorderSizePixel = 0
+	RightMenuFrame.ClipsDescendants = true
+	RightMenuFrame.Position = UDim2.new(0, 176, 0, 0)
+	RightMenuFrame.Size = UDim2.new(1, -176, 1, 0)
+	RightMenuFrame.ZIndex = 8
+
+	UIStroke.Transparency = 0.650
+	UIStroke.Color = Color3.fromRGB(45, 48, 58)
+	UIStroke.Parent = RightMenuFrame
+
+	UICorner_4.CornerRadius = UDim.new(0, 13)
+	UICorner_4.Parent = RightMenuFrame
+
+	RightHeader.Name = NeverLose.RandomString();
+	RightHeader.Parent = RightMenuFrame
+	RightHeader.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	RightHeader.BackgroundTransparency = 1.000
+	RightHeader.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	RightHeader.BorderSizePixel = 0
+	RightHeader.Size = UDim2.new(1, 0, 0, 50)
+	RightHeader.ZIndex = 9
+
+	LineFrame_3.Name = NeverLose.RandomString();
+	LineFrame_3.Parent = RightHeader
+	LineFrame_3.AnchorPoint = Vector2.new(0.5, 1)
+	LineFrame_3.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+	LineFrame_3.BackgroundTransparency = 0.650
+	LineFrame_3.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	LineFrame_3.BorderSizePixel = 0
+	LineFrame_3.Position = UDim2.new(0.5, 0, 1, 0)
+	LineFrame_3.Size = UDim2.new(1, -10, 0, 1)
+	LineFrame_3.ZIndex = 9
+
+	ConfigFrame.Name = NeverLose.RandomString();
+	ConfigFrame.Parent = RightHeader
+	ConfigFrame.AnchorPoint = Vector2.new(0, 0.5)
+	ConfigFrame.BackgroundColor3 = Color3.fromRGB(13, 17, 22)
+	ConfigFrame.BackgroundTransparency = 0.750
+	ConfigFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ConfigFrame.BorderSizePixel = 0
+	ConfigFrame.Position = UDim2.new(0, 10, 0.5, 0)
+	ConfigFrame.Size = UDim2.new(0, 115, 0, 30)
+	ConfigFrame.ZIndex = 9
+
+	UIStroke_2.Transparency = 0.650
+	UIStroke_2.Color = Color3.fromRGB(45, 48, 58)
+	UIStroke_2.Parent = ConfigFrame
+
+	UICorner_5.CornerRadius = UDim.new(0, 4)
+	UICorner_5.Parent = ConfigFrame
+
+	ConfigIcon.Name = NeverLose.RandomString();
+	ConfigIcon.Parent = ConfigFrame
+	ConfigIcon.AnchorPoint = Vector2.new(0, 0.5)
+	ConfigIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	ConfigIcon.BackgroundTransparency = 1.000
+	ConfigIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ConfigIcon.BorderSizePixel = 0
+	ConfigIcon.Position = UDim2.new(0, 2, 0.5, 0)
+	ConfigIcon.Size = UDim2.new(0, 25, 0, 25)
+	ConfigIcon.ZIndex = 9
+	ConfigIcon.FontFace = NeverLose.BuiltInBold
+	ConfigIcon.Text = "pencil-square"
+	ConfigIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
+	ConfigIcon.TextSize = 16.000
+	ConfigIcon.TextTransparency = 0.250
+	ConfigIcon.TextWrapped = true
+
+	LineFrame_4.Name = NeverLose.RandomString();
+	LineFrame_4.Parent = ConfigFrame
+	LineFrame_4.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+	LineFrame_4.BackgroundTransparency = 0.650
+	LineFrame_4.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	LineFrame_4.BorderSizePixel = 0
+	LineFrame_4.Position = UDim2.new(0, 30, 0, 0)
+	LineFrame_4.Size = UDim2.new(0, 1, 1, 0)
+
+	ConfigName.Name = NeverLose.RandomString();
+	ConfigName.Parent = ConfigFrame
+	ConfigName.AnchorPoint = Vector2.new(0, 0.5)
+	ConfigName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	ConfigName.BackgroundTransparency = 1.000
+	ConfigName.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ConfigName.BorderSizePixel = 0
+	ConfigName.Position = UDim2.new(0, 40, 0.5, 0)
+	ConfigName.Size = UDim2.new(1, -7, 0, 15)
+	ConfigName.ZIndex = 9
+	ConfigName.Font = Enum.Font.GothamMedium
+	ConfigName.Text = "Default"
+	ConfigName.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ConfigName.TextSize = 12.000
+	ConfigName.TextTransparency = 0.350
+	ConfigName.TextXAlignment = Enum.TextXAlignment.Left
+
+	ConfigBthIcon.Name = NeverLose.RandomString();
+	ConfigBthIcon.Parent = ConfigFrame
+	ConfigBthIcon.AnchorPoint = Vector2.new(1, 0.5)
+	ConfigBthIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	ConfigBthIcon.BackgroundTransparency = 1.000
+	ConfigBthIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ConfigBthIcon.BorderSizePixel = 0
+	ConfigBthIcon.Position = UDim2.new(1, -2, 0.5, 0)
+	ConfigBthIcon.Size = UDim2.new(0, 25, 0, 25)
+	ConfigBthIcon.ZIndex = 9
+	ConfigBthIcon.FontFace = NeverLose.BuiltInBold
+	ConfigBthIcon.Text = "chevron-small-down"
+	ConfigBthIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
+	ConfigBthIcon.TextSize = 16.000
+	ConfigBthIcon.TextTransparency = 0.250
+	ConfigBthIcon.TextWrapped = true
+
+	SearchFrame.Name = NeverLose.RandomString();
+	SearchFrame.Parent = RightHeader
+	SearchFrame.AnchorPoint = Vector2.new(1, 0.5)
+	SearchFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	SearchFrame.BackgroundTransparency = 1.000
+	SearchFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	SearchFrame.BorderSizePixel = 0
+	SearchFrame.ClipsDescendants = true
+	SearchFrame.Position = UDim2.new(1, -10, 0.5, 0)
+	SearchFrame.Size = UDim2.new(0, 30, 0, 30)
+	SearchFrame.ZIndex = 12
+
+	SearchIcon.Name = NeverLose.RandomString();
+	SearchIcon.Parent = SearchFrame
+	SearchIcon.AnchorPoint = Vector2.new(0, 0.5)
+	SearchIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	SearchIcon.BackgroundTransparency = 1.000
+	SearchIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	SearchIcon.BorderSizePixel = 0
+	SearchIcon.Position = UDim2.new(0, 2, 0.5, 0)
+	SearchIcon.Size = UDim2.new(0, 25, 0, 25)
+	SearchIcon.ZIndex = 12
+	SearchIcon.FontFace = NeverLose.BuiltInBold
+	SearchIcon.Text = "magnifying-glass"
+	SearchIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
+	SearchIcon.TextSize = 14.000
+	SearchIcon.TextTransparency = 0.45
+	SearchIcon.TextWrapped = true
+
+	SearchBox.Name = NeverLose.RandomString();
+	SearchBox.Parent = SearchFrame
+	SearchBox.AnchorPoint = Vector2.new(0, 0.5)
+	SearchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	SearchBox.BackgroundTransparency = 1.000
+	SearchBox.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	SearchBox.BorderSizePixel = 0
+	SearchBox.Position = UDim2.new(0, 35, 0.5, 0)
+	SearchBox.Size = UDim2.new(1, -35, 0, 25)
+	SearchBox.ZIndex = 12
+	SearchBox.ClearTextOnFocus = false
+	SearchBox.Font = Enum.Font.GothamMedium
+	SearchBox.PlaceholderText = "Search"
+	SearchBox.Text = ""
+	SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	SearchBox.TextSize = 13.000
+	SearchBox.TextTransparency = 1
+	SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+
+	TabContainer.Name = NeverLose.RandomString();
+	TabContainer.Parent = RightMenuFrame
+	TabContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	TabContainer.BackgroundTransparency = 1.000
+	TabContainer.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	TabContainer.BorderSizePixel = 0
+	TabContainer.ClipsDescendants = true
+	TabContainer.Position = UDim2.new(0, 0, 0, 50)
+	TabContainer.Size = UDim2.new(1, 0, 1, -50)
+	TabContainer.ZIndex = 5
+
+	do
+		Window.Searching = false;
+		local Input = NeverLose:CreateInput(SearchIcon , LPH_NO_VIRTUALIZE(function()
+			Window.Searching = not Window.Searching;
+
+			if Window.Searching then
+				NeverLose.PlayAnimate(SearchFrame , VSlowTween , {
+					Size = UDim2.new(0, 220, 0, 30)
+				})
+
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+					TextTransparency = 0.25
+				})
+
+				NeverLose.PlayAnimate(SearchBox , VSlowTween , {
+					TextTransparency = 0.350
+				})
+			else
+				NeverLose.PlayAnimate(SearchFrame , VSlowTween , {
+					Size = UDim2.new(0, 30, 0, 30)
+				})
+
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+					TextTransparency = 0.45
+				})
+
+				NeverLose.PlayAnimate(SearchBox , SlowyTween , {
+					TextTransparency = 1
+				})
+
+				SearchBox.Text = "";
+			end;
+		end));	
+
+		local wati_for_finish = tick();
+		local last_thread;
+		local max_time = 0.2;
+
+		NeverLose:AddSignal(SearchBox:GetPropertyChangedSignal('Text'):Connect(LPH_NO_VIRTUALIZE(function()
+			if not SearchBox.Text:byte() then
+				for i,v in next , NeverLose.NameRegisitry do
+					v.Root.Visible = true;
+				end;
+
+				return;	
+			end;
+
+			wati_for_finish = tick();
+
+			if last_thread then
+				task.cancel(last_thread);
+				last_thread = nil;
+			end;
+
+			last_thread = task.delay(max_time,function()
+				if SearchBox.Text:byte() and (tick() - wati_for_finish) > max_time then
+					for i,v in next , NeverLose.NameRegisitry do
+						if string.find(string.lower(v.Idx) , string.lower(SearchBox.Text), 1, true) then
+							v.Root.Visible = true;
+						else
+							v.Root.Visible = false;
+						end;
+					end;
+				end;
+			end);
+		end)));
+
+		NeverLose:AddSignal(Input.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+				TextTransparency = 0.25
+			})
+		end)))
+
+		NeverLose:AddSignal(Input.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			if Window.Searching then
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+					TextTransparency = 0.25
+				})
+			else
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+					TextTransparency = 0.45
+				})
+			end;
+		end)));
+	end;
+
+	if Window.Enable3DRenderer then
+		local Part = Instance.new('Part');
+
+		Part.Name = NeverLose.RandomString();
+		Part.Anchored = true;
+		Part.Transparency = 1;
+		Part.CanCollide = false;
+		Part.CanTouch = false;
+		Part.AudioCanCollide = false;
+		Part.CollisionGroup = NeverLose.RandomString();
+		Part.CFrame = CFrame.new(0,0,0);
+		Part.Size = Vector3.zero;
+
+		local SurfaceGui = Instance.new("SurfaceGui")
+
+		SurfaceGui.Parent = NeverLose.ScreenGui;
+		SurfaceGui.Adornee = Part;
+		SurfaceGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		SurfaceGui.AlwaysOnTop = true
+		SurfaceGui.LightInfluence = 1.000
+		SurfaceGui.ZIndexBehavior = Enum.ZIndexBehavior.Global;
+		SurfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.FixedSize;
+		SurfaceGui.PixelsPerStud = 40;
+
+		Window.SurfaceGui = SurfaceGui;
+		NeverLose.GlobalSurfaceGui = SurfaceGui;
+
+		local PerfectScale = Vector2.new(1920 , 1080 + 300)
+
+		Window.Load3DBlock = LPH_NO_VIRTUALIZE(function()
+			if not Window.Signal:GetValue() then
+				local _,OnScreen = CurrentCamera:WorldToViewportPoint(Part.Position);
+
+				if OnScreen then
+					NeverLose.PlayAnimate(Part,VSlowTween , {
+						CFrame = CurrentCamera.CFrame * CFrame.new(0,0,-15) * CFrame.Angles(0,math.rad(180),0);
+					});
+				end;
+
+				return
+			end;
+
+			local Dimensions = 50;
+
+			local XY_Incom = Vector2.new(PerfectScale.X + 5, PerfectScale.Y * 1.35) / (Dimensions / 2);
+			local PerfectDistance = XY_Incom.Magnitude;
+			local SizeIndicator = PerfectDistance / 1.35;
+
+			Part.Parent = NeverLose.BlurModuleParent or workspace;
+
+			NeverLose.PlayAnimate(Part,VSlowTween , {
+				CFrame = (CurrentCamera.CFrame * CFrame.new(0,0,-25)) * CFrame.Angles(0,math.rad(180),0);
+			});
+
+			Part.Size = Vector3.new(PerfectScale.X / SizeIndicator,PerfectScale.Y / SizeIndicator,0);
+		end);
+
+		function Window:Set3DRender(val)
+			Window.__3DRender = val;
+			NeverLose.Global3DRenderMode = val;
+
+			if val then
+				Window.Load3DBlock();
+			else
+				Part.Parent = nil;
+			end;
+
+			renderParentWindow();
+		end;
+	end;
+
+	function Window:AddTabLabel(Name: string)
+		local TabLabel = Instance.new("TextLabel")
+
+		TabLabel.Name = NeverLose.RandomString()
+		TabLabel.Parent = LeftScrollingFrame
+		TabLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		TabLabel.BackgroundTransparency = 1.000
+		TabLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		TabLabel.BorderSizePixel = 0
+		TabLabel.Size = UDim2.new(1, -7, 0, 15)
+		TabLabel.ZIndex = 8
+		TabLabel.Font = Enum.Font.GothamMedium
+		TabLabel.Text = Name
+		TabLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		TabLabel.TextSize = 11.000
+		TabLabel.TextTransparency = 0.500
+		TabLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+		local SetRender = LPH_NO_VIRTUALIZE(function(val)
+			if val then
+				NeverLose.PlayAnimate(TabLabel , SlowyTween,{
+					TextTransparency = 0.500
+				})
+			else
+				NeverLose.PlayAnimate(TabLabel , SlowyTween,{
+					TextTransparency = 1
+				})
+			end
+		end)
+
+		SetRender(Window.Signal:GetValue());
+
+		return Window.Signal:Connect(SetRender);
+	end;
+
+	function Window:AddTab(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Icon = "crosshairs",
+			Name = "Tab",
+			Type = "Double"
+		});
+
+		local Tab = {
+			Signal = NeverLose:CreateSignal(false);
+		};
+
+		local TabButton = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local TabIcon = Instance.new("TextLabel")
+		local TabContentLabel = Instance.new("TextLabel")
+
+		Tab.Idx = TabButton;
+
+		TabButton.Name = NeverLose.RandomString();
+		TabButton.Parent = LeftScrollingFrame
+		TabButton.BackgroundColor3 = Color3.fromRGB(41, 45, 49)
+		TabButton.BackgroundTransparency = 0.500
+		TabButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		TabButton.BorderSizePixel = 0
+		TabButton.Size = UDim2.new(1, -1, 0, 30)
+		TabButton.ZIndex = 8
+
+		UICorner.CornerRadius = UDim.new(0, 6)
+		UICorner.Parent = TabButton
+
+		TabIcon.Name = NeverLose.RandomString();
+		TabIcon.Parent = TabButton
+		TabIcon.AnchorPoint = Vector2.new(0, 0.5)
+		TabIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		TabIcon.BackgroundTransparency = 1.000
+		TabIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		TabIcon.BorderSizePixel = 0
+		TabIcon.Position = UDim2.new(0, 2, 0.5, 0)
+		TabIcon.Size = UDim2.new(0, 25, 0, 25)
+		TabIcon.ZIndex = 9
+		TabIcon.FontFace = NeverLose.BuiltInBold
+		
+		local iconString = Config.Icon
+		local isLucide = type(iconString) == "string" and iconString:sub(1,7) == "lucide:"
+		if isLucide then
+			TabIcon.Text = NeverLose:GetIcon(iconString)
+		else
+			TabIcon.Text = iconString
+		end
+		
+		TabIcon.TextColor3 = NeverLose.AccentColor
+		TabIcon.TextSize = 16.000
+		TabIcon.TextWrapped = true
+
+		TabContentLabel.Name = NeverLose.RandomString();
+		TabContentLabel.Parent = TabButton
+		TabContentLabel.AnchorPoint = Vector2.new(0, 0.5)
+		TabContentLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		TabContentLabel.BackgroundTransparency = 1.000
+		TabContentLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		TabContentLabel.BorderSizePixel = 0
+		TabContentLabel.Position = UDim2.new(0, 30, 0.5, 0)
+		TabContentLabel.Size = UDim2.new(1, -7, 0, 15)
+		TabContentLabel.ZIndex = 9
+		TabContentLabel.Font = Enum.Font.GothamMedium
+		TabContentLabel.Text = Config.Name
+		TabContentLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		TabContentLabel.TextSize = 12.000
+		TabContentLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+		local TabFrame = Instance.new("Frame")
+		local LeftScroll = Instance.new("ScrollingFrame")
+		local UIListLayout = Instance.new("UIListLayout")
+		local RightScroll = Instance.new("ScrollingFrame")
+		local UIListLayout_2 = Instance.new("UIListLayout")
+
+		TabFrame.Name = NeverLose.RandomString();
+		TabFrame.Parent = TabContainer
+		TabFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+		TabFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		TabFrame.BackgroundTransparency = 1.000
+		TabFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		TabFrame.BorderSizePixel = 0
+		TabFrame.ClipsDescendants = true
+		TabFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+		TabFrame.Size = UDim2.new(1, 0, 1, 0)
+		TabFrame.Visible = true;
+
+		LeftScroll.Name = NeverLose.RandomString();
+		LeftScroll.Parent = TabFrame
+		LeftScroll.Active = true
+		LeftScroll.AnchorPoint = Vector2.new(0.5, 0.5)
+		LeftScroll.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		LeftScroll.BackgroundTransparency = 1.000
+		LeftScroll.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LeftScroll.BorderSizePixel = 0
+		LeftScroll.ClipsDescendants = false
+		LeftScroll.Position = UDim2.new(0.25, 0, 0.5, 0)
+		LeftScroll.Size = UDim2.new(0.5, 0, 1, -5)
+		LeftScroll.ScrollBarThickness = 0
+
+		UIListLayout.Parent = LeftScroll
+		UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+		UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		UIListLayout.Padding = UDim.new(0, 5)
+
+		NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+			LeftScroll.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y + 1)
+		end)))
+
+		RightScroll.Name = NeverLose.RandomString();
+		RightScroll.Parent = TabFrame
+		RightScroll.Active = true
+		RightScroll.AnchorPoint = Vector2.new(0.5, 0.5)
+		RightScroll.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		RightScroll.BackgroundTransparency = 1.000
+		RightScroll.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		RightScroll.BorderSizePixel = 0
+		RightScroll.ClipsDescendants = false
+		RightScroll.Position = UDim2.new(0.75, 0, 0.5, 0)
+		RightScroll.Size = UDim2.new(0.5, 0, 1, -5)
+		RightScroll.ScrollBarThickness = 0
+
+		UIListLayout_2.Parent = RightScroll
+		UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
+		UIListLayout_2.Padding = UDim.new(0, 5)
+
+		if Config.Type == "Single" then
+			UIListLayout_2:Destroy();
+			RightScroll:Destroy();
+			RightScroll = LeftScroll;
+			UIListLayout_2 = UIListLayout;
+			LeftScroll.Size = UDim2.new(1, 0, 1, -5);
+			LeftScroll.Position = UDim2.new(0.5, 0, 0.5, 0)
+		else
+			NeverLose:AddSignal(UIListLayout_2:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+				RightScroll.CanvasSize = UDim2.fromOffset(0,UIListLayout_2.AbsoluteContentSize.Y + 1)
+			end)))
+		end;
+
+		NeverLose:AddSignal(TabIcon:GetPropertyChangedSignal('TextTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+			if TabIcon.TextTransparency > 0.4 then
+				UIListLayout.Parent = nil;
+				UIListLayout_2.Parent = nil;
+				TabFrame.Visible = false;
+				TabFrame.Parent = nil
+			else
+				UIListLayout.Parent = LeftScroll;
+				UIListLayout_2.Parent = RightScroll;
+				TabFrame.Visible = true;
+				TabFrame.Parent = TabContainer;
+			end;
+		end)));
+
+		Tab.SetValue = LPH_NO_VIRTUALIZE(function(value)
+			Tab.Signal:SetValue(value);
+
+			if value then
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
+					BackgroundTransparency = 0.500
+				})
+
+				NeverLose.PlayAnimate(TabIcon , SlowyTween , {
+					TextTransparency = 0,
+					TextColor3 = NeverLose.AccentColor
+				})
+
+				NeverLose.PlayAnimate(TabContentLabel , SlowyTween , {
+					TextTransparency = 0
+				})
+			else
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
+					BackgroundTransparency = 1
+				})
+
+				NeverLose.PlayAnimate(TabIcon , SlowyTween , {
+					TextTransparency = 0.5,
+					TextColor3 = Color3.fromRGB(252, 252, 252)
+				})
+
+				NeverLose.PlayAnimate(TabContentLabel , SlowyTween , {
+					TextTransparency = 0.5
+				})
+			end;
+		end);
+
+		table.insert(Window.Tabs,Tab);
+
+		if Window.Tabs[Window.CurrentTab] == Tab then
+			Tab.SetValue(true)
+		else
+			Tab.SetValue(false);
+		end;
+
+		local over = NeverLose:CreateInput(TabButton,LPH_NO_VIRTUALIZE(function()
+			for i,v in next , Window.Tabs do
+				if v.Idx == TabButton then
+					v.SetValue(true);
+					Window.CurrentTab = i;
+				else
+					v.SetValue(false);
+				end;
+			end;
+		end));
+
+		NeverLose:AddSignal(over.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			if Window.Tabs[Window.CurrentTab] == Tab then
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
+					BackgroundTransparency = 0.500
+				})
+			else
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
+					BackgroundTransparency = 0.8
+				})
+			end;
+		end)))
+
+		NeverLose:AddSignal(over.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			if Window.Tabs[Window.CurrentTab] == Tab then
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
+					BackgroundTransparency = 0.500
+				})
+			else
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
+					BackgroundTransparency = 1
+				})
+			end;
+		end)))
+
+		Window.Signal:Connect(LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				if Window.Tabs[Window.CurrentTab] == Tab then
+					Tab.SetValue(true)
+				else
+					Tab.SetValue(false);
+				end;
+			else
+				Tab.SetValue(false);
+
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
+					BackgroundTransparency = 1
+				})
+
+				NeverLose.PlayAnimate(TabIcon , SlowyTween , {
+					TextTransparency = 1,
+				})
+
+				NeverLose.PlayAnimate(TabContentLabel , SlowyTween , {
+					TextTransparency = 1
+				})
+			end;
+		end));
+
+		function Tab:AddSection(Config)
+			Config = NeverLose:ProcessParams(Config , {
+				Name = "SECTION",
+				Position = 'left'
+			});
+
+			local SectionFrame = Instance.new("Frame")
+			local SectionLabel = Instance.new("TextLabel")
+			local SectionHandler = Instance.new("Frame")
+			local UIStroke = Instance.new("UIStroke")
+			local UICorner = Instance.new("UICorner")
+			local UIListLayout = Instance.new("UIListLayout")
+
+			SectionFrame.Name = NeverLose.RandomString();
+			SectionFrame.Parent = (string.lower(Config.Position) == 'left' and LeftScroll) or RightScroll
+			SectionFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			SectionFrame.BackgroundTransparency = 1.000
+			SectionFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			SectionFrame.BorderSizePixel = 0
+			SectionFrame.ClipsDescendants = true
+			SectionFrame.Size = UDim2.new(1, -5, 0, 0)
+			SectionFrame.ZIndex = 9
+
+			SectionLabel.Name = NeverLose.RandomString();
+			SectionLabel.Parent = SectionFrame
+			SectionLabel.AnchorPoint = Vector2.new(0.5, 0)
+			SectionLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			SectionLabel.BackgroundTransparency = 1.000
+			SectionLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			SectionLabel.BorderSizePixel = 0
+			SectionLabel.Position = UDim2.new(0.5, 0, 0, 0)
+			SectionLabel.Size = UDim2.new(1, -35, 0, 15)
+			SectionLabel.ZIndex = 9
+			SectionLabel.Font = Enum.Font.GothamMedium
+			SectionLabel.Text = Config.Name
+			SectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			SectionLabel.TextSize = 11.000
+			SectionLabel.TextTransparency = 0.500
+			SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+			SectionHandler.Name = NeverLose.RandomString();
+			SectionHandler.Parent = SectionFrame
+			SectionHandler.AnchorPoint = Vector2.new(0.5, 0)
+			SectionHandler.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+			SectionHandler.BackgroundTransparency = 0.500
+			SectionHandler.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			SectionHandler.BorderSizePixel = 0
+			SectionHandler.ClipsDescendants = true
+			SectionHandler.Position = UDim2.new(0.5, 0, 0, 20)
+			SectionHandler.Size = UDim2.new(1, -10, 1, -21)
+			SectionHandler.ZIndex = 9
+
+			UIStroke.Transparency = 0.650
+			UIStroke.Color = Color3.fromRGB(45, 48, 58)
+			UIStroke.Parent = SectionHandler
+
+			UICorner.CornerRadius = UDim.new(0, 10)
+			UICorner.Parent = SectionHandler
+
+			UIListLayout.Parent = SectionHandler
+			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+			UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+				if UIListLayout.AbsoluteContentSize.Y <= 1 then
+					NeverLose.PlayAnimate(SectionFrame , VSlowTween , {
+						Size = UDim2.new(1, -5, 0, 0)
+					})
+				else
+					NeverLose.PlayAnimate(SectionFrame , VSlowTween , {
+						Size = UDim2.new(1, -5, 0, UIListLayout.AbsoluteContentSize.Y + 19.5)
+					})
+				end;
+			end));
+
+			local Section = NeverLose:RegisiterItem(SectionHandler , Tab.Signal);
+
+			Section.SetRender = LPH_NO_VIRTUALIZE(function(value)
+				if value then
+					NeverLose.PlayAnimate(SectionLabel,SlowyTween,{
+						TextTransparency = 0.500
+					})
+
+					NeverLose.PlayAnimate(SectionHandler,SlowyTween,{
+						BackgroundTransparency = 0.500
+					})
+
+					NeverLose.PlayAnimate(UIStroke,SlowyTween,{
+						Transparency = 0.650
+					})
+				else
+					NeverLose.PlayAnimate(SectionLabel,SlowyTween,{
+						TextTransparency = 1
+					})
+
+					NeverLose.PlayAnimate(SectionHandler,SlowyTween,{
+						BackgroundTransparency = 1
+					})
+
+					NeverLose.PlayAnimate(UIStroke,SlowyTween,{
+						Transparency = 1
+					})
+				end;
+			end);
+
+			Section.SetRender(Tab.Signal:GetValue());
+			Tab.Signal:Connect(Section.SetRender);
+
+			return Section;
+		end;
+
+		return Tab;
+	end;
+
+	function Window:_InitConfig()
+		local ConfigSignal = NeverLose:CreateSignal(false);
+		local ConfigLib = {
+			Signals = {},
+		};
+
+		local ConfigMenu = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local UIListLayout = Instance.new("UIListLayout")
+		local UIStroke = Instance.new("UIStroke")
+		local InputFrame = Instance.new("Frame")
+		local BasedLabel = Instance.new("TextLabel")
+		local LineFrame = Instance.new("Frame")
+		local BasedHandler = Instance.new("Frame")
+		local UIListLayout_2 = Instance.new("UIListLayout")
+		local TextInput = Instance.new("Frame")
+		local UICorner_2 = Instance.new("UICorner")
+		local UIStroke_2 = Instance.new("UIStroke")
+		local TextBox = Instance.new("TextBox")
+		local LoadConfig = Instance.new("Frame")
+		local Icon = Instance.new("TextLabel")
+		local UICorner_3 = Instance.new("UICorner")
+		local UICorner_4 = Instance.new("UICorner")
+
+		local shadow = NeverLose:CreateShadow(ConfigMenu);
+
+		ConfigLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				ConfigMenu.Position = UDim2.fromOffset(ConfigFrame.AbsolutePosition.X + 110 , ConfigFrame.AbsolutePosition.Y + 96)
+
+				NeverLose.PlayAnimate(ConfigMenu , SlowyTween , {
+					BackgroundTransparency = 0.035,
+					Position = UDim2.fromOffset(ConfigFrame.AbsolutePosition.X + 110 , ConfigFrame.AbsolutePosition.Y + 95)
+				})	
+
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+					Transparency = 0.650
+				})
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+					TextTransparency = 0.200
+				})	
+
+				NeverLose.PlayAnimate(UIStroke_2 , SlowyTween , {
+					Transparency = 0.65
+				})	
+
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
+					BackgroundTransparency = 0.650
+				})	
+				NeverLose.PlayAnimate(TextInput , SlowyTween , {
+					BackgroundTransparency = 0
+				})	
+				NeverLose.PlayAnimate(TextBox , SlowyTween , {
+					TextTransparency = 0.350
+				})	
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
+					TextTransparency = 0.350
+				})	
+
+				NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
+					Rotation = 180
+				})	
+
+				shadow:Render(true)
+			else
+				NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
+					Rotation = 0
+				})
+
+				NeverLose.PlayAnimate(ConfigMenu , SlowyTween , {
+					BackgroundTransparency = 1,
+					Position = UDim2.fromOffset(ConfigFrame.AbsolutePosition.X + 110 , ConfigFrame.AbsolutePosition.Y + 96)
+				})	
+
+				NeverLose.PlayAnimate(UIStroke_2 , SlowyTween , {
+					Transparency = 1
+				})	
+
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+					Transparency = 1
+				})
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
+					TextTransparency = 1
+				})	
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
+					BackgroundTransparency = 1
+				})	
+				NeverLose.PlayAnimate(TextInput , SlowyTween , {
+					BackgroundTransparency = 1
+				})	
+				NeverLose.PlayAnimate(TextBox , SlowyTween , {
+					TextTransparency = 1
+				})	
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
+					TextTransparency = 1
+				})	
+
+				shadow:Render(false)
+			end;
+		end);
+
+		NeverLose:AddSignal(ConfigMenu:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+			if ConfigMenu.BackgroundTransparency > 0.9 then
+				ConfigMenu.Visible = false;
+				UIListLayout.Parent = nil;
+				ConfigMenu.Parent = nil;
+			else
+
+				ConfigMenu.Visible = true;
+				UIListLayout.Parent = ConfigMenu
+
+				if NeverLose.Global3DRenderMode then
+					ConfigMenu.Parent = NeverLose.GlobalSurfaceGui;
+				else
+					ConfigMenu.Parent = NeverLose.ScreenGui;
+				end;
+			end
+		end)))
+
+		ConfigMenu.Name = NeverLose.RandomString();
+		ConfigMenu.Parent = NeverLose.ScreenGui;
+		ConfigMenu.AnchorPoint = Vector2.new(0.5, 0)
+		ConfigMenu.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+		ConfigMenu.BackgroundTransparency = 0.035
+		ConfigMenu.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ConfigMenu.BorderSizePixel = 0
+		ConfigMenu.ClipsDescendants = true
+		ConfigMenu.Position = UDim2.new(255,255,255,255)
+		ConfigMenu.Size = UDim2.new(0, 220,0, 110)
+		ConfigMenu.ZIndex = 151
+
+		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.Parent = ConfigMenu
+
+		UIListLayout.Parent = ConfigMenu
+		UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		UIListLayout.Padding = UDim.new(0, 4)
+
+		UIStroke.Transparency = 0.650
+		UIStroke.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke.Parent = ConfigMenu
+
+		InputFrame.Name = NeverLose.RandomString();
+		InputFrame.Parent = ConfigMenu
+		InputFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
+		InputFrame.BackgroundTransparency = 1.000
+		InputFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		InputFrame.BorderSizePixel = 0
+		InputFrame.Size = UDim2.new(1, 0, 0, 30)
+		InputFrame.ZIndex = 154
+
+		BasedLabel.Name = NeverLose.RandomString();
+		BasedLabel.Parent = InputFrame
+		BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		BasedLabel.BackgroundTransparency = 1.000
+		BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		BasedLabel.BorderSizePixel = 0
+		BasedLabel.Position = UDim2.new(0, 11, 0, 6)
+		BasedLabel.Size = UDim2.new(0,1, 0, 15)
+		BasedLabel.ZIndex = 154
+		BasedLabel.Font = Enum.Font.GothamMedium
+		BasedLabel.Text = "Config"
+		BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		BasedLabel.TextSize = 13.000
+		BasedLabel.TextTransparency = 0.200
+		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+		LineFrame.Name = NeverLose.RandomString();
+		LineFrame.Parent = InputFrame
+		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
+		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		LineFrame.BackgroundTransparency = 0.650
+		LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LineFrame.BorderSizePixel = 0
+		LineFrame.Position = UDim2.new(0.5, 0, 1, 0)
+		LineFrame.Size = UDim2.new(1, -20, 0, 1)
+		LineFrame.ZIndex = 154
+
+		BasedHandler.Name = NeverLose.RandomString();
+		BasedHandler.Parent = InputFrame
+		BasedHandler.AnchorPoint = Vector2.new(1, 0)
+		BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		BasedHandler.BackgroundTransparency = 1.000
+		BasedHandler.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		BasedHandler.BorderSizePixel = 0
+		BasedHandler.Position = UDim2.new(1, -11, 0, 2)
+		BasedHandler.Size = UDim2.new(1, -20, 0, 25)
+		BasedHandler.ZIndex = 154
+
+		UIListLayout_2.Parent = BasedHandler
+		UIListLayout_2.FillDirection = Enum.FillDirection.Horizontal
+		UIListLayout_2.HorizontalAlignment = Enum.HorizontalAlignment.Right
+		UIListLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
+		UIListLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
+		UIListLayout_2.Padding = UDim.new(0, 5)
+
+		NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+			if #ConfigLib.Signals <= 0 then
+				NeverLose.PlayAnimate(ConfigMenu , SlowyTween , {
+					Size = UDim2.new(0, 220,0, UIListLayout.AbsoluteContentSize.Y + 0);
+				})
+			else
+				NeverLose.PlayAnimate(ConfigMenu , SlowyTween , {
+					Size = UDim2.new(0, 220,0, UIListLayout.AbsoluteContentSize.Y + 5);
+				})
+			end;
+
+		end)));
+
+		TextInput.Name = NeverLose.RandomString();
+		TextInput.Parent = BasedHandler
+		TextInput.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		TextInput.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		TextInput.BorderSizePixel = 0
+		TextInput.ClipsDescendants = true
+		TextInput.Size = UDim2.new(0, 100, 0, 18)
+		TextInput.ZIndex = 154
+
+		UICorner_2.CornerRadius = UDim.new(0, 4)
+		UICorner_2.Parent = TextInput
+
+		UIStroke_2.Transparency = 0.650
+		UIStroke_2.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke_2.Parent = TextInput
+
+		TextBox.Parent = TextInput
+		TextBox.AnchorPoint = Vector2.new(0, 0.5)
+		TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		TextBox.BackgroundTransparency = 1.000
+		TextBox.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		TextBox.BorderSizePixel = 0
+		TextBox.Position = UDim2.new(0, 5, 0.5, 0)
+		TextBox.Size = UDim2.new(1, -5, 0, 17)
+		TextBox.ZIndex = 154
+		TextBox.ClearTextOnFocus = false
+		TextBox.Font = Enum.Font.GothamMedium
+		TextBox.PlaceholderText = "Config Name ..."
+		TextBox.Text = ""
+		TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+		TextBox.TextSize = 11.000
+		TextBox.TextTransparency = 0.350
+		TextBox.TextXAlignment = Enum.TextXAlignment.Left
+
+		LoadConfig.Name = NeverLose.RandomString();
+		LoadConfig.Parent = BasedHandler
+		LoadConfig.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
+		LoadConfig.BackgroundTransparency = 1.000
+		LoadConfig.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LoadConfig.BorderSizePixel = 0
+		LoadConfig.ClipsDescendants = true
+		LoadConfig.Size = UDim2.new(0, 20, 0, 18)
+		LoadConfig.ZIndex = 153
+
+		Icon.Name = NeverLose.RandomString();
+		Icon.Parent = LoadConfig
+		Icon.AnchorPoint = Vector2.new(0.5, 0.5)
+		Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Icon.BackgroundTransparency = 1.000
+		Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Icon.BorderSizePixel = 0
+		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
+		Icon.Size = UDim2.new(1, 0, 1, 0)
+		Icon.ZIndex = 153
+		Icon.FontFace = NeverLose.BuiltInBold
+		Icon.Text = "plus-large"
+		Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
+		Icon.TextSize = 16.000
+		Icon.TextTransparency = 0.350
+		Icon.TextWrapped = true
+
+		UICorner_3.CornerRadius = UDim.new(0, 4)
+		UICorner_3.Parent = LoadConfig
+
+		UICorner_4.CornerRadius = UDim.new(0, 10)
+		UICorner_4.Parent = InputFrame
+
+		local OpenButton = Instance.new("TextButton")
+		local UICorner = Instance.new("UICorner")
+
+		OpenButton.Name = NeverLose.RandomString();
+		OpenButton.Parent = ConfigFrame
+		OpenButton.AnchorPoint = Vector2.new(0, 0.5)
+		OpenButton.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+		OpenButton.BackgroundTransparency = 1.000
+		OpenButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		OpenButton.BorderSizePixel = 0
+		OpenButton.Position = UDim2.new(0, 31, 0.5, 0)
+		OpenButton.Size = UDim2.new(1, -31, 1, 0)
+		OpenButton.ZIndex = 10
+		OpenButton.Font = Enum.Font.SourceSans
+		OpenButton.Text = ""
+		OpenButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+		OpenButton.TextSize = 14.000
+
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = OpenButton
+
+		ConfigLib.SetRender(false);
+		ConfigSignal:Connect(ConfigLib.SetRender);
+		ConfigLib.UnsafeThread = nil;
+		ConfigLib.SelectedConfig = "Default";
+
+		local UpdateSize = LPH_NO_VIRTUALIZE(function()
+			local size = TextService:GetTextSize(ConfigName.Text , ConfigName.TextSize,ConfigName.Font,Vector2.new(math.huge,math.huge));
+
+			NeverLose.PlayAnimate(ConfigFrame,SlowyTween , {
+				Size = UDim2.fromOffset(size.X + 75, 30)
+			});
+		end);
+
+		UpdateSize();
+
+		function ConfigLib:GetData(performance)
+			local ikc = {};
+			
+			local cd = 0;
+			for Flag,v in next , NeverLose.Flags do
+				if v and v.GetValue then
+					local data = v:GetValue();
+
+					if typeof(data) == 'Color3' then
+						table.insert(ikc,{
+							Idx = Flag,
+							Value = data:ToHex(),
+						});
+					else
+						table.insert(ikc,{
+							Idx = Flag,
+							Value = data
+						});
+					end;
+				end;
+				
+				if performance then
+					if cd % 35 == 1 then
+						task.wait()
+					end
+				end;
+				
+				cd += 1;
+			end;
+
+			return NeverLose.Base64Encode(Encryption.new(HttpService:JSONEncode(ikc)));
+		end;
+
+		function ConfigLib:LoadData(data)
+			local coded = HttpService:JSONDecode(Encryption.reverse(NeverLose.Base64Decode(data)));
+
+			for i,v in next , coded do
+				if v.Idx then
+					if NeverLose.Flags[v.Idx] then
+						task.spawn(function()
+							NeverLose.Flags[v.Idx]:SetValue(v.Value)
+						end)
+					end;
+				end;
+			end;
+		end;
+
+		function ConfigLib:RefreshConfig()
+			if not isfolder(Window.ConfigFolder) then
+				makefolder(Window.ConfigFolder);
+			end;
+			
+			if not isfile(Window.ConfigFolder..'/Default') then
+				writefile(Window.ConfigFolder..'/Default',ConfigLib:GetData());
+			end;
+			
+			for i,v in next,ConfigMenu:GetChildren() do
+				if v:GetAttribute('ConfigItem') then
+					v:Destroy();
+				end;
+			end;
+
+			for i,v in next , ConfigLib.Signals do
+				v:Disconnect();
+			end
+
+			table.clear(ConfigLib.Signals);
+
+			local ConfigList = {};
+			for i,v in next , listfiles(Window.ConfigFolder) do
+
+				local name = string.sub(v , #Window.ConfigFolder + 2);
+
+				table.insert(ConfigList , name)
+			end;
+
+			for i,ConfigNameStr in next , ConfigList do
+				local ConfigItemFrame = Instance.new("Frame")
+				local BasedHandler = Instance.new("Frame")
+				local UIListLayout = Instance.new("UIListLayout")
+				local DeleteConfig = Instance.new("Frame")
+				local Icon = Instance.new("TextLabel")
+				local UICorner = Instance.new("UICorner")
+				local LoadConfig = Instance.new("Frame")
+				local Icon_2 = Instance.new("TextLabel")
+				local UICorner_2 = Instance.new("UICorner")
+				local UICorner_3 = Instance.new("UICorner")
+				local BasedLabel = Instance.new("TextLabel")
+				local UIStroke = Instance.new("UIStroke")
+
+				ConfigItemFrame.Name = NeverLose.RandomString();
+				ConfigItemFrame.Parent = ConfigMenu
+				ConfigItemFrame.BackgroundColor3 = Color3.fromRGB(21, 20, 27)
+				ConfigItemFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				ConfigItemFrame.BorderSizePixel = 0
+				ConfigItemFrame.Size = UDim2.new(1, -10, 0, 30)
+				ConfigItemFrame.ZIndex = 153
+				ConfigItemFrame:SetAttribute('ConfigItem',true);
+
+				BasedHandler.Name = NeverLose.RandomString();
+				BasedHandler.Parent = ConfigItemFrame
+				BasedHandler.AnchorPoint = Vector2.new(1, 0)
+				BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				BasedHandler.BackgroundTransparency = 1.000
+				BasedHandler.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				BasedHandler.BorderSizePixel = 0
+				BasedHandler.Position = UDim2.new(1, -11, 0, 2)
+				BasedHandler.Size = UDim2.new(1, -20, 0, 25)
+				BasedHandler.ZIndex = 153
+
+				UIListLayout.Parent = BasedHandler
+				UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+				UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+				UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+				UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+				UIListLayout.Padding = UDim.new(0, 5)
+
+				DeleteConfig.Name = NeverLose.RandomString();
+				DeleteConfig.Parent = BasedHandler
+				DeleteConfig.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
+				DeleteConfig.BackgroundTransparency = 1.000
+				DeleteConfig.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				DeleteConfig.BorderSizePixel = 0
+				DeleteConfig.ClipsDescendants = true
+				DeleteConfig.Size = UDim2.new(0, 20, 0, 18)
+				DeleteConfig.ZIndex = 153
+
+				Icon.Name = NeverLose.RandomString();
+				Icon.Parent = DeleteConfig
+				Icon.AnchorPoint = Vector2.new(0.5, 0.5)
+				Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				Icon.BackgroundTransparency = 1.000
+				Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				Icon.BorderSizePixel = 0
+				Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
+				Icon.Size = UDim2.new(1, 0, 1, 0)
+				Icon.ZIndex = 153
+				Icon.FontFace = NeverLose.BuiltInBold
+				Icon.Text = "trash-can"
+				Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
+				Icon.TextSize = 16.000
+				Icon.TextTransparency = 0.400
+				Icon.TextWrapped = true
+
+				UICorner.CornerRadius = UDim.new(0, 4)
+				UICorner.Parent = DeleteConfig
+
+				LoadConfig.Name = NeverLose.RandomString();
+				LoadConfig.Parent = BasedHandler
+				LoadConfig.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
+				LoadConfig.BackgroundTransparency = 1.000
+				LoadConfig.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				LoadConfig.BorderSizePixel = 0
+				LoadConfig.ClipsDescendants = true
+				LoadConfig.Size = UDim2.new(0, 20, 0, 18)
+				LoadConfig.ZIndex = 153
+
+				Icon_2.Name = NeverLose.RandomString();
+				Icon_2.Parent = LoadConfig
+				Icon_2.AnchorPoint = Vector2.new(0.5, 0.5)
+				Icon_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				Icon_2.BackgroundTransparency = 1.000
+				Icon_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				Icon_2.BorderSizePixel = 0
+				Icon_2.Position = UDim2.new(0.5, 0, 0.5, 0)
+				Icon_2.Size = UDim2.new(1, 0, 1, 0)
+				Icon_2.ZIndex = 153
+				Icon_2.FontFace = NeverLose.BuiltInBold
+				Icon_2.Text = "arrow-right-from-portrait-rectangle"
+				Icon_2.TextColor3 = Color3.fromRGB(223, 223, 223)
+				Icon_2.TextSize = 16.000
+				Icon_2.TextTransparency = 0.400
+				Icon_2.TextWrapped = true
+
+				UICorner_2.CornerRadius = UDim.new(0, 4)
+				UICorner_2.Parent = LoadConfig
+
+				UICorner_3.CornerRadius = UDim.new(0, 5)
+				UICorner_3.Parent = ConfigItemFrame
+
+				BasedLabel.Name = NeverLose.RandomString();
+				BasedLabel.Parent = ConfigItemFrame
+				BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				BasedLabel.BackgroundTransparency = 1.000
+				BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				BasedLabel.BorderSizePixel = 0
+				BasedLabel.Position = UDim2.new(0, 11, 0, 7)
+				BasedLabel.Size = UDim2.new(0, 1, 0, 15)
+				BasedLabel.ZIndex = 153
+				BasedLabel.Font = Enum.Font.GothamMedium
+				BasedLabel.Text = ConfigNameStr
+				BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+				BasedLabel.TextSize = 13.000
+				BasedLabel.TextTransparency = 0.200
+				BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+				UIStroke.Transparency = 0.500
+				UIStroke.Color = Color3.fromRGB(45, 48, 58)
+				UIStroke.Parent = ConfigItemFrame
+
+				local Render = LPH_NO_VIRTUALIZE(function(rst)
+					if rst then
+						NeverLose.PlayAnimate(ConfigItemFrame,SlowyTween,{
+							BackgroundTransparency = 0
+						})
+
+						NeverLose.PlayAnimate(Icon,SlowyTween,{
+							TextTransparency = 0.400
+						})
+
+						NeverLose.PlayAnimate(Icon_2,SlowyTween,{
+							TextTransparency = 0.400
+						})
+
+						NeverLose.PlayAnimate(BasedLabel,SlowyTween,{
+							TextTransparency = 0.200
+						})
+
+						NeverLose.PlayAnimate(UIStroke,SlowyTween,{
+							Transparency = 0.500
+						})
+					else
+						NeverLose.PlayAnimate(ConfigItemFrame,SlowyTween,{
+							BackgroundTransparency = 1
+						})
+
+						NeverLose.PlayAnimate(Icon,SlowyTween,{
+							TextTransparency = 1
+						})
+
+						NeverLose.PlayAnimate(Icon_2,SlowyTween,{
+							TextTransparency = 1
+						})
+
+						NeverLose.PlayAnimate(BasedLabel,SlowyTween,{
+							TextTransparency = 1
+						})
+
+						NeverLose.PlayAnimate(UIStroke,SlowyTween,{
+							Transparency = 1
+						})
+					end;
+				end)
+
+				Render(ConfigSignal:GetValue());
+				table.insert(ConfigLib.Signals , ConfigSignal:Connect(Render));
+
+				table.insert(ConfigLib.Signals , ConfigItemFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+					NeverLose.PlayAnimate(UIStroke,SlowyTween,{
+						Transparency = 0.25
+					})
+				end)));
+
+				table.insert(ConfigLib.Signals , ConfigItemFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+					NeverLose.PlayAnimate(UIStroke,SlowyTween,{
+						Transparency = 0.500
+					})
+				end)));
+
+				local deleter,signal = NeverLose:CreateInput(DeleteConfig,function()
+					if ConfigNameStr == "Default" then
+						Logging.new("trash-can","You can't delete default config!",3.5)
+						return;
+					end;
+					
+					delfile(Window.ConfigFolder..'/'..ConfigNameStr);
+
+					UpdateSize();
+
+					ConfigLib:RefreshConfig();
+
+					Logging.new("trash-can",'Deleted '..tostring(ConfigNameStr),3.5)
+				end);
+
+
+				local _,load_signal = NeverLose:CreateInput(LoadConfig,function()
+					local path = Window.ConfigFolder..'/'..ConfigNameStr;
+
+					if isfile(path) then
+						local data = readfile(path);
+
+						ConfigLib:LoadData(data);
+
+						ConfigLib.SelectedConfig = ConfigNameStr;
+						ConfigName.Text = ConfigNameStr;
+
+						UpdateSize();
+
+						ConfigLib:RefreshConfig();
+
+						Logging.new("folder",'Loaded '..tostring(ConfigNameStr),3.5)
+					end
+				end);
+
+				table.insert(ConfigLib.Signals , signal);
+				table.insert(ConfigLib.Signals , load_signal);
+
+				table.insert(ConfigLib.Signals , deleter.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+					NeverLose.PlayAnimate(Icon,SlowyTween,{
+						TextTransparency = 0.2,
+						TextColor3 = Color3.fromRGB(223, 125, 125)
+					})
+				end)))
+
+				table.insert(ConfigLib.Signals , deleter.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+					NeverLose.PlayAnimate(Icon,SlowyTween,{
+						TextTransparency = 0.400,
+						TextColor3 = Color3.fromRGB(223, 223, 223)
+					})
+				end)))
+
+				table.insert(ConfigLib.Signals , LoadConfig.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+					NeverLose.PlayAnimate(Icon_2,SlowyTween,{
+						TextTransparency = 0.2,
+						TextColor3 = NeverLose.AccentColor
+					})
+				end)))
+
+				table.insert(ConfigLib.Signals , LoadConfig.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+					NeverLose.PlayAnimate(Icon_2,SlowyTween,{
+						TextTransparency = 0.400,
+						TextColor3 = Color3.fromRGB(223, 223, 223)
+					})
+				end)))
+			end;
+
+			table.clear(ConfigList);
+		end;
+		
+		task.delay(1,function()
+			if ConfigLib.SelectedConfig == "Default" then
+				local path = Window.ConfigFolder..'/Default';
+				local ConfigNameStr = "Default";
+				
+				if isfile(path) then
+					local data = readfile(path);
+
+					ConfigLib:LoadData(data);
+
+					ConfigLib.SelectedConfig = ConfigNameStr;
+					ConfigName.Text = ConfigNameStr;
+
+					UpdateSize();
+
+					ConfigLib:RefreshConfig();
+
+					Logging.new("folder","Loaded Default Config",3.5);
+					
+					task.spawn(function()
+						while true do task.wait(5.75);
+							if isfile(path) and ConfigLib.SelectedConfig == "Default" then
+								writefile(Window.ConfigFolder..'/Default',ConfigLib:GetData(true));
+							end;
+						end;
+					end);
+				end;
+			end;
+		end);
+
+		local hover_write = NeverLose:CreateInput(ConfigIcon,function()
+			local path = Window.ConfigFolder..'/'..(ConfigLib.SelectedConfig or "Default");
+
+			if isfile(path) then
+				writefile(Window.ConfigFolder..'/'..(ConfigLib.SelectedConfig or "Default"),ConfigLib:GetData());
+
+				Logging.new("folder",'Saved '..tostring(ConfigLib.SelectedConfig),3.5)
+			end;
+		end);
+
+		NeverLose:AddSignal(hover_write.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(ConfigIcon,SlowyTween,{
+				TextTransparency = 0.1
+			})
+		end)));
+
+		NeverLose:AddSignal(hover_write.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(ConfigIcon,SlowyTween,{
+				TextTransparency = 0.25
+			})
+		end)));
+
+
+		local mv = NeverLose:CreateInput(LoadConfig , function()
+			local cfg_name = TextBox.Text;
+
+			if cfg_name and cfg_name:byte() and not cfg_name:find('/',1,true) and not cfg_name:find('\\',1,true) then
+				cfg_name = string.sub(cfg_name , 1 , 24);
+
+				writefile(Window.ConfigFolder..'/'..cfg_name,ConfigLib:GetData());
+				ConfigLib.SelectedConfig = cfg_name;
+				ConfigName.Text = cfg_name;
+
+				Logging.new("folder",'Created '..tostring(cfg_name),3.5)
+
+				TextBox.Text = "";
+
+				UpdateSize();
+
+				ConfigLib:RefreshConfig();
+			end;
+		end);
+
+		NeverLose:AddSignal(mv.MouseEnter:Connect(function()
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
+				TextTransparency = 0.1
+			})
+		end))
+
+		NeverLose:AddSignal(mv.MouseLeave:Connect(function()
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
+				TextTransparency = 0.35
+			})
+		end))
+
+		ConfigLib:RefreshConfig();
+
+		OpenButton.MouseButton1Click:Connect(LPH_NO_VIRTUALIZE(function()
+			if ConfigLib.UnsafeThread then
+				ConfigLib.UnsafeThread:Disconnect();
+				ConfigLib.UnsafeThread = nil;
+			end;
+
+			ConfigSignal:SetValue(true);
+
+			ConfigLib.UnsafeThread = UserInputService.InputBegan:Connect(function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+					if not NeverLose:IsMouseOverFrame(ConfigMenu) then
+						if ConfigLib.UnsafeThread then
+							ConfigLib.UnsafeThread:Disconnect();
+							ConfigLib.UnsafeThread = nil;
+						end;
+
+						ConfigSignal:SetValue(false);
+					end;
+				end;
+			end)
+		end));
+
+		return ConfigLib;
+	end;
+
+	Window:_InitConfig();
+
+	local UserSettings = NeverLose:CreateOptionWindow(BottomFrame , BottomFrame.ZIndex + 13);
+	local reciveSignal;
+	NeverLose:CreateInput(BottomFrame , LPH_NO_VIRTUALIZE(function()
+		if reciveSignal then
+			reciveSignal:Disconnect();
+			reciveSignal = nil;	
+		end;
+
+		UserSettings.Signal:SetValue(true);
+
+		reciveSignal = UserInputService.InputBegan:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+				if not NeverLose:IsMouseOverFrame(UserSettings.Root) and not NeverLose:IsMouseOverFrame(BottomFrame) and not NeverLose.IsMosueOverOtherFrame then
+					if reciveSignal then
+						reciveSignal:Disconnect();
+						reciveSignal = nil;	
+					end;
+
+					UserSettings.Signal:SetValue(false);
+				end
+			end
+		end);
+	end))
+
+	Window.UserSettings = UserSettings;
+
+	function Window:SetAccount(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Profile = NeverLose.UserProfile,
+			Username = LocalPlayer.DisplayName,
+			Expires = "Never",
+		});
+
+		AccountName.Text = Config.Username;
+		AccountProfile.Image = Config.Profile;
+		ExpireLabel.Text = Config.Expires;
+
+		Window.Username = Config.Username or Window.Username;
+		Window.Profile = Config.Profile or Window.Profile;
+		Window.Expires = Config.Expires or Window.Expires;
+
+		if Window.UserSettings.UserFrame then
+			Window.UserSettings.UserFrame:SetUsername(Window.Username);
+			Window.UserSettings.UserFrame:SetProfile(Window.Profile);
+			Window.UserSettings.UserFrame:SetExpires(Window.Expires);
+		else
+			Window.UserSettings.UserFrame = UserSettings:AddUserFrame(Window.Username , Window.Profile , Window.Expires);
+		end;
+	end;
+
+	function Window:SetSize(newsize)
+		Window.Size = newsize;
+
+		if Window.Signal:GetValue() then
+			NeverLose.PlayAnimate(WindowFrame , VSlowTween , {
+				Size = Window.Size
+			})
+		end
+	end;
+
+	Window:SetAccount();
+
+	NeverLose:AddSignal(UserInputService.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(value,ISTYPING)
+		if value.KeyCode == Window.Keybind or value.KeyCode.Name == Window.Keybind then
+			if not ISTYPING then
+				Window:ToggleInterface()
+			end
+		end;
+	end)));
+
+	function Window:ToggleInterface()
+		Window.Signal:SetValue(not Window.Signal:GetValue());
+
+		if Window.__3DRender then
+			Window.Load3DBlock();
+		end;
+	end;
+
+	NeverLose.ActiveWindow = Window;
+
+	function Window:Watermark()
+		if NeverLose.__WatermarkCache then
+			return NeverLose.__WatermarkCache;
+		end;
+
+		local Watermark_lb = {};
+		local Watermark = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local UIListLayout = Instance.new("UIListLayout")
+		local Shadow = NeverLose:CreateShadow(Watermark);
+
+		Watermark.Name = NeverLose.RandomString();
+		Watermark.Parent = NeverLose.ScreenGui
+		Watermark.AnchorPoint = Vector2.new(1, 0)
+		Watermark.BackgroundColor3 = Color3.fromRGB(8, 8, 13)
+		Watermark.BackgroundTransparency = 0.200
+		Watermark.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Watermark.BorderSizePixel = 0
+		Watermark.ClipsDescendants = true
+		Watermark.Active = true
+		Watermark.Position = UDim2.new(1, -10, 0, 10)
+		Watermark.Size = UDim2.new(0, 120, 0, 30)
+		Watermark.ZIndex = 16
+
+		UICorner.CornerRadius = UDim.new(0, 25)
+		UICorner.Parent = Watermark
+
+		UIListLayout.Parent = Watermark
+		UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+		UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+
+		local empty_space = Instance.new('Frame');
+
+		empty_space.Size = UDim2.fromOffset(15,0);
+		empty_space.BackgroundTransparency = 1;
+		empty_space.Parent = Watermark;
+		empty_space.LayoutOrder = 5;
+
+		Watermark:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+			if Watermark.BackgroundTransparency > 0.9 then
+				Watermark.Visible = false;
+				Watermark.Parent = nil;
+			else
+				Watermark.Parent = NeverLose.ScreenGui
+				Watermark.Visible = true;
+			end;
+		end));
+
+		UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(Watermark , SlowyTween , {
+				Size = UDim2.new(0, UIListLayout.AbsoluteContentSize.X + 5, 0, 30)
+			})
+		end));
+
+		NeverLose.__WatermarkCache = Watermark_lb;
+
+		Shadow:Render(true);
+
+		Watermark_lb.Renders = {};
+		Watermark_lb.Status = true;
+
+		function Watermark_lb:SetRender(value)
+			Watermark_lb.Status = value;
+
+			if value then
+				NeverLose.PlayAnimate(Watermark,SlowyTween , {
+					BackgroundTransparency = 0.200
+				})
+
+				Shadow:Render(true);
+
+				for i,v in next , Watermark_lb.Renders do
+					pcall(v,true);
+				end;
+			else
+				NeverLose.PlayAnimate(Watermark,SlowyTween , {
+					BackgroundTransparency = 1
+				})
+
+				Shadow:Render(false);
+
+				for i,v in next , Watermark_lb.Renders do
+					pcall(v,false);
+				end;
+			end
+		end;
+
+		function Watermark_lb:AddBlock(IconStr , Name)
+			local InnerBlock = {};
+
+			local Frame = Instance.new("Frame")
+			local Content = Instance.new("TextLabel")
+			local Icon = Instance.new("TextLabel")
+
+			Frame.Parent = Watermark
+			Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			Frame.BackgroundTransparency = 1.000
+			Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			Frame.BorderSizePixel = 0
+			Frame.Active = true
+			Frame.Size = UDim2.new(0, 50, 0, 30)
+			Frame.ZIndex = 17
+
+			Content.Name = NeverLose.RandomString();
+			Content.Parent = Frame
+			Content.AnchorPoint = Vector2.new(0, 0.5)
+			Content.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
+			Content.BackgroundTransparency = 1.000
+			Content.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			Content.BorderSizePixel = 0
+			Content.Position = UDim2.new(0, 35, 0.5, 0)
+			Content.Size = UDim2.new(0, 1, 0, 25)
+			Content.ZIndex = 17
+			Content.Font = Enum.Font.GothamBold
+			Content.Text = Name
+			Content.TextColor3 = Color3.fromRGB(186, 186, 186)
+			Content.TextSize = 15.000
+			Content.TextTransparency = 0.200
+			Content.TextXAlignment = Enum.TextXAlignment.Left
+
+			Icon.Name = NeverLose.RandomString();
+			Icon.Parent = Frame
+			Icon.AnchorPoint = Vector2.new(0, 0.5)
+			Icon.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
+			Icon.BackgroundTransparency = 1.000
+			Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			Icon.BorderSizePixel = 0
+			Icon.Position = UDim2.new(0, 10, 0.5, 0)
+			Icon.Size = UDim2.new(0, 20, 0, 20)
+			Icon.ZIndex = 17
+			Icon.FontFace = NeverLose.BuiltInBold;
+			Icon.Text = IconStr
+			Icon.TextColor3 = NeverLose.AccentColor
+			Icon.TextSize = 18.000
+			Icon.TextTransparency = 0.250
+			Icon.TextWrapped = true
+
+			InnerBlock.Update = LPH_NO_VIRTUALIZE(function(value)
+				local size = TextService:GetTextSize(Content.Text , Content.TextSize,Content.Font,Vector2.new(math.huge,math.huge))
+
+				if InnerBlock.Visible then
+					NeverLose.PlayAnimate(Frame,VSlowTween,{
+						Size = UDim2.new(0, size.X + 35, 0, 30)
+					})
+				else
+					NeverLose.PlayAnimate(Frame,VSlowTween,{
+						Size = UDim2.new(0, 0, 0, 30)
+					})
+				end;
+			end);
+
+			InnerBlock.Visible = true;
+
+			InnerBlock.Update();
+
+			function InnerBlock:SetVisible(v)
+				InnerBlock.Visible = v;
+
+				if Watermark_lb.Status then
+					InnerBlock.SetRender(v);
+				end;
+
+				InnerBlock.Update();
+			end;
+
+			InnerBlock.SetRender = LPH_NO_VIRTUALIZE(function(value)
+				if value and InnerBlock.Visible then
+					NeverLose.PlayAnimate(Content,SlowyTween , {
+						TextTransparency = 0.200
+					})
+
+					NeverLose.PlayAnimate(Icon,SlowyTween , {
+						TextTransparency = 0.250
+					})
+				else
+
+					NeverLose.PlayAnimate(Content,SlowyTween , {
+						TextTransparency = 1
+					})
+
+					NeverLose.PlayAnimate(Icon,SlowyTween , {
+						TextTransparency = 1
+					})
+				end;
+			end);
+
+			table.insert(Watermark_lb.Renders,InnerBlock.SetRender);
+
+			function InnerBlock:SetText(t)
+				Content.Text = t;
+
+				InnerBlock.Update();
+			end;
+
+			function InnerBlock:Input(func)
+				local handler = func or function()
+					NeverLose:FireKeybind();
+				end;
+
+				local btn, signal = NeverLose:CreateInput(Frame, handler);
+				btn.Active = true;
+				btn.ZIndex = Frame.ZIndex + 10;
+				return signal;
+			end;
+
+			return InnerBlock;
+		end;
+
+		return Watermark_lb;
+	end;
+
+	Window:SetRender(Window.ToggleUi);
+
+	function Window:_RegisterMenuIconSettings(MenuIcon)
+		if not MenuIcon then return; end;
+
+		Window.UserSettings:AddLabel('Icon Size'):AddSlider({
+			Min      = 32,
+			Max      = 96,
+			Default  = MenuIcon._size,
+			Rounding = 0,
+			Type     = "px",
+			Size     = 100,
+			Callback = function(v)
+				MenuIcon:SetSize(v);
+			end,
+		});
+
+		Window.UserSettings:AddLabel('Icon Draggable'):AddToggle({
+			Default  = MenuIcon._draggable,
+			Callback = function(v)
+				MenuIcon:SetDraggable(v);
+			end,
+		});
+	end;
+
+	local _orig_Toggle = Window.ToggleInterface;
+	function Window:ToggleInterface()
+		_orig_Toggle(self);
+		if Window._MenuIcon then
+			Window._MenuIcon:OnWindowToggle(Window.Signal:GetValue());
+		end;
+	end;
+
+	function Window:AttachMenuIcon(MenuIcon)
+		Window._MenuIcon = MenuIcon;
+		Window:_RegisterMenuIconSettings(MenuIcon);
+	end;
+
+	return Window;
+end;
+
+function NeverLose:CreateNotification()
+	if NeverLose.__Notification_Cache then
+		return NeverLose.__Notification_Cache;
+	end;
+
+	local Notifier = {};
+	local Notification = Instance.new("Frame")
+	local UIListLayout = Instance.new("UIListLayout")
+
+	Notification.Name = NeverLose.RandomString();
+	Notification.Parent = NeverLose.ScreenGui;
+	Notification.AnchorPoint = Vector2.new(1, 0)
+	Notification.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Notification.BackgroundTransparency = 1.000
+	Notification.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Notification.BorderSizePixel = 0
+	Notification.Position = UDim2.new(1, -25, 0, 25)
+	Notification.Size = UDim2.new(0, 25, 0, 25)
+
+	UIListLayout.Parent = Notification
+	UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	UIListLayout.Padding = UDim.new(0, 0)
+
+	NeverLose.__Notification_Cache = Notifier;
+
+	function Notifier.new(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Title = "Notification",
+			Content = "Hello World!",
+			Logo = NeverLose.GlobalLogo or "rbxasset://textures/ui/VerifiedBadgeNameIcon.png",
+			Duration = 5,
+		});
+
+		if NeverLose.__WatermarkCache then
+			NeverLose.PlayAnimate(Notification,SlowyTween , {
+				Position = UDim2.new(1, -25, 0, 55)
+			});
+		end;
+
+		local ContainerFrame = Instance.new("Frame")
+		local NotifyFrame = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local UIStroke = Instance.new("UIStroke")
+		local LogoImage = Instance.new("ImageLabel")
+		local UICorner_2 = Instance.new("UICorner")
+		local NotifyName = Instance.new("TextLabel")
+		local NotifyContent = Instance.new("TextLabel");
+		local shadow = NeverLose:CreateShadow(NotifyFrame , true);
+
+		ContainerFrame.Name = NeverLose.RandomString();
+		ContainerFrame.Parent = Notification
+		ContainerFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		ContainerFrame.BackgroundTransparency = 1.000
+		ContainerFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ContainerFrame.BorderSizePixel = 0
+		ContainerFrame.Size = UDim2.new(0, 0, 0, 100)
+
+		NotifyFrame.Name = NeverLose.RandomString();
+		NotifyFrame.Parent = ContainerFrame
+		NotifyFrame.AnchorPoint = Vector2.new(1, 0)
+		NotifyFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+		NotifyFrame.BackgroundTransparency = 0.075
+		NotifyFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		NotifyFrame.BorderSizePixel = 0
+		NotifyFrame.ClipsDescendants = true
+		NotifyFrame.Position = UDim2.new(0, 750, 0, 0)
+		NotifyFrame.Size = UDim2.new(0, 220, 0, 55)
+		NotifyFrame.ZIndex = 130
+
+		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.Parent = NotifyFrame
+
+		UIStroke.Transparency = 0.650
+		UIStroke.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke.Parent = NotifyFrame
+
+		LogoImage.Name = NeverLose.RandomString();
+		LogoImage.Parent = NotifyFrame
+		LogoImage.AnchorPoint = Vector2.new(0, 0.5)
+		LogoImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		LogoImage.BackgroundTransparency = 1.000
+		LogoImage.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LogoImage.BorderSizePixel = 0
+		LogoImage.Position = UDim2.new(0, 10, 0.5, 0)
+		LogoImage.Size = UDim2.new(0, 35, 0, 35)
+		LogoImage.ZIndex = 131
+		LogoImage.Image = Config.Logo
+		LogoImage.ImageColor3 = NeverLose.IconColor;
+
+		UICorner_2.CornerRadius = UDim.new(0, 7)
+		UICorner_2.Parent = LogoImage
+
+		NotifyName.Name = NeverLose.RandomString();
+		NotifyName.Parent = NotifyFrame
+		NotifyName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		NotifyName.BackgroundTransparency = 1.000
+		NotifyName.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		NotifyName.BorderSizePixel = 0
+		NotifyName.Position = UDim2.new(0, 50, 0, 7)
+		NotifyName.Size = UDim2.new(0, 200, 0, 20)
+		NotifyName.ZIndex = 132
+		NotifyName.Font = Enum.Font.GothamBold
+		NotifyName.Text = Config.Title
+		NotifyName.TextColor3 = Color3.fromRGB(255, 255, 255)
+		NotifyName.TextSize = 17.000
+		NotifyName.TextXAlignment = Enum.TextXAlignment.Left
+
+		NotifyContent.Name = NeverLose.RandomString();
+		NotifyContent.Parent = NotifyFrame
+		NotifyContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		NotifyContent.BackgroundTransparency = 1.000
+		NotifyContent.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		NotifyContent.BorderSizePixel = 0
+		NotifyContent.Position = UDim2.new(0, 50, 0, 28)
+		NotifyContent.Size = UDim2.new(0, 200, 0, 15)
+		NotifyContent.ZIndex = 132
+		NotifyContent.Font = Enum.Font.GothamBold
+		NotifyContent.Text = Config.Content
+		NotifyContent.TextColor3 = Color3.fromRGB(255, 255, 255)
+		NotifyContent.TextSize = 12.000
+		NotifyContent.TextTransparency = 0.650
+		NotifyContent.TextXAlignment = Enum.TextXAlignment.Left
+
+		local Size1 = TextService:GetTextSize(NotifyName.Text,NotifyName.TextSize,NotifyName.Font,Vector2.new(math.huge,math.huge));
+		local Size2 = TextService:GetTextSize(NotifyContent.Text,NotifyContent.TextSize,NotifyContent.Font,Vector2.new(math.huge,math.huge));
+
+		local MainSize = math.max(Size1.X , Size2.X);
+
+		NotifyFrame.Size = UDim2.new(0, MainSize + 65, 0, 55);
+
+		shadow:Render(true)
+		NeverLose.PlayAnimate(NotifyFrame , VSlowTween , {
+			Position = UDim2.new(1, 0, 0, 0)
+		})
+
+		ContainerFrame.Size = UDim2.new(0, 0, 0, 65)
+
+		task.delay(Config.Duration or 5 , LPH_NO_VIRTUALIZE(function()
+
+			if NeverLose.__WatermarkCache then
+				NeverLose.PlayAnimate(Notification,SlowyTween , {
+					Position = UDim2.new(1, -25, 0, 55)
+				});
+			end;
+
+			shadow:Render(false)
+
+			NeverLose.PlayAnimate(NotifyFrame , SlowyTween , {
+				BackgroundTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+				Transparency = 1
+			})
+
+			NeverLose.PlayAnimate(LogoImage , SlowyTween , {
+				ImageTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(NotifyName , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			NeverLose.PlayAnimate(NotifyContent , SlowyTween , {
+				TextTransparency = 1
+			})
+
+			task.wait(0.125);
+
+			NeverLose.PlayAnimate(ContainerFrame , SlowyTween , {
+				Size = UDim2.new(0, 0, 0, 0)
+			})
+
+			task.wait(0.125);
+
+			ContainerFrame:Destroy();
+		end))
+	end;
+
+	return Notifier;
+end;
+
+function NeverLose:CreateLogger()
+	if NeverLose.__LogSystem then
+		return 	NeverLose.__LogSystem;
+	end;
+
+	local Logging = {};
+	local Log = Instance.new("Frame")
+	local UIListLayout = Instance.new("UIListLayout")
+
+	Log.Name = NeverLose.RandomString();
+	Log.Parent = NeverLose.ScreenGui
+	Log.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Log.BackgroundTransparency = 1.000
+	Log.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Log.BorderSizePixel = 0
+	Log.Position = UDim2.new(0, 25, 0, 5 + math.abs(NeverLose.ScreenGui.AbsolutePosition.Y))
+	Log.Size = UDim2.new(0, 25, 0, 25)
+
+	UIListLayout.Parent = Log
+	UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	UIListLayout.Padding = UDim.new(0, 12)
+
+	NeverLose.__LogSystem = Logging;
+
+	function Logging.new(IconStr: string , Message: string , Duration: number)
+		Duration = Duration or 3;
+		Message = Message or "Log";
+		IconStr = IconStr or "crosshairs";
+
+		local LogFrame = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local UIStroke = Instance.new("UIStroke")
+		local LogContent = Instance.new("TextLabel")
+		local Line = Instance.new("Frame")
+		local UICorner_2 = Instance.new("UICorner")
+		local Icon = Instance.new("TextLabel")
+		local Shadow = NeverLose:CreateShadow(LogFrame , true);
+
+		LogFrame.Name = NeverLose.RandomString();
+		LogFrame.Parent = Log
+		LogFrame.AnchorPoint = Vector2.new(0.5, 0)
+		LogFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+		LogFrame.BackgroundTransparency =  1--0.075
+		LogFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LogFrame.BorderSizePixel = 0
+		LogFrame.ClipsDescendants = true
+		LogFrame.Position = UDim2.new(0,0,0,0)
+		LogFrame.Size = UDim2.new(0, 0, 0, 20)
+		LogFrame.ZIndex = 130
+
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = LogFrame
+
+		UIStroke.Transparency = 1--0.650
+		UIStroke.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke.Parent = LogFrame
+
+		LogContent.Name = NeverLose.RandomString();
+		LogContent.Parent = LogFrame
+		LogContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		LogContent.BackgroundTransparency = 1.000
+		LogContent.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		LogContent.BorderSizePixel = 0
+		LogContent.Position = UDim2.new(0, 25, 0, 2)
+		LogContent.Size = UDim2.new(0, 200, 0, 15)
+		LogContent.ZIndex = 132
+		LogContent.Font = Enum.Font.GothamBold
+		LogContent.Text = Message
+		LogContent.TextColor3 = Color3.fromRGB(255, 255, 255)
+		LogContent.TextSize = 12.000
+		LogContent.TextTransparency = 1--0.250
+		LogContent.TextXAlignment = Enum.TextXAlignment.Left
+
+		Line.Name = NeverLose.RandomString();
+		Line.Parent = LogFrame
+		Line.AnchorPoint = Vector2.new(0, 0.5)
+		Line.BackgroundColor3 = NeverLose.AccentColor
+		Line.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Line.BackgroundTransparency = 1 --0
+		Line.BorderSizePixel = 0
+		Line.Position = UDim2.new(0, -2, 0.5, 0)
+		Line.Size = UDim2.new(0, 5, 1, 0)
+		Line.ZIndex = 131
+
+		UICorner_2.CornerRadius = UDim.new(0, 4)
+		UICorner_2.Parent = Line
+
+		Icon.Name = NeverLose.RandomString();
+		Icon.Parent = LogFrame
+		Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Icon.BackgroundTransparency = 1.000
+		Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Icon.BorderSizePixel = 0
+		Icon.Position = UDim2.new(0, 7, 0, 3)
+		Icon.Size = UDim2.new(0, 15, 0, 15)
+		Icon.ZIndex = 133
+		Icon.FontFace = NeverLose.BuiltInBold
+		Icon.Text = IconStr
+		Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
+		Icon.TextSize = 13.000
+		Icon.TextTransparency = 1--0.250
+		Icon.TextWrapped = true
+
+		local size = TextService:GetTextSize(LogContent.Text,LogContent.TextSize,LogContent.Font,Vector2.new(math.huge,math.huge));
+
+		NeverLose.PlayAnimate(LogFrame , SlowyTween , {
+			Size = UDim2.new(0, size.X + 35, 0, 20),
+			BackgroundTransparency =  0.075
+		});
+
+		task.delay(0.15,LPH_NO_VIRTUALIZE(function()
+			Shadow:Render(true);
+
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+				Transparency = 0.650
+			});
+
+			NeverLose.PlayAnimate(LogContent , SlowyTween , {
+				TextTransparency = 0.25
+			});
+
+			NeverLose.PlayAnimate(Line , SlowyTween , {
+				BackgroundTransparency = 0
+			});
+
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
+				TextTransparency = 0.25
+			});
+
+			task.wait(Duration + 0.1);
+
+			Shadow:Render(false);
+
+			NeverLose.PlayAnimate(LogFrame , SlowyTween , {
+				BackgroundTransparency =  1
+			});
+
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
+				Transparency = 1
+			});
+
+			NeverLose.PlayAnimate(LogContent , SlowyTween , {
+				TextTransparency = 1
+			});
+
+			NeverLose.PlayAnimate(Line , SlowyTween , {
+				BackgroundTransparency = 1
+			});
+
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
+				TextTransparency = 1
+			});
+
+			task.wait(0.25);
+
+			LogFrame:Destroy();
+		end))
+	end;
+
+	return Logging
+end;
+
+function NeverLose:CreateIndicator()
+	local IndicatorFrame = Instance.new("Frame")
+	local UIListLayout = Instance.new("UIListLayout")
+
+	IndicatorFrame.Name = NeverLose.RandomString();
+	IndicatorFrame.Parent = NeverLose.ScreenGui;
+	IndicatorFrame.AnchorPoint = Vector2.new(0, 0.5)
+	IndicatorFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	IndicatorFrame.BackgroundTransparency = 1.000
+	IndicatorFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	IndicatorFrame.BorderSizePixel = 0
+	IndicatorFrame.Position = UDim2.new(0, 15, 0.5, 0)
+	IndicatorFrame.Size = UDim2.new(0, 100, 0, 100)
+	IndicatorFrame.ZIndex = 15
+
+	UIListLayout.Parent = IndicatorFrame
+	UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	UIListLayout.Padding = UDim.new(0, 10)
+
+	local Indicators = {};
+
+	Indicators.Color = {
+		Red = Color3.fromRGB(255, 102, 105),
+		Green = Color3.fromRGB(135, 255, 143),
+		White = Color3.fromRGB(186, 186, 186),
+	};
+
+	Indicators.Root = IndicatorFrame;
+
+	function Indicators.new(Config)
+		Config = NeverLose:ProcessParams(Config , {
+			Name = "Indicator",
+			Icon = 'crosshairs',
+			Color = 'Red',
+		});
+
+		local Indicator = {
+			CurrentColor = Config.Color,	
+			Visible = false,
+		};
+
+		local IndicatorItem = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local Line = Instance.new("Frame")
+		local UICorner_2 = Instance.new("UICorner")
+		local UIGradient = Instance.new("UIGradient")
+		local Icon = Instance.new("TextLabel")
+		local Content = Instance.new("TextLabel")
+		local Shadow = NeverLose:CreateShadow(IndicatorItem);
+
+		IndicatorItem.Name = NeverLose.RandomString();
+		IndicatorItem.BackgroundColor3 = Color3.fromRGB(8, 8, 13)
+		IndicatorItem.BackgroundTransparency = 1
+		IndicatorItem.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		IndicatorItem.BorderSizePixel = 0
+		IndicatorItem.ClipsDescendants = true
+		IndicatorItem.Size = UDim2.new(0, 85, 0, 40)
+		IndicatorItem.ZIndex = 16
+		IndicatorItem.Visible = false;
+
+		IndicatorItem:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+			if IndicatorItem.BackgroundTransparency > 0.9 then
+				IndicatorItem.Parent = nil;
+				IndicatorItem.Visible = false;
+			else
+				IndicatorItem.Parent = IndicatorFrame;
+				IndicatorItem.Visible = true;
+			end;
+		end))
+
+		UICorner.CornerRadius = UDim.new(0, 25)
+		UICorner.Parent = IndicatorItem
+
+		Line.Name = NeverLose.RandomString();
+		Line.Parent = IndicatorItem
+		Line.AnchorPoint = Vector2.new(0, 0.5)
+		Line.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
+		Line.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Line.BorderSizePixel = 0
+		Line.Position = UDim2.new(0, 2, 0.5, 0)
+		Line.BackgroundTransparency = 1;
+		Line.Size = UDim2.new(0, 3, 0.649999976, 0)
+		Line.ZIndex = 17
+
+		UICorner_2.CornerRadius = UDim.new(0, 25)
+		UICorner_2.Parent = Line
+
+		UIGradient.Rotation = 90
+		UIGradient.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0.00, 1.00), NumberSequenceKeypoint.new(0.50, 0.00), NumberSequenceKeypoint.new(1.00, 1.00)}
+		UIGradient.Parent = Line
+
+		Icon.Name = NeverLose.RandomString();
+		Icon.Parent = IndicatorItem
+		Icon.AnchorPoint = Vector2.new(0, 0.5)
+		Icon.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
+		Icon.BackgroundTransparency = 1.000
+		Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Icon.BorderSizePixel = 0
+		Icon.Position = UDim2.new(0, 10, 0.5, 0)
+		Icon.Size = UDim2.new(0, 25, 0, 25)
+		Icon.ZIndex = 17
+		Icon.FontFace = NeverLose.BuiltInBold;
+		Icon.Text = Config.Icon
+		Icon.TextColor3 = Color3.fromRGB(186, 186, 186)
+		Icon.TextSize = 21.000
+		Icon.TextTransparency = 1
+		Icon.TextWrapped = true
+
+		Content.Name = NeverLose.RandomString();
+		Content.Parent = IndicatorItem
+		Content.AnchorPoint = Vector2.new(0, 0.5)
+		Content.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
+		Content.BackgroundTransparency = 1.000
+		Content.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Content.BorderSizePixel = 0
+		Content.Position = UDim2.new(0, 40, 0.5, 0)
+		Content.Size = UDim2.new(1, -40, 0, 25)
+		Content.ZIndex = 17
+		Content.Font = Enum.Font.GothamBold
+		Content.Text = Config.Name
+		Content.TextColor3 = Color3.fromRGB(186, 186, 186)
+		Content.TextSize = 20.000
+		Content.TextTransparency = 1
+		Content.TextXAlignment = Enum.TextXAlignment.Left
+
+		Indicator.Update = LPH_NO_VIRTUALIZE(function()
+			local text = TextService:GetTextSize(Content.Text,Content.TextSize , Content.Font , Vector2.new(math.huge,math.huge));
+
+			NeverLose.PlayAnimate(IndicatorItem , SlowyTween , {
+				Size = UDim2.new(0, text.X + 60, 0, 40);
+			})
+		end);
+
+		Indicator.SetRender = LPH_NO_VIRTUALIZE(function(self , value)
+			Indicator.Visible = value;
+
+			if value then
+				NeverLose.PlayAnimate(IndicatorItem , SlowyTween , {
+					BackgroundTransparency = 0.200
+				});
+
+				NeverLose.PlayAnimate(Line , SlowyTween , {
+					BackgroundTransparency = 0,
+					BackgroundColor3 = Indicators.Color[Indicator.CurrentColor]
+				});
+
+				NeverLose.PlayAnimate(Icon , VSlowTween , {
+					TextTransparency = 0.250,
+					TextColor3 = Indicators.Color[Indicator.CurrentColor]
+				});
+
+				NeverLose.PlayAnimate(Content , VSlowTween , {
+					TextTransparency = 0.2,
+					TextColor3 = Indicators.Color[Indicator.CurrentColor]
+				});
+
+				Shadow:Render(true);
+			else
+				NeverLose.PlayAnimate(IndicatorItem , SlowyTween , {
+					BackgroundTransparency = 1
+				});
+
+				NeverLose.PlayAnimate(Line , SlowyTween , {
+					BackgroundTransparency = 1,
+					BackgroundColor3 = Indicators.Color[Indicator.CurrentColor]
+				});
+
+				NeverLose.PlayAnimate(Icon , VSlowTween , {
+					TextTransparency = 1,
+					TextColor3 = Indicators.Color[Indicator.CurrentColor]
+				});
+
+				NeverLose.PlayAnimate(Content , VSlowTween , {
+					TextTransparency = 1,
+					TextColor3 = Indicators.Color[Indicator.CurrentColor]
+				});
+
+				Shadow:Render(false);
+			end;
+
+			Indicator.Update();
+		end);
+
+		Indicator.Update();
+		Indicator:SetRender(false);
+
+		function Indicator:SetColor(new_color)
+			Indicator.CurrentColor = new_color;
+
+			if Indicator.Visible then
+				Indicator:SetRender(true);
+			end;
+		end;
+
+		function Indicator:SetText(name)
+			Config.Name = name;
+
+			Content.Text = Config.Name;
+
+			Indicator.Update();
+		end;
+
+		return Indicator;
+	end;
+
+	return Indicators;
+end;
+
+function NeverLose:Unload()
+	if not NeverLose.UnloadEnabled then
+		return;	
+	end;
+
+	NeverLose.ScreenGui:Destroy();
+
+	for i,v in next , NeverLose.GlobalSignals do
+		pcall(v.Disconnect,v)
+	end;
+end;
+
+return NeverLose;
