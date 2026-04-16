@@ -1,5 +1,7 @@
 --[[
 main.lua
+NeverLose UI Library
+Version: 1.0
 ]]
 
 do
@@ -145,22 +147,6 @@ listfiles = listfiles or getgenv().listfiles;
 isfolder = isfolder or getgenv().isfolder;
 isfile = isfile or getgenv().isfile;
 
--- Load Lucide Icons
-local LucideIcons = {}
-local function LoadLucideIcons()
-	local iconData = game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/refs/heads/main/lucide/dist/Icons.lua")
-	local chunk = loadstring(iconData)
-	if chunk then
-		local icons = chunk()
-		if type(icons) == "table" then
-			for name, char in pairs(icons) do
-				LucideIcons[name] = char
-			end
-		end
-	end
-end
-pcall(LoadLucideIcons)
-
 local NeverLose = {};
 
 NeverLose.BuiltInRegular = Font.new('rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json',Enum.FontWeight.Regular,Enum.FontStyle.Normal);
@@ -218,7 +204,26 @@ NeverLose.IsMosueOverOtherFrame = false;
 NeverLose.GlobalLogo = "rbxassetid://120358385035996";
 NeverLose.ImageColorMapping = "rbxassetid://4155801252";
 
--- Function to get icon (supports lucide:iconname format)
+-- Load Lucide Icons (optional)
+local LucideIcons = {}
+local function LoadLucideIcons()
+	local success, iconData = pcall(function()
+		return game:HttpGet("https://raw.githubusercontent.com/Footagesus/Icons/refs/heads/main/lucide/dist/Icons.lua")
+	end)
+	if success and iconData then
+		local chunk = loadstring(iconData)
+		if chunk then
+			local icons = chunk()
+			if type(icons) == "table" then
+				for name, char in pairs(icons) do
+					LucideIcons[name] = char
+				end
+			end
+		end
+	end
+end
+pcall(LoadLucideIcons)
+
 function NeverLose:GetIcon(iconString)
 	if type(iconString) == "string" and iconString:sub(1,7) == "lucide:" then
 		local iconName = iconString:sub(8)
@@ -688,7 +693,7 @@ do
 end;
 
 function NeverLose:FireKeybind()
-	if NeverLose.ActiveWindow and NeverLose.ActiveWindow.ToggleUi then
+	if NeverLose.ActiveWindow then
 		NeverLose.ActiveWindow:ToggleInterface();
 	end;
 end;
@@ -697,7 +702,495 @@ NeverLose.LoadIcon = LPH_NO_VIRTUALIZE(function()
 	NeverLose.RobloxIcon = {
 		["3d-cube-arrow-left"] = "3d-cube-arrow-left",
 		["amazon"] = "amazon",
-		-- ... (ikon lainnya tetap sama)
+		["arm-left"] = "arm-left",
+		["arm-right"] = "arm-right",
+		["arrow-curl-to-left"] = "arrow-curl-to-left",
+		["arrow-curl-to-right"] = "arrow-curl-to-right",
+		["arrow-down-to-line"] = "arrow-down-to-line",
+		["arrow-large-down"] = "arrow-large-down",
+		["arrow-large-left"] = "arrow-large-left",
+		["arrow-large-right"] = "arrow-large-right",
+		["arrow-large-up"] = "arrow-large-up",
+		["arrow-right-from-portrait-rectangle"] = "arrow-right-from-portrait-rectangle",
+		["arrow-right-to-portrait-rectangle"] = "arrow-right-to-portrait-rectangle",
+		["arrow-rotate-down-dashed"] = "arrow-rotate-down-dashed",
+		["arrow-rotate-right"] = "arrow-rotate-right",
+		["arrow-rotate-right-dashed"] = "arrow-rotate-right-dashed",
+		["arrow-small-down"] = "arrow-small-down",
+		["arrow-small-left"] = "arrow-small-left",
+		["arrow-small-right"] = "arrow-small-right",
+		["arrow-small-up"] = "arrow-small-up",
+		["arrow-spin-clockwise"] = "arrow-spin-clockwise",
+		["arrow-spin-clockwise-10"] = "arrow-spin-clockwise-10",
+		["arrow-spin-clockwise-15"] = "arrow-spin-clockwise-15",
+		["arrow-spin-clockwise-30"] = "arrow-spin-clockwise-30",
+		["arrow-spin-counter-clockwise-10"] = "arrow-spin-counter-clockwise-10",
+		["arrow-spin-counter-clockwise-15"] = "arrow-spin-counter-clockwise-15",
+		["arrow-spin-counter-clockwise-30"] = "arrow-spin-counter-clockwise-30",
+		["arrow-thick-to-left"] = "arrow-thick-to-left",
+		["arrow-thick-to-right"] = "arrow-thick-to-right",
+		["arrow-up-from-landscape-rectangle"] = "arrow-up-from-landscape-rectangle",
+		["arrow-up-right-from-square"] = "arrow-up-right-from-square",
+		["arrow-wide-short-down"] = "arrow-wide-short-down",
+		["arrow-wide-short-left"] = "arrow-wide-short-left",
+		["arrow-wide-short-right"] = "arrow-wide-short-right",
+		["arrow-wide-short-up"] = "arrow-wide-short-up",
+		["arrows-small-directional"] = "arrows-small-directional",
+		["audio-wave-dotted-line"] = "audio-wave-dotted-line",
+		["backpack"] = "backpack",
+		["beard"] = "beard",
+		["bell"] = "bell",
+		["bell-clock"] = "bell-clock",
+		["bell-plus"] = "bell-plus",
+		["bell-slash"] = "bell-slash",
+		["belt"] = "belt",
+		["binoculars"] = "binoculars",
+		["book-closed"] = "book-closed",
+		["bookmark"] = "bookmark",
+		["bow-tie"] = "bow-tie",
+		["building-store"] = "building-store",
+		["bullet-flying"] = "bullet-flying",
+		["butterfly-wings"] = "butterfly-wings",
+		["calendar"] = "calendar",
+		["calendar-plus"] = "calendar-plus",
+		["calendar-star"] = "calendar-star",
+		["camera-small"] = "camera-small",
+		["caret-small-down"] = "caret-small-down",
+		["caret-small-left"] = "caret-small-left",
+		["caret-small-right"] = "caret-small-right",
+		["caret-small-up"] = "caret-small-up",
+		["chain-link"] = "chain-link",
+		["chart-four-vertical-bars"] = "chart-four-vertical-bars",
+		["chart-line"] = "chart-line",
+		["chart-pie"] = "chart-pie",
+		["chart-scatter-plot"] = "chart-scatter-plot",
+		["chart-three-vertical-bars"] = "chart-three-vertical-bars",
+		["check"] = "check",
+		["check-large"] = "check-large",
+		["check-small"] = "check-small",
+		["chevron-large-down"] = "chevron-large-down",
+		["chevron-large-down-to-line"] = "chevron-large-down-to-line",
+		["chevron-large-left"] = "chevron-large-left",
+		["chevron-large-left-to-line"] = "chevron-large-left-to-line",
+		["chevron-large-right"] = "chevron-large-right",
+		["chevron-large-right-to-line"] = "chevron-large-right-to-line",
+		["chevron-large-up"] = "chevron-large-up",
+		["chevron-large-up-to-line"] = "chevron-large-up-to-line",
+		["chevron-small-down"] = "chevron-small-down",
+		["chevron-small-down-to-line"] = "chevron-small-down-to-line",
+		["chevron-small-left"] = "chevron-small-left",
+		["chevron-small-left-to-line"] = "chevron-small-left-to-line",
+		["chevron-small-right"] = "chevron-small-right",
+		["chevron-small-right-to-line"] = "chevron-small-right-to-line",
+		["chevron-small-up"] = "chevron-small-up",
+		["chevron-small-up-to-line"] = "chevron-small-up-to-line",
+		["circle-check"] = "circle-check",
+		["circle-i"] = "circle-i",
+		["circle-minus"] = "circle-minus",
+		["circle-person"] = "circle-person",
+		["circle-person-three-horizontal-bars-wrapping-right"] = "circle-person-three-horizontal-bars-wrapping-right",
+		["circle-play"] = "circle-play",
+		["circle-plus"] = "circle-plus",
+		["circle-question"] = "circle-question",
+		["circle-slash"] = "circle-slash",
+		["circle-star"] = "circle-star",
+		["circle-three-dots-horizontal"] = "circle-three-dots-horizontal",
+		["circle-three-dots-vertical"] = "circle-three-dots-vertical",
+		["circle-x"] = "circle-x",
+		["clock"] = "clock",
+		["clock-dashed"] = "clock-dashed",
+		["clock-spin-reverse"] = "clock-spin-reverse",
+		["clock-spin-reverse-dashed"] = "clock-spin-reverse-dashed",
+		["clothes-hanger"] = "clothes-hanger",
+		["cloud"] = "cloud",
+		["cloud-arrow-down"] = "cloud-arrow-down",
+		["code"] = "code",
+		["compact-makeup-brush"] = "compact-makeup-brush",
+		["compass"] = "compass",
+		["controller-with-cog"] = "controller-with-cog",
+		["crop"] = "crop",
+		["crosshairs"] = "crosshairs",
+		["crosshairs-slash"] = "crosshairs-slash",
+		["cube-vertexes"] = "cube-vertexes",
+		["curved-rectangle-megaphone"] = "curved-rectangle-megaphone",
+		["diagonal-line-pattern"] = "diagonal-line-pattern",
+		["diagonal-line-pattern-sticker"] = "diagonal-line-pattern-sticker",
+		["diamond-simplified"] = "diamond-simplified",
+		["discord"] = "discord",
+		["disguise-nose-glasses"] = "disguise-nose-glasses",
+		["document-circle-slash"] = "document-circle-slash",
+		["document-list-heart"] = "document-list-heart",
+		["door-open-arrow-to-bottom-right"] = "door-open-arrow-to-bottom-right",
+		["dress"] = "dress",
+		["dual-arrows-horizontal"] = "dual-arrows-horizontal",
+		["dual-arrows-to-corners"] = "dual-arrows-to-corners",
+		["dual-arrows-vertical"] = "dual-arrows-vertical",
+		["envelope"] = "envelope",
+		["eraser"] = "eraser",
+		["eye"] = "eye",
+		["eye-slash"] = "eye-slash",
+		["eye-with-eyeliner"] = "eye-with-eyeliner",
+		["eyebrows"] = "eyebrows",
+		["eyelashes"] = "eyelashes",
+		["face-winking"] = "face-winking",
+		["facebook"] = "facebook",
+		["file-box"] = "file-box",
+		["fingerprint"] = "fingerprint",
+		["flag"] = "flag",
+		["flame"] = "flame",
+		["folder"] = "folder",
+		["fountain-pen-nib"] = "fountain-pen-nib",
+		["four-bars-horizontal-center-aligned"] = "four-bars-horizontal-center-aligned",
+		["four-bars-horizontal-chevron-left"] = "four-bars-horizontal-chevron-left",
+		["four-bars-horizontal-chevron-right"] = "four-bars-horizontal-chevron-right",
+		["four-bars-horizontal-justified-aligned"] = "four-bars-horizontal-justified-aligned",
+		["four-bars-horizontal-left-aligned"] = "four-bars-horizontal-left-aligned",
+		["four-bars-horizontal-right-aligned"] = "four-bars-horizontal-right-aligned",
+		["frame-bubble-slash"] = "frame-bubble-slash",
+		["frame-bubble-soundwave"] = "frame-bubble-soundwave",
+		["frame-camera"] = "frame-camera",
+		["frame-camera-center"] = "frame-camera-center",
+		["frame-collapsed"] = "frame-collapsed",
+		["frame-corners"] = "frame-corners",
+		["frame-expanded"] = "frame-expanded",
+		["frame-face"] = "frame-face",
+		["frame-person-torso"] = "frame-person-torso",
+		["frame-record"] = "frame-record",
+		["frame-single-bar-horizontal"] = "frame-single-bar-horizontal",
+		["frame-soundwave"] = "frame-soundwave",
+		["frame-video-camera"] = "frame-video-camera",
+		["gear"] = "gear",
+		["generic-dpad"] = "generic-dpad",
+		["gift-box"] = "gift-box",
+		["gift-card"] = "gift-card",
+		["glasses"] = "glasses",
+		["globe-detailed"] = "globe-detailed",
+		["globe-simplified"] = "globe-simplified",
+		["globe-simplipfied-speech-bubble"] = "globe-simplipfied-speech-bubble",
+		["grid"] = "grid",
+		["guilded"] = "guilded",
+		["hack-week"] = "hack-week",
+		["hammer-code"] = "hammer-code",
+		["hand-curved-arrow-left"] = "hand-curved-arrow-left",
+		["hand-dual-arrows"] = "hand-dual-arrows",
+		["hand-ellipse"] = "hand-ellipse",
+		["hand-half-ellipse"] = "hand-half-ellipse",
+		["hand-two-arrows-horizontal"] = "hand-two-arrows-horizontal",
+		["hashtag"] = "hashtag",
+		["hat-fedora"] = "hat-fedora",
+		["hat-toque"] = "hat-toque",
+		["head-blank"] = "head-blank",
+		["head-blush"] = "head-blush",
+		["head-female"] = "head-female",
+		["head-freckles"] = "head-freckles",
+		["head-lips"] = "head-lips",
+		["head-male"] = "head-male",
+		["headphones"] = "headphones",
+		["headphones-arrow-up"] = "headphones-arrow-up",
+		["headphones-arrow-up-lock"] = "headphones-arrow-up-lock",
+		["headphones-slash"] = "headphones-slash",
+		["headphones-x"] = "headphones-x",
+		["headphones-x-lock"] = "headphones-x-lock",
+		["heart"] = "heart",
+		["house"] = "house",
+		["image"] = "image",
+		["image-stacked"] = "image-stacked",
+		["instagram"] = "instagram",
+		["jacket"] = "jacket",
+		["key"] = "key",
+		["key-alt"] = "key-alt",
+		["key-apostrophe"] = "key-apostrophe",
+		["key-arrow-down"] = "key-arrow-down",
+		["key-arrow-right"] = "key-arrow-right",
+		["key-arrow-up"] = "key-arrow-up",
+		["key-asterisk"] = "key-asterisk",
+		["key-backspace"] = "key-backspace",
+		["key-caps-lock"] = "key-caps-lock",
+		["key-caret"] = "key-caret",
+		["key-comma"] = "key-comma",
+		["key-command"] = "key-command",
+		["key-control"] = "key-control",
+		["key-grave-accent"] = "key-grave-accent",
+		["key-period"] = "key-period",
+		["key-return"] = "key-return",
+		["key-shift"] = "key-shift",
+		["key-space"] = "key-space",
+		["key-tab"] = "key-tab",
+		["language-characters"] = "language-characters",
+		["leg-left"] = "leg-left",
+		["leg-right"] = "leg-right",
+		["lightning-bolt"] = "lightning-bolt",
+		["linkedin"] = "linkedin",
+		["lips"] = "lips",
+		["lipstick"] = "lipstick",
+		["list-bulleted"] = "list-bulleted",
+		["location-pin"] = "location-pin",
+		["location-pin-map"] = "location-pin-map",
+		["lock-closed"] = "lock-closed",
+		["lollipop"] = "lollipop",
+		["magnifying-glass"] = "magnifying-glass",
+		["magnifying-glass-minus"] = "magnifying-glass-minus",
+		["magnifying-glass-plus"] = "magnifying-glass-plus",
+		["mascara"] = "mascara",
+		["megaphone"] = "megaphone",
+		["memory-card"] = "memory-card",
+		["messenger"] = "messenger",
+		["microphone"] = "microphone",
+		["microphone-slash"] = "microphone-slash",
+		["microphone-text-box"] = "microphone-text-box",
+		["microphone-triangle-exclamation"] = "microphone-triangle-exclamation",
+		["minus"] = "minus",
+		["minus-small"] = "minus-small",
+		["mirror-standing"] = "mirror-standing",
+		["moments"] = "moments",
+		["moon"] = "moon",
+		["mouse-button-left"] = "mouse-button-left",
+		["mouse-button-right"] = "mouse-button-right",
+		["mouse-scrollwheel"] = "mouse-scrollwheel",
+		["music-note"] = "music-note",
+		["nebula"] = "nebula",
+		["necklace"] = "necklace",
+		["nine-dots-grid"] = "nine-dots-grid",
+		["ninja"] = "ninja",
+		["nose"] = "nose",
+		["page"] = "page",
+		["paint-brush"] = "paint-brush",
+		["paint-bucket"] = "paint-bucket",
+		["pants"] = "pants",
+		["pants-2d-text"] = "pants-2d-text",
+		["paper-airplane"] = "paper-airplane",
+		["parrot"] = "parrot",
+		["pause-large"] = "pause-large",
+		["pause-small"] = "pause-small",
+		["pencil"] = "pencil",
+		["pencil-square"] = "pencil-square",
+		["person"] = "person",
+		["person-arrow-from-bottom-right"] = "person-arrow-from-bottom-right",
+		["person-check"] = "person-check",
+		["person-circle-slash"] = "person-circle-slash",
+		["person-climbing"] = "person-climbing",
+		["person-clock"] = "person-clock",
+		["person-falling"] = "person-falling",
+		["person-graduate"] = "person-graduate",
+		["person-jumping"] = "person-jumping",
+		["person-magnifying-glass"] = "person-magnifying-glass",
+		["person-photo-camera"] = "person-photo-camera",
+		["person-play"] = "person-play",
+		["person-play-clock"] = "person-play-clock",
+		["person-plus"] = "person-plus",
+		["person-racing"] = "person-racing",
+		["person-running"] = "person-running",
+		["person-standing"] = "person-standing",
+		["person-standing-arrow-reverse"] = "person-standing-arrow-reverse",
+		["person-standing-dual-arrows-vertical"] = "person-standing-dual-arrows-vertical",
+		["person-standing-gear"] = "person-standing-gear",
+		["person-swimming"] = "person-swimming",
+		["person-teleport"] = "person-teleport",
+		["person-trash-can"] = "person-trash-can",
+		["person-walking"] = "person-walking",
+		["person-with-smaller-person"] = "person-with-smaller-person",
+		["phone"] = "phone",
+		["phone-down"] = "phone-down",
+		["phone-plus"] = "phone-plus",
+		["phone-volume"] = "phone-volume",
+		["phone-x"] = "phone-x",
+		["photo-camera"] = "photo-camera",
+		["photo-camera-face"] = "photo-camera-face",
+		["photo-camera-slash"] = "photo-camera-slash",
+		["picture-in-picture"] = "picture-in-picture",
+		["pig"] = "pig",
+		["pin"] = "pin",
+		["pin-slash"] = "pin-slash",
+		["play-large"] = "play-large",
+		["play-small"] = "play-small",
+		["plus-large"] = "plus-large",
+		["plus-small"] = "plus-small",
+		["premium"] = "premium",
+		["ps-circle"] = "ps-circle",
+		["ps-dpad-down"] = "ps-dpad-down",
+		["ps-dpad-left"] = "ps-dpad-left",
+		["ps-dpad-right"] = "ps-dpad-right",
+		["ps-dpad-up"] = "ps-dpad-up",
+		["ps-l1"] = "ps-l1",
+		["ps-l2"] = "ps-l2",
+		["ps-l3"] = "ps-l3",
+		["ps-r1"] = "ps-r1",
+		["ps-r2"] = "ps-r2",
+		["ps-r3"] = "ps-r3",
+		["ps-square"] = "ps-square",
+		["ps-stick-left"] = "ps-stick-left",
+		["ps-stick-right"] = "ps-stick-right",
+		["ps-triagle"] = "ps-triagle",
+		["ps-x"] = "ps-x",
+		["ps4-options"] = "ps4-options",
+		["ps4-share"] = "ps4-share",
+		["ps4-touchpad"] = "ps4-touchpad",
+		["ps5-options"] = "ps5-options",
+		["ps5-share"] = "ps5-share",
+		["ps5-touchpad"] = "ps5-touchpad",
+		["pumpkin"] = "pumpkin",
+		["purse"] = "purse",
+		["rectangle-list"] = "rectangle-list",
+		["rectangle-numbers-counting"] = "rectangle-numbers-counting",
+		["rectangle-person-with-three-horizontal-lines"] = "rectangle-person-with-three-horizontal-lines",
+		["robux"] = "robux",
+		["rosette-seven-point"] = "rosette-seven-point",
+		["rosette-ten-point"] = "rosette-ten-point",
+		["seven-point-rosette"] = "seven-point-rosette",
+		["shield-check"] = "shield-check",
+		["shield-lock"] = "shield-lock",
+		["shirt"] = "shirt",
+		["shirt-2d-text"] = "shirt-2d-text",
+		["shirt-pants"] = "shirt-pants",
+		["shoe-left"] = "shoe-left",
+		["shoe-right"] = "shoe-right",
+		["shopping-basket"] = "shopping-basket",
+		["shopping-basket-check"] = "shopping-basket-check",
+		["shopping-cart"] = "shopping-cart",
+		["shorts"] = "shorts",
+		["sidebar"] = "sidebar",
+		["signal-exclamation"] = "signal-exclamation",
+		["six-dots-two-column-grid"] = "six-dots-two-column-grid",
+		["skip-end-large"] = "skip-end-large",
+		["skip-end-small"] = "skip-end-small",
+		["skip-next-large"] = "skip-next-large",
+		["skip-next-small"] = "skip-next-small",
+		["skip-previous-large"] = "skip-previous-large",
+		["skip-previous-small"] = "skip-previous-small",
+		["skip-start-large"] = "skip-start-large",
+		["skip-start-small"] = "skip-start-small",
+		["smartphone-portrait"] = "smartphone-portrait",
+		["speaker"] = "speaker",
+		["speaker-slash"] = "speaker-slash",
+		["speaker-triangle-exclamation"] = "speaker-triangle-exclamation",
+		["speaker-x"] = "speaker-x",
+		["speech-bubble-align-center"] = "speech-bubble-align-center",
+		["speech-bubble-align-left"] = "speech-bubble-align-left",
+		["speech-bubble-exclamation"] = "speech-bubble-exclamation",
+		["speech-bubble-round"] = "speech-bubble-round",
+		["square-bone"] = "square-bone",
+		["square-books"] = "square-books",
+		["square-check"] = "square-check",
+		["square-code"] = "square-code",
+		["square-dashed-person-standing"] = "square-dashed-person-standing",
+		["square-dual-arrows-horizontal"] = "square-dual-arrows-horizontal",
+		["square-dual-arrows-to-corner"] = "square-dual-arrows-to-corner",
+		["square-face-sound"] = "square-face-sound",
+		["square-face-waving-hand"] = "square-face-waving-hand",
+		["square-face-winking"] = "square-face-winking",
+		["square-minus"] = "square-minus",
+		["square-person"] = "square-person",
+		["squares-grid-plus"] = "squares-grid-plus",
+		["squares-grid-qr"] = "squares-grid-qr",
+		["stacked-squares-arrow-down-left"] = "stacked-squares-arrow-down-left",
+		["stacked-squares-arrow-up-right"] = "stacked-squares-arrow-up-right",
+		["stacked-squares-plus"] = "stacked-squares-plus",
+		["star"] = "star",
+		["stop-large"] = "stop-large",
+		["stop-small"] = "stop-small",
+		["studio"] = "studio",
+		["sun"] = "sun",
+		["sweater"] = "sweater",
+		["sword"] = "sword",
+		["tag-sparkle"] = "tag-sparkle",
+		["teletype"] = "teletype",
+		["tencent-qq"] = "tencent-qq",
+		["text-b-bold"] = "text-b-bold",
+		["text-box-microphone"] = "text-box-microphone",
+		["text-h-subscript-1"] = "text-h-subscript-1",
+		["text-h-subscript-2"] = "text-h-subscript-2",
+		["text-h-subscript-3"] = "text-h-subscript-3",
+		["text-i-italic"] = "text-i-italic",
+		["text-s-strikethrough"] = "text-s-strikethrough",
+		["text-u-underline"] = "text-u-underline",
+		["text-uppercase-a-lowercase-a"] = "text-uppercase-a-lowercase-a",
+		["text-x-subscript-2"] = "text-x-subscript-2",
+		["text-x-superscript-2"] = "text-x-superscript-2",
+		["three-bars-horizontal"] = "three-bars-horizontal",
+		["three-bars-horizontal-chevron-left"] = "three-bars-horizontal-chevron-left",
+		["three-bars-horizontal-narrowing"] = "three-bars-horizontal-narrowing",
+		["three-bars-horizontal-triangles-vertical"] = "three-bars-horizontal-triangles-vertical",
+		["three-bars-vertical-triangles-horizontal"] = "three-bars-vertical-triangles-horizontal",
+		["three-chevrons-enlarging-down"] = "three-chevrons-enlarging-down",
+		["three-chevrons-enlarging-up"] = "three-chevrons-enlarging-up",
+		["three-dots-horizontal"] = "three-dots-horizontal",
+		["three-dots-vertical"] = "three-dots-vertical",
+		["three-horizontal-bars-wrapping-right"] = "three-horizontal-bars-wrapping-right",
+		["three-people"] = "three-people",
+		["three-ring-note"] = "three-ring-note",
+		["three-sliders-horizontal"] = "three-sliders-horizontal",
+		["three-stacked-squares-tilted"] = "three-stacked-squares-tilted",
+		["thumb-down"] = "thumb-down",
+		["thumb-up"] = "thumb-up",
+		["tik-tok"] = "tik-tok",
+		["tilt"] = "tilt",
+		["torso"] = "torso",
+		["trash-can"] = "trash-can",
+		["triangle-exclamation"] = "triangle-exclamation",
+		["trophy"] = "trophy",
+		["tshirt"] = "tshirt",
+		["tshirt-2d-text"] = "tshirt-2d-text",
+		["tshirt-dual-arrows"] = "tshirt-dual-arrows",
+		["twitch"] = "twitch",
+		["twitter"] = "twitter",
+		["two-arrows-down-and-up"] = "two-arrows-down-and-up",
+		["two-arrows-from-center"] = "two-arrows-from-center",
+		["two-arrows-left-right"] = "two-arrows-left-right",
+		["two-arrows-loop-clockwise"] = "two-arrows-loop-clockwise",
+		["two-arrows-loop-clockwise-1"] = "two-arrows-loop-clockwise-1",
+		["two-arrows-loop-clockwise-infinity"] = "two-arrows-loop-clockwise-infinity",
+		["two-arrows-spin-clockwise"] = "two-arrows-spin-clockwise",
+		["two-arrows-spin-clockwise-plus"] = "two-arrows-spin-clockwise-plus",
+		["two-arrows-switch-right"] = "two-arrows-switch-right",
+		["two-arrows-to-center"] = "two-arrows-to-center",
+		["two-folders"] = "two-folders",
+		["two-location-pins-connecting-arrow"] = "two-location-pins-connecting-arrow",
+		["two-makeup-brushes"] = "two-makeup-brushes",
+		["two-people"] = "two-people",
+		["two-people-speech-bubble"] = "two-people-speech-bubble",
+		["two-stacked-squares"] = "two-stacked-squares",
+		["two-switches-horizontal"] = "two-switches-horizontal",
+		["verified-backplate"] = "verified-backplate",
+		["verified-check"] = "verified-check",
+		["verified-mono"] = "verified-mono",
+		["video-camera"] = "video-camera",
+		["video-camera-arrow-to-bottom-left"] = "video-camera-arrow-to-bottom-left",
+		["video-camera-arrow-to-top-right"] = "video-camera-arrow-to-top-right",
+		["video-camera-slash"] = "video-camera-slash",
+		["video-camera-triangle-exclamation"] = "video-camera-triangle-exclamation",
+		["video-camera-x"] = "video-camera-x",
+		["wallet"] = "wallet",
+		["we-chat"] = "we-chat",
+		["whatsapp"] = "whatsapp",
+		["x"] = "x",
+		["x-small"] = "x-small",
+		["xbox-a"] = "xbox-a",
+		["xbox-a-pressed"] = "xbox-a-pressed",
+		["xbox-a-unpressed"] = "xbox-a-unpressed",
+		["xbox-b"] = "xbox-b",
+		["xbox-dpad"] = "xbox-dpad",
+		["xbox-dpad-down"] = "xbox-dpad-down",
+		["xbox-dpad-left"] = "xbox-dpad-left",
+		["xbox-dpad-right"] = "xbox-dpad-right",
+		["xbox-dpad-up"] = "xbox-dpad-up",
+		["xbox-lb"] = "xbox-lb",
+		["xbox-lt"] = "xbox-lt",
+		["xbox-menu"] = "xbox-menu",
+		["xbox-rb"] = "xbox-rb",
+		["xbox-rt"] = "xbox-rt",
+		["xbox-stick-left"] = "xbox-stick-left",
+		["xbox-stick-left-directional"] = "xbox-stick-left-directional",
+		["xbox-stick-left-horizontal"] = "xbox-stick-left-horizontal",
+		["xbox-stick-left-vertical"] = "xbox-stick-left-vertical",
+		["xbox-stick-right"] = "xbox-stick-right",
+		["xbox-stick-right-directional"] = "xbox-stick-right-directional",
+		["xbox-stick-right-horizontal"] = "xbox-stick-right-horizontal",
+		["xbox-stick-right-vertical"] = "xbox-stick-right-vertical",
+		["xbox-view"] = "xbox-view",
+		["xbox-x"] = "xbox-x",
+		["xbox-y"] = "xbox-y",
+		["xr-headset"] = "xr-headset",
+		["youtube"] = "youtube"
 	};
 end);
 
@@ -3715,7 +4208,8 @@ function NeverLose:CreateWindow(Config)
 		Color = NeverLose.AccentColor,
 		Image = nil,
 		Title = nil,
-		ToggleUi = true
+		ToggleUi = true,
+		Search = false
 	});
 
 	local Window = {
@@ -3729,9 +4223,11 @@ function NeverLose:CreateWindow(Config)
 		CurrentTab = 1,
 		Keybind = Config.Keybind,
 		Enable3DRenderer = Config.Enable3DRenderer,
-		ToggleUi = Config.ToggleUi
+		ToggleUi = Config.ToggleUi,
+		ToggleButtonImage = Config.Image or Config.Logo,
+		SearchEnabled = Config.Search
 	};
-	
+
 	if Config.Title then
 		Window.Name = Config.Title
 	end
@@ -3778,10 +4274,12 @@ function NeverLose:CreateWindow(Config)
 	local LineFrame_4 = Instance.new("Frame")
 	local ConfigName = Instance.new("TextLabel")
 	local ConfigBthIcon = Instance.new("TextLabel")
-	local SearchFrame = Instance.new("Frame")
-	local SearchIcon = Instance.new("TextLabel")
-	local SearchBox = Instance.new("TextBox")
 	local TabContainer = Instance.new("Frame")
+	
+	-- Search UI components (hanya dibuat jika Search enabled)
+	local SearchFrame = nil
+	local SearchIcon = nil
+	local SearchBox = nil
 
 	WindowFrame.Name = NeverLose.RandomString();
 	WindowFrame.Parent = NeverLose.ScreenGui;
@@ -3820,8 +4318,6 @@ function NeverLose:CreateWindow(Config)
 			else
 				WindowFrame.Visible = true;
 				WindowFrame.Parent = NeverLose.ScreenGui
-
-
 			end;
 		end;
 	end);
@@ -3906,14 +4402,18 @@ function NeverLose:CreateWindow(Config)
 			NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
 				TextTransparency = 0.250
 			})
-
-			NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
-				TextTransparency = 0.250
-			})
-
-			NeverLose.PlayAnimate(SearchBox , SlowyTween , {
-				TextTransparency = 0.350
-			})
+			
+			if Window.SearchEnabled and SearchIcon then
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+					TextTransparency = 0.250
+				})
+			end
+			
+			if Window.SearchEnabled and SearchBox then
+				NeverLose.PlayAnimate(SearchBox , SlowyTween , {
+					TextTransparency = 0.350
+				})
+			end
 
 			Window.Shadow:Render(true);
 		else
@@ -3994,14 +4494,18 @@ function NeverLose:CreateWindow(Config)
 			NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
 				TextTransparency = 1
 			})
-
-			NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
-				TextTransparency = 1
-			})
-
-			NeverLose.PlayAnimate(SearchBox , SlowyTween , {
-				TextTransparency = 1
-			})
+			
+			if Window.SearchEnabled and SearchIcon then
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+					TextTransparency = 1
+				})
+			end
+			
+			if Window.SearchEnabled and SearchBox then
+				NeverLose.PlayAnimate(SearchBox , SlowyTween , {
+					TextTransparency = 1
+				})
+			end
 
 			Window.Shadow:Render(false);
 		end;
@@ -4348,53 +4852,147 @@ function NeverLose:CreateWindow(Config)
 	ConfigBthIcon.TextTransparency = 0.250
 	ConfigBthIcon.TextWrapped = true
 
-	SearchFrame.Name = NeverLose.RandomString();
-	SearchFrame.Parent = RightHeader
-	SearchFrame.AnchorPoint = Vector2.new(1, 0.5)
-	SearchFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	SearchFrame.BackgroundTransparency = 1.000
-	SearchFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	SearchFrame.BorderSizePixel = 0
-	SearchFrame.ClipsDescendants = true
-	SearchFrame.Position = UDim2.new(1, -10, 0.5, 0)
-	SearchFrame.Size = UDim2.new(0, 30, 0, 30)
-	SearchFrame.ZIndex = 12
+	-- Hanya buat SearchFrame jika Search = true
+	if Window.SearchEnabled then
+		SearchFrame = Instance.new("Frame")
+		SearchIcon = Instance.new("TextLabel")
+		SearchBox = Instance.new("TextBox")
+		
+		SearchFrame.Name = NeverLose.RandomString();
+		SearchFrame.Parent = RightHeader
+		SearchFrame.AnchorPoint = Vector2.new(1, 0.5)
+		SearchFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		SearchFrame.BackgroundTransparency = 1.000
+		SearchFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		SearchFrame.BorderSizePixel = 0
+		SearchFrame.ClipsDescendants = true
+		SearchFrame.Position = UDim2.new(1, -10, 0.5, 0)
+		SearchFrame.Size = UDim2.new(0, 30, 0, 30)
+		SearchFrame.ZIndex = 12
 
-	SearchIcon.Name = NeverLose.RandomString();
-	SearchIcon.Parent = SearchFrame
-	SearchIcon.AnchorPoint = Vector2.new(0, 0.5)
-	SearchIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	SearchIcon.BackgroundTransparency = 1.000
-	SearchIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	SearchIcon.BorderSizePixel = 0
-	SearchIcon.Position = UDim2.new(0, 2, 0.5, 0)
-	SearchIcon.Size = UDim2.new(0, 25, 0, 25)
-	SearchIcon.ZIndex = 12
-	SearchIcon.FontFace = NeverLose.BuiltInBold
-	SearchIcon.Text = "magnifying-glass"
-	SearchIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
-	SearchIcon.TextSize = 14.000
-	SearchIcon.TextTransparency = 0.45
-	SearchIcon.TextWrapped = true
+		SearchIcon.Name = NeverLose.RandomString();
+		SearchIcon.Parent = SearchFrame
+		SearchIcon.AnchorPoint = Vector2.new(0, 0.5)
+		SearchIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		SearchIcon.BackgroundTransparency = 1.000
+		SearchIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		SearchIcon.BorderSizePixel = 0
+		SearchIcon.Position = UDim2.new(0, 2, 0.5, 0)
+		SearchIcon.Size = UDim2.new(0, 25, 0, 25)
+		SearchIcon.ZIndex = 12
+		SearchIcon.FontFace = NeverLose.BuiltInBold
+		SearchIcon.Text = "magnifying-glass"
+		SearchIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
+		SearchIcon.TextSize = 14.000
+		SearchIcon.TextTransparency = 0.45
+		SearchIcon.TextWrapped = true
 
-	SearchBox.Name = NeverLose.RandomString();
-	SearchBox.Parent = SearchFrame
-	SearchBox.AnchorPoint = Vector2.new(0, 0.5)
-	SearchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	SearchBox.BackgroundTransparency = 1.000
-	SearchBox.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	SearchBox.BorderSizePixel = 0
-	SearchBox.Position = UDim2.new(0, 35, 0.5, 0)
-	SearchBox.Size = UDim2.new(1, -35, 0, 25)
-	SearchBox.ZIndex = 12
-	SearchBox.ClearTextOnFocus = false
-	SearchBox.Font = Enum.Font.GothamMedium
-	SearchBox.PlaceholderText = "Search"
-	SearchBox.Text = ""
-	SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-	SearchBox.TextSize = 13.000
-	SearchBox.TextTransparency = 1
-	SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+		SearchBox.Name = NeverLose.RandomString();
+		SearchBox.Parent = SearchFrame
+		SearchBox.AnchorPoint = Vector2.new(0, 0.5)
+		SearchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		SearchBox.BackgroundTransparency = 1.000
+		SearchBox.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		SearchBox.BorderSizePixel = 0
+		SearchBox.Position = UDim2.new(0, 35, 0.5, 0)
+		SearchBox.Size = UDim2.new(1, -35, 0, 25)
+		SearchBox.ZIndex = 12
+		SearchBox.ClearTextOnFocus = false
+		SearchBox.Font = Enum.Font.GothamMedium
+		SearchBox.PlaceholderText = "Search"
+		SearchBox.Text = ""
+		SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+		SearchBox.TextSize = 13.000
+		SearchBox.TextTransparency = 1
+		SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+
+		-- Search functionality
+		do
+			Window.Searching = false;
+			local Input = NeverLose:CreateInput(SearchIcon , LPH_NO_VIRTUALIZE(function()
+				Window.Searching = not Window.Searching;
+
+				if Window.Searching then
+					NeverLose.PlayAnimate(SearchFrame , VSlowTween , {
+						Size = UDim2.new(0, 220, 0, 30)
+					})
+
+					NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+						TextTransparency = 0.25
+					})
+
+					NeverLose.PlayAnimate(SearchBox , VSlowTween , {
+						TextTransparency = 0.350
+					})
+				else
+					NeverLose.PlayAnimate(SearchFrame , VSlowTween , {
+						Size = UDim2.new(0, 30, 0, 30)
+					})
+
+					NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+						TextTransparency = 0.45
+					})
+
+					NeverLose.PlayAnimate(SearchBox , SlowyTween , {
+						TextTransparency = 1
+					})
+
+					SearchBox.Text = "";
+				end;
+			end));	
+
+			local wati_for_finish = tick();
+			local last_thread;
+			local max_time = 0.2;
+
+			NeverLose:AddSignal(SearchBox:GetPropertyChangedSignal('Text'):Connect(LPH_NO_VIRTUALIZE(function()
+				if not SearchBox.Text:byte() then
+					for i,v in next , NeverLose.NameRegisitry do
+						v.Root.Visible = true;
+					end;
+
+					return;	
+				end;
+
+				wati_for_finish = tick();
+
+				if last_thread then
+					task.cancel(last_thread);
+					last_thread = nil;
+				end;
+
+				last_thread = task.delay(max_time,function()
+					if SearchBox.Text:byte() and (tick() - wati_for_finish) > max_time then
+						for i,v in next , NeverLose.NameRegisitry do
+							if string.find(string.lower(v.Idx) , string.lower(SearchBox.Text), 1, true) then
+								v.Root.Visible = true;
+							else
+								v.Root.Visible = false;
+							end;
+						end;
+					end;
+				end);
+			end)));
+
+			NeverLose:AddSignal(Input.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+					TextTransparency = 0.25
+				})
+			end)))
+
+			NeverLose:AddSignal(Input.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+				if Window.Searching then
+					NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+						TextTransparency = 0.25
+					})
+				else
+					NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
+						TextTransparency = 0.45
+					})
+				end;
+			end)));
+		end;
+	end
 
 	TabContainer.Name = NeverLose.RandomString();
 	TabContainer.Parent = RightMenuFrame
@@ -4406,92 +5004,6 @@ function NeverLose:CreateWindow(Config)
 	TabContainer.Position = UDim2.new(0, 0, 0, 50)
 	TabContainer.Size = UDim2.new(1, 0, 1, -50)
 	TabContainer.ZIndex = 5
-
-	do
-		Window.Searching = false;
-		local Input = NeverLose:CreateInput(SearchIcon , LPH_NO_VIRTUALIZE(function()
-			Window.Searching = not Window.Searching;
-
-			if Window.Searching then
-				NeverLose.PlayAnimate(SearchFrame , VSlowTween , {
-					Size = UDim2.new(0, 220, 0, 30)
-				})
-
-				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
-					TextTransparency = 0.25
-				})
-
-				NeverLose.PlayAnimate(SearchBox , VSlowTween , {
-					TextTransparency = 0.350
-				})
-			else
-				NeverLose.PlayAnimate(SearchFrame , VSlowTween , {
-					Size = UDim2.new(0, 30, 0, 30)
-				})
-
-				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
-					TextTransparency = 0.45
-				})
-
-				NeverLose.PlayAnimate(SearchBox , SlowyTween , {
-					TextTransparency = 1
-				})
-
-				SearchBox.Text = "";
-			end;
-		end));	
-
-		local wati_for_finish = tick();
-		local last_thread;
-		local max_time = 0.2;
-
-		NeverLose:AddSignal(SearchBox:GetPropertyChangedSignal('Text'):Connect(LPH_NO_VIRTUALIZE(function()
-			if not SearchBox.Text:byte() then
-				for i,v in next , NeverLose.NameRegisitry do
-					v.Root.Visible = true;
-				end;
-
-				return;	
-			end;
-
-			wati_for_finish = tick();
-
-			if last_thread then
-				task.cancel(last_thread);
-				last_thread = nil;
-			end;
-
-			last_thread = task.delay(max_time,function()
-				if SearchBox.Text:byte() and (tick() - wati_for_finish) > max_time then
-					for i,v in next , NeverLose.NameRegisitry do
-						if string.find(string.lower(v.Idx) , string.lower(SearchBox.Text), 1, true) then
-							v.Root.Visible = true;
-						else
-							v.Root.Visible = false;
-						end;
-					end;
-				end;
-			end);
-		end)));
-
-		NeverLose:AddSignal(Input.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-			NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
-				TextTransparency = 0.25
-			})
-		end)))
-
-		NeverLose:AddSignal(Input.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-			if Window.Searching then
-				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
-					TextTransparency = 0.25
-				})
-			else
-				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
-					TextTransparency = 0.45
-				})
-			end;
-		end)));
-	end;
 
 	if Window.Enable3DRenderer then
 		local Part = Instance.new('Part');
@@ -4640,15 +5152,7 @@ function NeverLose:CreateWindow(Config)
 		TabIcon.Size = UDim2.new(0, 25, 0, 25)
 		TabIcon.ZIndex = 9
 		TabIcon.FontFace = NeverLose.BuiltInBold
-		
-		local iconString = Config.Icon
-		local isLucide = type(iconString) == "string" and iconString:sub(1,7) == "lucide:"
-		if isLucide then
-			TabIcon.Text = NeverLose:GetIcon(iconString)
-		else
-			TabIcon.Text = iconString
-		end
-		
+		TabIcon.Text = Config.Icon
 		TabIcon.TextColor3 = NeverLose.AccentColor
 		TabIcon.TextSize = 16.000
 		TabIcon.TextWrapped = true
@@ -6013,6 +6517,122 @@ function NeverLose:CreateWindow(Config)
 
 		return Watermark_lb;
 	end;
+
+	-- Toggle Button (seperti Vilaris UI)
+	local ToggleButtonGui = nil
+	local ToggleMainButton = nil
+	
+	function Window:CreateToggleButton()
+		if ToggleButtonGui then
+			pcall(function() ToggleButtonGui:Destroy() end)
+			ToggleButtonGui = nil
+			ToggleMainButton = nil
+		end
+		
+		ToggleButtonGui = Instance.new("ScreenGui")
+		ToggleButtonGui.Name = NeverLose.RandomString()
+		ToggleButtonGui.ResetOnSpawn = false
+		ToggleButtonGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		ToggleButtonGui.Parent = NeverLose.ScreenGui
+		
+		ToggleMainButton = Instance.new("ImageLabel")
+		ToggleMainButton.Parent = ToggleButtonGui
+		ToggleMainButton.Size = UDim2.new(0, 42, 0, 42)
+		ToggleMainButton.Position = UDim2.new(0, 15, 0, 100)
+		ToggleMainButton.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+		ToggleMainButton.BackgroundTransparency = 0.15
+		ToggleMainButton.Image = "rbxassetid://" .. (Window.ToggleButtonImage or "101833678008843")
+		ToggleMainButton.ScaleType = Enum.ScaleType.Fit
+		ToggleMainButton.ZIndex = 50
+		
+		local BtnCorner = Instance.new("UICorner")
+		BtnCorner.CornerRadius = UDim.new(0, 8)
+		BtnCorner.Parent = ToggleMainButton
+		
+		local BtnStroke = Instance.new("UIStroke")
+		BtnStroke.Color = NeverLose.AccentColor
+		BtnStroke.Thickness = 1.5
+		BtnStroke.Transparency = 0.3
+		BtnStroke.Parent = ToggleMainButton
+		
+		local ClickButton = Instance.new("ImageButton")
+		ClickButton.Parent = ToggleMainButton
+		ClickButton.Size = UDim2.new(1, 0, 1, 0)
+		ClickButton.BackgroundTransparency = 1
+		ClickButton.ImageTransparency = 1
+		ClickButton.ZIndex = 51
+		
+		ClickButton.MouseEnter:Connect(function()
+			NeverLose.PlayAnimate(ToggleMainButton, FastTween, {
+				BackgroundTransparency = 0.1,
+				Size = UDim2.new(0, 46, 0, 46)
+			})
+			NeverLose.PlayAnimate(BtnStroke, FastTween, { Transparency = 0 })
+		end)
+		
+		ClickButton.MouseLeave:Connect(function()
+			NeverLose.PlayAnimate(ToggleMainButton, FastTween, {
+				BackgroundTransparency = 0.15,
+				Size = UDim2.new(0, 42, 0, 42)
+			})
+			NeverLose.PlayAnimate(BtnStroke, FastTween, { Transparency = 0.3 })
+		end)
+		
+		local dragging = false
+		local dragStart, startPos
+		
+		ClickButton.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+			   input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = ToggleMainButton.Position
+				
+				input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						dragging = false
+					end
+				end)
+			end
+		end)
+		
+		UserInputService.InputChanged:Connect(function(input)
+			if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or 
+							 input.UserInputType == Enum.UserInputType.Touch) then
+				local delta = input.Position - dragStart
+				ToggleMainButton.Position = UDim2.new(
+					startPos.X.Scale, startPos.X.Offset + delta.X,
+					startPos.Y.Scale, startPos.Y.Offset + delta.Y
+				)
+			end
+		end)
+		
+		ClickButton.MouseButton1Click:Connect(function()
+			Window:ToggleInterface()
+			
+			NeverLose.PlayAnimate(ToggleMainButton, TweenInfo.new(0.1), {
+				Size = UDim2.new(0, 37, 0, 37)
+			})
+			task.delay(0.1, function()
+				if ToggleMainButton and ToggleMainButton.Parent then
+					NeverLose.PlayAnimate(ToggleMainButton, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+						Size = UDim2.new(0, 42, 0, 42)
+					})
+				end
+			end)
+		end)
+	end
+	
+	Window:CreateToggleButton()
+	
+	NeverLose:OnThemeChanged(function(theme)
+		if ToggleMainButton then
+			local stroke = ToggleMainButton:FindFirstChildWhichIsA("UIStroke")
+			if stroke then
+				stroke.Color = NeverLose.AccentColor
+			end
+		end
+	end)
 
 	Window:SetRender(Window.ToggleUi);
 
