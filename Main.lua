@@ -22,7 +22,7 @@ local lighting          = safe_clone(game:GetService("Lighting"))
 
 --#region ══╗ Load Elements Module ╔══════════════════════════════════════════════
 
-local ELEMENTS_BASE_URL = "https://raw.githubusercontent.com/opsidian279/Moded/refs/heads/main/"
+local ELEMENTS_BASE_URL = "https://raw.githubusercontent.com/opsidian279/Moded/main/"
 local Elements = loadstring(game:HttpGet(ELEMENTS_BASE_URL .. "elements/Elements.lua"))()
 
 if not Elements then
