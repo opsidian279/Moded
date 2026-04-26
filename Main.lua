@@ -1,7 +1,4 @@
---[[
-    VoraHub UI Library - Main Module
-    Version: 2.0 (Modular - Complete)
-]]
+-- Code Lama
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -16,18 +13,6 @@ local core_gui          = safe_clone(game:GetService("CoreGui"))
 local gui_service       = safe_clone(game:GetService("GuiService"))
 local http_service      = safe_clone(game:GetService("HttpService"))
 local lighting          = safe_clone(game:GetService("Lighting"))
-
---#endregion═════════════════════════════════════════════════════════════════════
-
-
---#region ══╗ Load Elements Module ╔══════════════════════════════════════════════
-
-local ELEMENTS_BASE_URL = "https://raw.githubusercontent.com/opsidian279/Moded/main/"
-local Elements = loadstring(game:HttpGet(ELEMENTS_BASE_URL .. "elements/Elements.lua"))()
-
-if not Elements then
-    warn("[VoraHub] Failed to load Elements.lua! Make sure URL is correct.")
-end
 
 --#endregion═════════════════════════════════════════════════════════════════════
 
@@ -87,16 +72,48 @@ local default_icons = {
 }
 
 -- Custom Logo Image
-local vora_img      = writefile("vora_logo.png", game:HttpGet("https://github.com/Andrazx23/voralib/blob/main/VoraHub.G7_20260405143108.png?raw=true"))
-local vora_logo     = getcustomasset("vora_logo.png")
+local modern_img      = writefile("modern_logo.png", game:HttpGet("https://github.com/Andrazx23/voralib/blob/main/Modern.G7_20260405143108.png?raw=true"))
+local modern_logo     = getcustomasset("modern_logo.png")
+
+local function resolve_image(imageInput)
+    if not imageInput then
+        return modern_logo
+    end
+    local inputStr = tostring(imageInput)
+    if inputStr:match("^rbxassetid://") or inputStr:match("^rbxasset://") or inputStr:match("^http") then
+        return inputStr
+    end
+    if inputStr:match("^%d+$") then
+        return "rbxassetid://" .. inputStr
+    end
+    return modern_logo
+end
+
+
+
+local function resolve_image(imageInput)
+    if not imageInput then
+        return modern_logo
+    end
+    local inputStr = tostring(imageInput)
+    if inputStr:match("^rbxassetid://") or inputStr:match("^rbxasset://") or inputStr:match("^http") then
+        return inputStr
+    end
+    if inputStr:match("^%d+$") then
+        return "rbxassetid://" .. inputStr
+    end
+    return modern_logo
+end
+
+
 
 --#endregion═════════════════════════════════════════════════════════════════════
 
 
---#region ══╗ Core Functions ╔════════════════════════════════════════════════════
+--#region ══╗ Core ╔═════════════════════════════════════════════════════════════
 
-local vora_ui = {}
-vora_ui.__index = vora_ui
+local Modern = {}
+Modern.__index = Modern
 
 local Toggles = {}
 local Options = {}
@@ -120,6 +137,8 @@ local function resolve_font_enum(weight)
     end
     return default_font_enum
 end
+
+local font_face_supported = false
 
 local function make_font_descriptor(family, weight, style, enumFont)
     return {
@@ -249,7 +268,7 @@ local function make_draggable(frame, handle, libraryRef)
         end
     end
     
-    local function updateTargetPosition(input)
+    local function updateTargetPositionYay(input)
         local howMuchDidIMove = input.Position - whereDidIStart
         targetDragPosition = UDim2.new(
             whereWasIBefore.X.Scale,
@@ -298,9 +317,9 @@ local function make_draggable(frame, handle, libraryRef)
             return
         end
         if input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateTargetPosition(input)
+            updateTargetPositionYay(input)
         elseif input.UserInputType == Enum.UserInputType.Touch and (activeDragInput == nil or input == activeDragInput) then
-            updateTargetPosition(input)
+            updateTargetPositionYay(input)
         end
     end)
 
@@ -365,7 +384,7 @@ local function attach_scrollbar(libraryRef, scrollFrame, parentInstance, options
     local xOffset = options.XOffset or 0
 
     local trackFrame = create("Frame", {
-        Name = "VoraHubScrollbarTrack",
+        Name = "ModernScrollbarTrack",
         BackgroundColor3 = Color3.fromRGB(11, 11, 14),
         BackgroundTransparency = 0.12,
         BorderSizePixel = 0,
@@ -376,7 +395,7 @@ local function attach_scrollbar(libraryRef, scrollFrame, parentInstance, options
     create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = trackFrame})
 
     local thumbFrame = create("Frame", {
-        Name = "VoraHubScrollbarThumb",
+        Name = "ModernScrollbarThumb",
         AnchorPoint = Vector2.new(0.5, 0),
         BackgroundColor3 = libraryRef.config.AccentColor,
         BorderSizePixel = 0,
@@ -522,8 +541,8 @@ local function resolve_avatar_3d(defaultUserId)
 end
 
 local function measure_text_width(text, textSize, font)
-    local textBounds = text_service:GetTextSize(text, textSize, font or Enum.Font.GothamSemibold, Vector2.new(math.huge, math.huge))
-    return textBounds.X
+    local textBoundsYay = text_service:GetTextSize(text, textSize, font or Enum.Font.GothamSemibold, Vector2.new(math.huge, math.huge))
+    return textBoundsYay.X
 end
 
 local function truncate_text(text, maxWidth, textSize, font)
@@ -677,12 +696,12 @@ local function sanitize_config_name(name)
     return cleanName
 end
 
-local function get_config_folder()
-    return "VoraHubConfigs"
+local function get_config_folder(customFolder)
+    return customFolder or "ModernConfigs"
 end
 
-local function ensure_config_folder()
-    local folder = get_config_folder()
+local function ensure_config_folder(customFolder)
+    local folder = get_config_folder(customFolder)
 
     if isfolder and isfolder(folder) then
         return true, folder
@@ -705,18 +724,18 @@ local function get_config_filename(configName)
     return sanitize_config_name(configName) .. ".json"
 end
 
-local function get_writable_config_path(configName)
+local function get_writable_config_path(configName, customFolder)
     local fileName = get_config_filename(configName)
-    local okFolder, folder = ensure_config_folder()
+    local okFolder, folder = ensure_config_folder(customFolder)
     if okFolder then
         return folder .. "/" .. fileName, true
     end
     return fileName, false
 end
 
-local function get_readable_config_paths(configName)
+local function get_readable_config_paths(configName, customFolder)
     local fileName = get_config_filename(configName)
-    local folder = get_config_folder()
+    local folder = get_config_folder(customFolder)
     return {
         folder .. "/" .. fileName,
         folder .. "\\" .. fileName,
@@ -724,8 +743,8 @@ local function get_readable_config_paths(configName)
     }
 end
 
-local RUNTIME_INSTANCE_KEY = "__VORA_UI_ACTIVE"
-local SCREEN_GUI_NAME = "VoraHub"
+local RUNTIME_INSTANCE_KEY = "__MODERN_UI_ACTIVE"
+local SCREEN_GUI_NAME = "Modern"
 
 local function get_shared_env()
     if type(getgenv) == "function" then
@@ -795,66 +814,852 @@ local function cleanup_previous_instance()
     destroy_existing_guis()
 end
 
---#endregion═════════════════════════════════════════════════════════════════════
+function Modern:Window(config)
+    cleanup_previous_instance()
 
+    local self = setmetatable({}, Modern)
+    
+    config = config or {}
+    self.config = {}
+    
+    -- New Window API mapping
+    self.config.Name = config.Title or config.Name or "Modern"
+    self.config.AccentColor = config.Color or config.AccentColor or Color3.fromRGB(0, 200, 255)
+    self.config.BackgroundColor = config.BackgroundColor or Color3.fromRGB(16, 16, 16)
+    self.config.SecondaryColor = config.SecondaryColor or Color3.fromRGB(18, 18, 18)
+    self.config.TextColor = config.TextColor or Color3.fromRGB(255, 255, 255)
+    self.config.SubTextColor = config.SubTextColor or Color3.fromRGB(124, 124, 124)
+    
+    -- New features
+    self.config.Image = resolve_image(config.Image)
+    self.config.Uitransparent = config.Uitransparent or 0
+    self.config.ShowUser = config.ShowUser ~= false
+    self.config.Search = config.Search ~= false
+    
+    -- Config system
+    local cfg = config.Config or {}
+    self.config.ConfigFolder = cfg.ConfigFolder or "Modern/Config/"
+    self.config.AutoSaveFile = cfg.AutoSaveFile or "Default"
+    self.config.AutoSave = cfg.AutoSave == true
+    self.config.AutoLoad = cfg.AutoLoad == true
+    self.config.ShowAutoSaveToggle = cfg.ShowAutoSaveToggle
+    
+    self.Toggles = Toggles
+    self.Options = Options
 
---#region ══╗ ESP Preview Functions ╔═════════════════════════════════════════════
+    self.sections = {}
+    self.all_tabs = {}
+    self.active_tab = nil
+    self.notifications = {}
+    self.is_visible = true
+    self.dropdown_holder = nil
+    self.toggleKeyCode = config.Keybind or Enum.KeyCode.RightShift
+    self.toggleButtonVisible = true
+    self._destroyed = false
+    self._connections = {}
+    self._trackedControls = {}
+    self._lastControlRegistration = 0
+    self._autoConfigName = sanitize_config_name(self.config.AutoSaveFile or ((self.config.Name or "Modern") .. "_last"))
+    self._autoConfigEnabled = self.config.AutoSave == true
+    self._autoConfigLoadAttempted = not self._autoConfigEnabled
+    self._autoConfigAccumulator = 0
+    self._autoConfigInterval = 1.2
+    self._autoConfigSnapshot = nil
+    self._isApplyingConfig = false
+    self._configPathHints = {}
+    self._smoothScrollFrames = {}
+    self._scrollbarRefreshers = {}
+    self._searchQuery = ""
+    self._fpsRollingSize = 60
+    self._fpsRollingWindow = table.create and table.create(self._fpsRollingSize, 0) or {}
+    self._fpsRollingTotal = 0
+    self._fpsRollingIndex = 1
+    self._fpsRollingCount = 0
+    self._latestFPSValue = 0
+    self._cachedViewportSize = Vector2.new(1280, 720)
+    self._cachedViewportWidth = 1280
+    self._cachedViewportHeight = 720
+    self._cachedViewportAreaScale = 1
+    self._blurEffectRef = nil
+    self._snowflakes = {}
+    self._snowSpawnAccumulator = 0
+    self._snowMaxFlakes = is_mobile and 45 or 90
+    self._overlayMode = "None"
+    self._overlayModes = {"Snow", "Rain", "Stars", "None"}
+    self._backgroundFxTime = 0
+    self._backgroundFxAccumulator = 0
+    self._textGradientAnimationTime = 0
+    self._gradientAnimationAccumulator = 0
+    self._overlayUpdateAccumulator = 0
+    self._watermarkUpdateAccumulator = 0
+    self._watermarkLastWidth = 0
+    self._refreshJobs = {}
+    self._notificationTimestamps = {}
+    self._uiVisualSettings = {
+        Blur = true,
+        Snow = false,
+        BackgroundEffects = false,
+        TextGradient = true,
+        ESPSelfPreview = false,
+        HideName = true
+    }
+    self._fontPresets = {
+        {Name = "Gotham", EnumFont = Enum.Font.Gotham, Family = "rbxasset://fonts/families/GothamSSm.json", Weight = Enum.FontWeight.SemiBold},
+        {Name = "Gotham Medium", EnumFont = Enum.Font.GothamMedium, Family = "rbxasset://fonts/families/GothamSSm.json", Weight = Enum.FontWeight.Medium},
+        {Name = "Montserrat", EnumFont = Enum.Font.Gotham, Family = "rbxasset://fonts/families/Montserrat.json", Weight = Enum.FontWeight.SemiBold},
+        {Name = "Nunito", EnumFont = Enum.Font.Gotham, Family = "rbxasset://fonts/families/Nunito.json", Weight = Enum.FontWeight.SemiBold},
+        {Name = "Bodoni", EnumFont = Enum.Font.Bodoni},
+        {Name = "Garamond", EnumFont = Enum.Font.Garamond},
+        {Name = "Source Sans", EnumFont = Enum.Font.SourceSans, Family = "rbxasset://fonts/families/SourceSansPro.json", Weight = Enum.FontWeight.SemiBold},
+        {Name = "Highway", EnumFont = Enum.Font.Highway},
+        {Name = "Antique", EnumFont = Enum.Font.Antique},
+        {Name = "Code", EnumFont = Enum.Font.Code}
+    }
+    self._fontPresetIndex = 1
+    self._gradientLabels = {}
+    self._gradientObjects = {}
+    self._espPreviewProvider = nil
+    self._espPreviewData = nil
+    self._espPreviewState = nil
+    self._espPreviewResolveAccumulator = 0
+    self._espPreviewUpdateAccumulator = 0
+    self._espPreviewWasShowing = false
+    self._espPreviewPanel = nil
+    self._espPreviewViewport = nil
+    self._espPreviewWorldModel = nil
+    self._espPreviewCamera = nil
+    self._espPreviewCharacter = nil
+    self._espPreviewLastCharacter = nil
+    self._espPreviewPartDefaults = {}
+    self._espPreviewHeadPart = nil
+    self._espPreviewRootPart = nil
+    self._espPreviewVisualState = nil
+    self._espPreviewVisualDirty = false
+    self._espPreviewProjectionCache = nil
+    self._espPreviewProjectionDirty = true
+    self._espPreviewHighlight = nil
+    self._espPreviewHeaderTag = nil
+    self._espPreviewBox = nil
+    self._espPreviewBoxStroke = nil
+    self._espPreviewHealthTrack = nil
+    self._espPreviewHealthFill = nil
+    self._espPreviewDot = nil
+    self._espPreviewTracer = nil
+    self._espPreviewName = nil
+    self._espPreviewItem = nil
+    self._espPreviewDistance = nil
+    self._espPreviewWalkTrack = nil
+    self._espPreviewAnimationId = nil
+    self._espPreviewAvatar3DUserId = tonumber(local_player.UserId) or 0
+    self._espPreviewAvatar3DImageUrl = nil
+    self._espPreviewRotationYaw = math.rad(180)
+    self._espPreviewRotationTargetYaw = math.rad(180)
+    self._espPreviewStaticMode = true
+    self._espPreviewAllowManualRotation = true
+    self._espPreviewPivotYOffset = -2
+    self._espPreviewRotateCapture = nil
+    self._espPreviewIsRotating = false
+    self._espPreviewRotateInput = nil
+    self._espPreviewRotateLastX = 0
+    
+    self:BuildUI()
+    rawset(get_shared_env(), RUNTIME_INSTANCE_KEY, self)
+    
+    return self
+end
+
+function Modern:_TrackConnection(conn)
+    if conn then
+        table.insert(self._connections, conn)
+        if #self._connections % 100 == 0 then
+            local activeConnections = {}
+            for _, item in ipairs(self._connections) do
+                if item then
+                    if typeof(item) == "RBXScriptConnection" then
+                        if item.Connected then
+                            table.insert(activeConnections, item)
+                        end
+                    else
+                        table.insert(activeConnections, item)
+                    end
+                end
+            end
+            self._connections = activeConnections
+        end
+    end
+    return conn
+end
+
+function Modern:RegisterControl(flag, getter, setter)
+    if type(flag) ~= "string" or flag == "" then return end
+    if type(getter) ~= "function" or type(setter) ~= "function" then return end
+    self._trackedControls[flag] = {
+        get = getter,
+        set = setter
+    }
+    self._lastControlRegistration = os.clock()
+end
+
+function Modern:_RegisterRefreshJob(interval, isAliveFn, stepFn)
+    if type(stepFn) ~= "function" then
+        return nil
+    end
+
+    local job = {
+        Interval = math.max(tonumber(interval) or 0.5, 0.05),
+        IsAlive = isAliveFn,
+        Step = stepFn,
+        Accumulator = 0
+    }
+
+    table.insert(self._refreshJobs, job)
+    return job
+end
+
+function Modern:_StepRefreshJobs(dt)
+    if not self._refreshJobs then
+        return
+    end
+
+    local resolvedDt = tonumber(dt) or 0
+    for index = #self._refreshJobs, 1, -1 do
+        local job = self._refreshJobs[index]
+        local keepJob = true
+
+        if type(job) ~= "table" or type(job.Step) ~= "function" then
+            keepJob = false
+        elseif type(job.IsAlive) == "function" then
+            local okAlive, isAlive = pcall(job.IsAlive)
+            keepJob = okAlive and isAlive ~= false
+        end
+
+        if not keepJob then
+            table.remove(self._refreshJobs, index)
+        else
+            job.Accumulator = (job.Accumulator or 0) + resolvedDt
+            if job.Accumulator >= (job.Interval or 0.5) then
+                job.Accumulator = 0
+                local okStep, keepResult = pcall(job.Step)
+                if not okStep or keepResult == false then
+                    table.remove(self._refreshJobs, index)
+                end
+            end
+        end
+    end
+end
+
+function Modern:_BuildAutoConfigSnapshot()
+    local controlsSnapshot = {}
+    local trackedFlags = {}
+
+    for flag in pairs(self._trackedControls) do
+        table.insert(trackedFlags, flag)
+    end
+
+    table.sort(trackedFlags)
+
+    for _, flag in ipairs(trackedFlags) do
+        local control = self._trackedControls[flag]
+        if control and type(control.get) == "function" then
+            local ok, value = pcall(control.get)
+            if ok then
+                controlsSnapshot[flag] = serialize_value(value)
+            end
+        end
+    end
+
+    local okEncode, encoded = pcall(function()
+        return http_service:JSONEncode(controlsSnapshot)
+    end)
+
+    if okEncode then
+        return encoded
+    end
+
+    return nil
+end
+
+function Modern:_TryAutoSaveConfig(forceSave)
+    if self._destroyed or not self._autoConfigEnabled or self._isApplyingConfig then
+        return false
+    end
+
+    if not writefile or next(self._trackedControls) == nil then
+        return false
+    end
+
+    local snapshot = self:_BuildAutoConfigSnapshot()
+    if not snapshot then
+        return false
+    end
+
+    if not forceSave and snapshot == self._autoConfigSnapshot then
+        return false
+    end
+
+    local okSave = self:SaveConfig(self._autoConfigName)
+    if okSave then
+        self._autoConfigSnapshot = snapshot
+    end
+
+    return okSave == true
+end   
+function Modern:_TryAutoLoadConfig(forceAttempt)
+    if self._destroyed then
+        return false
+    end
+
+    if self._autoConfigLoadAttempted and not forceAttempt then
+        return false
+    end
+
+    if not readfile or next(self._trackedControls) == nil then
+        return false
+    end
+
+    self._isApplyingConfig = true
+    local okLoad = self:LoadConfig(self._autoConfigName)
+    self._isApplyingConfig = false
+    self._autoConfigLoadAttempted = true
+    self._autoConfigAccumulator = 0
+    self._autoConfigSnapshot = self:_BuildAutoConfigSnapshot()
+    return okLoad == true
+end
+
+function Modern:_RefreshViewportMetrics()
+    local viewportSize = (self.screen_gui and self.screen_gui.AbsoluteSize) or Vector2.new(0, 0)
+    local width = math.max(200, math.floor(viewportSize.X > 0 and viewportSize.X or 1280))
+    local height = math.max(320, math.floor(viewportSize.Y > 0 and viewportSize.Y or 720))
+    self._cachedViewportSize = Vector2.new(width, height)
+    self._cachedViewportWidth = width
+    self._cachedViewportHeight = height
+    self._cachedViewportAreaScale = math.clamp(math.sqrt((width * height) / (1280 * 720)), is_mobile and 0.52 or 0.68, 1.12)
+end
+
+function Modern:_InvalidateESPPreviewProjection(clearCache)
+    self._espPreviewProjectionDirty = true
+    if clearCache then
+        self._espPreviewProjectionCache = nil
+    end
+end
+
+function Modern:_EnsureBlurEffect()
+    if self._blurEffectRef and self._blurEffectRef.Parent then
+        return self._blurEffectRef
+    end
+    local existingBlur = lighting:FindFirstChild("ModernBlurEffect")
+    if existingBlur and existingBlur:IsA("BlurEffect") then
+        self._blurEffectRef = existingBlur
+        return existingBlur
+    end
+    self._blurEffectRef = create("BlurEffect", {
+        Name = "ModernBlurEffect",
+        Size = 0,
+        Enabled = true,
+        Parent = lighting
+    })
+    return self._blurEffectRef
+end
+
+function Modern:_SetBlurActive(active, instant)
+    local blur = self:_EnsureBlurEffect()
+    local shouldEnable = self._uiVisualSettings.Blur and active
+    local targetSize = shouldEnable and (is_mobile and 14 or 18) or 0
+    if instant then
+        blur.Size = targetSize
+        return
+    end
+    tween_to(blur, {Size = targetSize}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+end
+
+function Modern:_ClearSnowflakes()
+    for i = #self._snowflakes, 1, -1 do
+        local snowObj = self._snowflakes[i]
+        if snowObj and snowObj.instance and snowObj.instance.Parent then
+            snowObj.instance:Destroy()
+        end
+        self._snowflakes[i] = nil
+    end
+end
+
+function Modern:_SpawnSnowflake()
+    if not self.snow_layer or not self.snow_layer.Parent then
+        return
+    end
+    local width = self._cachedViewportWidth or 200
+    local size = math.random(2, 7) * scale_factor
+    local startX = math.random(-18, width + 18)
+    local flake = create("ImageLabel", {
+        BackgroundTransparency = 1,
+        Image = "rbxassetid://3570695787",
+        ImageColor3 = Color3.fromRGB(236 + math.random(0, 19), 243 + math.random(0, 12), 255),
+        ImageTransparency = math.random(22, 56) / 100,
+        Size = UDim2.new(0, size, 0, size),
+        Position = UDim2.new(0, startX, 0, -math.random(6, 80)),
+        Rotation = math.random(0, 359),
+        ZIndex = 2,
+        Parent = self.snow_layer
+    })
+    table.insert(self._snowflakes, {
+        overlayType = "Snow",
+        instance = flake,
+        baseX = startX,
+        fallSpeed = math.random(16, 42) * scale_factor,
+        driftAmount = math.random(12, 42) * scale_factor,
+        swirlAmount = math.random(2, 10) * scale_factor,
+        driftSpeed = math.random(5, 15) / 10,
+        twinkleSpeed = math.random(6, 15) / 10,
+        baseTransparency = flake.ImageTransparency,
+        phase = math.random() * math.pi * 2,
+        spin = math.random(-14, 14),
+        size = size,
+        yOffset = flake.Position.Y.Offset
+    })
+end
+
+function Modern:_SpawnRainDrop()
+    if not self.snow_layer or not self.snow_layer.Parent then
+        return
+    end
+    local width = self._cachedViewportWidth or 200
+    local depthScale = math.random(62, 150) / 100
+    local length = (math.random(12, 30) * depthScale + 3) * scale_factor
+    local thickness = math.max(1, math.floor((0.8 + depthScale * 0.9) * scale_factor + 0.5))
+    local startX = math.random(-58, width + 58)
+    local startY = -math.random(30, 180)
+    local windSpeed = (math.random(26, 88) * depthScale) * scale_factor
+    local fallSpeed = (math.random(270, 560) * depthScale) * scale_factor
+    local angle = math.deg(math.atan(fallSpeed / windSpeed)) - 90
+    local drop = create("Frame", {
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(176 + math.random(0, 26), 208 + math.random(0, 26), 255),
+        BackgroundTransparency = math.random(15, 45) / 100,
+        Position = UDim2.new(0, startX, 0, startY),
+        Size = UDim2.new(0, thickness, 0, length),
+        Rotation = angle,
+        ZIndex = depthScale > 1 and 3 or 2,
+        Parent = self.snow_layer
+    })
+    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = drop})
+    table.insert(self._snowflakes, {
+        overlayType = "RainDrop",
+        instance = drop,
+        xOffset = startX,
+        yOffset = startY,
+        velocityX = windSpeed,
+        velocityY = fallSpeed,
+        angle = angle,
+        width = thickness,
+        length = length,
+        baseTransparency = drop.BackgroundTransparency,
+        driftSpeed = math.random(11, 24) / 10,
+        windJitter = math.random(6, 18) * scale_factor,
+        stretchPulse = math.random(16, 30) / 10,
+        splashChance = 0.55 + math.random() * 0.25,
+        phase = math.random() * math.pi * 2
+    })
+end
+
+function Modern:_SpawnRainSplash(xPosition, yPosition)
+    if not self.snow_layer or not self.snow_layer.Parent then
+        return
+    end
+    local startSize = math.random(2, 5) * scale_factor
+    local splash = create("Frame", {
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(194 + math.random(0, 20), 224 + math.random(0, 22), 255),
+        BackgroundTransparency = math.random(24, 42) / 100,
+        Position = UDim2.new(0, xPosition, 0, yPosition),
+        Size = UDim2.new(0, startSize, 0, math.max(1 * scale_factor, startSize * 0.5)),
+        ZIndex = 3,
+        Parent = self.snow_layer
+    })
+    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = splash})
+    local life = math.random(8, 14) / 100
+    table.insert(self._snowflakes, {
+        overlayType = "RainSplash",
+        instance = splash,
+        baseX = xPosition,
+        yOffset = yPosition,
+        life = life,
+        totalLife = life,
+        startSize = startSize,
+        startThickness = math.max(1 * scale_factor, startSize * 0.5),
+        endSize = math.random(10, 20) * scale_factor,
+        driftX = math.random(-14, 14) * scale_factor,
+        baseTransparency = splash.BackgroundTransparency
+    })
+end
+
+function Modern:_SpawnStarParticle()
+    if not self.snow_layer or not self.snow_layer.Parent then
+        return
+    end
+    local width = self._cachedViewportWidth or 200
+    local height = self._cachedViewportHeight or 320
+    local size = (math.random(10, 28) / 10) * scale_factor
+    local startX = math.random(0, width)
+    local startY = math.random(0, height)
+    local star = create("ImageLabel", {
+        BackgroundTransparency = 1,
+        Image = "rbxassetid://3570695787",
+        ImageColor3 = Color3.fromRGB(224 + math.random(0, 28), 233 + math.random(0, 20), 255),
+        ImageTransparency = math.random(22, 56) / 100,
+        Position = UDim2.new(0, startX, 0, startY),
+        Size = UDim2.new(0, size, 0, size),
+        ZIndex = 3,
+        Parent = self.snow_layer
+    })
+    table.insert(self._snowflakes, {
+        overlayType = "Stars",
+        instance = star,
+        xOffset = startX,
+        yOffset = startY,
+        velocityX = (math.random(-16, 16) / 10) * scale_factor,
+        velocityY = (math.random(-9, 9) / 10) * scale_factor,
+        baseSize = size,
+        driftAmount = math.random(5, 18) * scale_factor,
+        driftLift = math.random(4, 14) * scale_factor,
+        driftSpeed = math.random(3, 10) / 10,
+        twinkleSpeed = math.random(7, 18) / 10,
+        pulseAmount = (math.random(8, 24) / 100),
+        baseTransparency = star.ImageTransparency,
+        phase = math.random() * math.pi * 2
+    })
+end
+
+function Modern:_SetSnowEnabled(enabled)
+    self._uiVisualSettings.Snow = enabled == true
+    if self.snow_layer then
+        self.snow_layer.Visible = self._uiVisualSettings.Snow and self.is_visible and self._overlayMode ~= "None"
+    end
+    if not self._uiVisualSettings.Snow or not self.is_visible or self._overlayMode == "None" then
+        self._overlayUpdateAccumulator = 0
+        self._snowSpawnAccumulator = 0
+        self:_ClearSnowflakes()
+    end
+end
+
+function Modern:_SetOverlayMode(mode)
+    local normalized = string.lower(tostring(mode or "snow"))
+    local resolved = "Snow"
+    if normalized == "rain" then
+        resolved = "Rain"
+    elseif normalized == "stars" or normalized == "star" then
+        resolved = "Stars"
+    elseif normalized == "none" or normalized == "off" then
+        resolved = "None"
+    end
+    local changed = self._overlayMode ~= resolved
+    self._overlayMode = resolved
+    if self.overlay_mode_label then
+        self.overlay_mode_label.Text = resolved
+    end
+    if self.snow_layer then
+        self.snow_layer.Visible = self.is_visible and self._uiVisualSettings.Snow and resolved ~= "None"
+    end
+    if changed or resolved == "None" then
+        self._overlayUpdateAccumulator = 0
+        self._snowSpawnAccumulator = 0
+        self:_ClearSnowflakes()
+    end
+end
+
+function Modern:_SetBackgroundEffectsEnabled(enabled)
+    self._uiVisualSettings.BackgroundEffects = enabled == true
+    if not self._uiVisualSettings.BackgroundEffects then
+        self._backgroundFxAccumulator = 0
+    end
+    if self.bg_effects_frame then
+        self.bg_effects_frame.Visible = self._uiVisualSettings.BackgroundEffects
+    end
+end
+
+function Modern:_SetNameHidden(enabled)
+    self._uiVisualSettings.HideName = enabled == true
+    local hideName = self._uiVisualSettings.HideName == true
+
+    if self.user_name_label and self.user_name_label.Parent then
+        self.user_name_label.Visible = (self.config.ShowUser ~= false) and not hideName
+        if not hideName and self.config.ShowUser ~= false then
+            self.user_name_label.Text = "@" .. tostring(local_player.Name)
+        end
+    end
+
+    if self._espPreviewHeaderTag and self._espPreviewHeaderTag.Parent then
+        self._espPreviewHeaderTag.Visible = (self.config.ShowUser ~= false) and not hideName
+        if not hideName and self.config.ShowUser ~= false then
+            self._espPreviewHeaderTag.Text = "@" .. tostring(local_player.Name)
+        end
+    end
+
+    if self._espPreviewPanel and self._espPreviewPanel.Parent then
+        self:_UpdateESPPreview(0)
+    end
+end
+
+function Modern:_SetTextGradientEnabled(enabled)
+    self._uiVisualSettings.TextGradient = enabled == true
+    if not self._uiVisualSettings.TextGradient then
+        self._gradientAnimationAccumulator = 0
+    end
+    local accent = self.config.AccentColor
+    local gradientSweepSpeed = 0.9
+    local animationTime = tonumber(self._textGradientAnimationTime) or 0
+    local sweepX = ((animationTime * gradientSweepSpeed) % 2) - 1
+    for i = #self._gradientObjects, 1, -1 do
+        self._gradientObjects[i] = nil
+    end
+    for _, label in ipairs(self._gradientLabels) do
+        if label and label.Parent then
+            local gradientObj = label:FindFirstChild("ModernTextGradient")
+            if self._uiVisualSettings.TextGradient then
+                if not gradientObj then
+                    gradientObj = create("UIGradient", {
+                        Name = "ModernTextGradient",
+                        Rotation = 0,
+                        Parent = label
+                    })
+                end
+                gradientObj.Rotation = 0
+                gradientObj.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, accent:Lerp(Color3.new(1, 1, 1), 0.2)),
+                    ColorSequenceKeypoint.new(0.55, Color3.new(1, 1, 1)),
+                    ColorSequenceKeypoint.new(1, accent:Lerp(Color3.new(1, 1, 1), 0.35))
+                })
+                gradientObj.Offset = Vector2.new(sweepX, 0)
+                table.insert(self._gradientObjects, gradientObj)
+            elseif gradientObj then
+                gradientObj:Destroy()
+            end
+        end
+    end
+end
+
+function Modern:_AnimateTextGradients(dt)
+    if not self._uiVisualSettings.TextGradient then
+        return
+    end
+
+    self._gradientAnimationAccumulator = (tonumber(self._gradientAnimationAccumulator) or 0) + (dt or 0)
+    if self._gradientAnimationAccumulator < (1 / 30) then
+        return
+    end
+    local resolvedDt = self._gradientAnimationAccumulator
+    self._gradientAnimationAccumulator = 0
+
+    local gradientSweepSpeed = 0.9
+    self._textGradientAnimationTime = (tonumber(self._textGradientAnimationTime) or 0) + resolvedDt
+    local sweepX = ((self._textGradientAnimationTime * gradientSweepSpeed) % 2) - 1
+    local animatedOffset = Vector2.new(sweepX, 0)
+
+    for i = #self._gradientObjects, 1, -1 do
+        local gradientObj = self._gradientObjects[i]
+        if gradientObj and gradientObj.Parent then
+            gradientObj.Rotation = 0
+            gradientObj.Offset = animatedOffset
+        else
+            table.remove(self._gradientObjects, i)
+        end
+    end
+end
+
+function Modern:SetFontPreset(index)
+    if #self._fontPresets == 0 then
+        return
+    end
+    local normalizedIndex = tonumber(index) or (self._fontPresetIndex + 1)
+    if normalizedIndex > #self._fontPresets then
+        normalizedIndex = 1
+    elseif normalizedIndex < 1 then
+        normalizedIndex = #self._fontPresets
+    end
+    self._fontPresetIndex = normalizedIndex
+    local preset = self._fontPresets[self._fontPresetIndex]
+    local targetFontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
+    if preset.Family then
+        local okFont, generatedFont = pcall(function()
+            return Font.new(preset.Family, preset.Weight or Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
+        end)
+        if okFont then
+            targetFontFace = generatedFont
+        end
+    elseif preset.EnumFont then
+        pcall(function()
+            targetFontFace = Font.fromEnum(preset.EnumFont)
+        end)
+    end
+    if self.screen_gui and self.screen_gui.Parent then
+        for _, obj in ipairs(self.screen_gui:GetDescendants()) do
+            if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+                if preset.EnumFont then
+                    pcall(function()
+                        obj.Font = preset.EnumFont
+                    end)
+                end
+                apply_font(obj, targetFontFace, preset.EnumFont or default_font_enum)
+            end
+        end
+    end
+    if self.uiSettingsFontValueLabel then
+        self.uiSettingsFontValueLabel.Text = preset.Name
+    end
+end
+
+function Modern:_RefreshAccentCore()
+    local accent = self.config.AccentColor
+    if self._accentTopLine then
+        self._accentTopLine.BackgroundColor3 = accent
+    end
+    if self.toggle_icon then
+        self.toggle_icon.ImageColor3 = accent
+    end
+    if self.bg_accent_glow then
+        self.bg_accent_glow.ImageColor3 = accent
+    end
+    if self.accent_preview then
+        self.accent_preview.BackgroundColor3 = accent
+    end
+    if self.settings_btn_stroke then
+        self.settings_btn_stroke.Color = self.settings_open and accent:Lerp(Color3.fromRGB(20, 20, 20), 0.45) or Color3.fromRGB(45, 45, 45)
+    end
+    if self.active_tab and self.active_tab.button_frame then
+        self.active_tab.button_frame.BackgroundColor3 = accent
+    end
+    if self._scrollbarRefreshers then
+        for index = #self._scrollbarRefreshers, 1, -1 do
+            local refresher = self._scrollbarRefreshers[index]
+            local okRefresh, keepRefresher = pcall(refresher)
+            if not okRefresh or keepRefresher == false then
+                table.remove(self._scrollbarRefreshers, index)
+            end
+        end
+    end
+    self:_SetTextGradientEnabled(self._uiVisualSettings.TextGradient)
+end
+
+function Modern:_ApplyOpenCloseVisuals(instant)
+    self:_SetBlurActive(self.is_visible, instant)
+    if self.backdrop_dim then
+        local targetTransparency = (self.is_visible and self._uiVisualSettings.Blur) and 0.55 or 1
+        if instant then
+            self.backdrop_dim.BackgroundTransparency = targetTransparency
+        else
+            tween_to(self.backdrop_dim, {
+                BackgroundTransparency = targetTransparency
+            }, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+        end
+    end
+    if self.snow_layer then
+        self.snow_layer.Visible = self.is_visible and self._uiVisualSettings.Snow and self._overlayMode ~= "None"
+    end
+    if not self.is_visible or not self._uiVisualSettings.Snow or self._overlayMode == "None" then
+        self._overlayUpdateAccumulator = 0
+        self._snowSpawnAccumulator = 0
+        self:_ClearSnowflakes()
+    end
+    self:_UpdateESPPreview(0)
+end
 
 local function pull_preview_value(sourceTable, keys)
-    if type(sourceTable) ~= "table" then return nil end
+    if type(sourceTable) ~= "table" then
+        return nil
+    end
     for _, key in ipairs(keys) do
         local value = sourceTable[key]
-        if value ~= nil then return value end
+        if value ~= nil then
+            return value
+        end
     end
     return nil
 end
 
 local function flowPreviewToBool(value)
-    if type(value) == "boolean" then return value end
-    if type(value) == "number" then return value ~= 0 end
+    if type(value) == "boolean" then
+        return value
+    end
+    if type(value) == "number" then
+        return value ~= 0
+    end
     if type(value) == "string" then
         local normalized = string.lower(value)
-        if normalized == "true" or normalized == "on" or normalized == "enabled" or normalized == "yes" or normalized == "1" then return true end
-        if normalized == "false" or normalized == "off" or normalized == "disabled" or normalized == "no" or normalized == "0" then return false end
+        if normalized == "true" or normalized == "on" or normalized == "enabled" or normalized == "yes" or normalized == "1" then
+            return true
+        end
+        if normalized == "false" or normalized == "off" or normalized == "disabled" or normalized == "no" or normalized == "0" then
+            return false
+        end
     end
     return nil
 end
 
 local function flowPreviewToColor3(value)
-    if typeof(value) == "Color3" then return value end
-    if type(value) ~= "table" then return nil end
+    if typeof(value) == "Color3" then
+        return value
+    end
+    if type(value) ~= "table" then
+        return nil
+    end
     local r = value.r or value.R or value[1]
     local g = value.g or value.G or value[2]
     local b = value.b or value.B or value[3]
-    if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" then return nil end
-    if r > 1 or g > 1 or b > 1 then r, g, b = r / 255, g / 255, b / 255 end
+    if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" then
+        return nil
+    end
+    if r > 1 or g > 1 or b > 1 then
+        r, g, b = r / 255, g / 255, b / 255
+    end
     return Color3.new(math.clamp(r, 0, 1), math.clamp(g, 0, 1), math.clamp(b, 0, 1))
 end
 
 local flowPreviewCoreBodyParts = {
-    Head = true, UpperTorso = true, LowerTorso = true, Torso = true,
-    LeftUpperArm = true, LeftLowerArm = true, LeftHand = true,
-    RightUpperArm = true, RightLowerArm = true, RightHand = true,
-    LeftUpperLeg = true, LeftLowerLeg = true, LeftFoot = true,
-    RightUpperLeg = true, RightLowerLeg = true, RightFoot = true,
-    ["Left Arm"] = true, ["Right Arm"] = true, ["Left Leg"] = true, ["Right Leg"] = true
+    Head = true,
+    UpperTorso = true,
+    LowerTorso = true,
+    Torso = true,
+    LeftUpperArm = true,
+    LeftLowerArm = true,
+    LeftHand = true,
+    RightUpperArm = true,
+    RightLowerArm = true,
+    RightHand = true,
+    LeftUpperLeg = true,
+    LeftLowerLeg = true,
+    LeftFoot = true,
+    RightUpperLeg = true,
+    RightLowerLeg = true,
+    RightFoot = true,
+    ["Left Arm"] = true,
+    ["Right Arm"] = true,
+    ["Left Leg"] = true,
+    ["Right Leg"] = true
 }
 
 local flowPreviewBoundingCornerSigns = {
-    Vector3.new(-1, -1, -1), Vector3.new(-1, -1, 1), Vector3.new(-1, 1, -1), Vector3.new(-1, 1, 1),
-    Vector3.new(1, -1, -1), Vector3.new(1, -1, 1), Vector3.new(1, 1, -1), Vector3.new(1, 1, 1)
+    Vector3.new(-1, -1, -1),
+    Vector3.new(-1, -1, 1),
+    Vector3.new(-1, 1, -1),
+    Vector3.new(-1, 1, 1),
+    Vector3.new(1, -1, -1),
+    Vector3.new(1, -1, 1),
+    Vector3.new(1, 1, -1),
+    Vector3.new(1, 1, 1)
 }
 
 local function getModelBoundingBoxSafe(model)
-    if not model or not model.Parent then return nil, nil end
-    local okBounds, boundsCF, boundsSize = pcall(function() return model:GetBoundingBox() end)
+    if not model or not model.Parent then
+        return nil, nil
+    end
+    local okBounds, boundsCF, boundsSize = pcall(function()
+        return model:GetBoundingBox()
+    end)
     if okBounds and typeof(boundsCF) == "CFrame" and typeof(boundsSize) == "Vector3" and boundsSize.Magnitude > 0 then
         return boundsCF, boundsSize
     end
     return nil, nil
 end
 
-function vora_ui:SetESPProvider(providerFn)
+function Modern:SetESPProvider(providerFn)
     if providerFn ~= nil and type(providerFn) ~= "function" then
         return false, "ESP preview provider must be a function or nil."
     end
@@ -863,7 +1668,7 @@ function vora_ui:SetESPProvider(providerFn)
     return true
 end
 
-function vora_ui:SetESPData(previewData)
+function Modern:SetESPData(previewData)
     if previewData ~= nil and type(previewData) ~= "table" then
         return false, "ESP preview data must be a table or nil."
     end
@@ -872,7 +1677,7 @@ function vora_ui:SetESPData(previewData)
     return true
 end
 
-function vora_ui:SetESPPreview(enabled)
+function Modern:SetESPPreview(enabled)
     self._uiVisualSettings.ESPSelfPreview = enabled == true
     if not self._uiVisualSettings.ESPSelfPreview then
         self._espPreviewWasShowing = false
@@ -884,37 +1689,7 @@ function vora_ui:SetESPPreview(enabled)
     self:_UpdateESPPreview(0)
 end
 
-function vora_ui:_DestroyESPPreviewCharacter()
-    if self._espPreviewWalkTrack then
-        pcall(function()
-            self._espPreviewWalkTrack:Stop(0.1)
-        end)
-        pcall(function()
-            self._espPreviewWalkTrack:Destroy()
-        end)
-    end
-    self._espPreviewWalkTrack = nil
-    self._espPreviewAnimationId = nil
-    if self._espPreviewHighlight then
-        self._espPreviewHighlight.Adornee = nil
-        self._espPreviewHighlight.Enabled = false
-    end
-    self._espPreviewPartDefaults = {}
-    self._espPreviewHeadPart = nil
-    self._espPreviewRootPart = nil
-    self._espPreviewVisualState = nil
-    self._espPreviewVisualDirty = false
-    self._espPreviewProjectionCache = nil
-    self._espPreviewProjectionDirty = true
-    if self._espPreviewCharacter and self._espPreviewCharacter.Parent then
-        self._espPreviewCharacter:Destroy()
-    end
-    self._espPreviewCharacter = nil
-    self._espPreviewLastCharacter = nil
-    self._espPreviewPivotYOffset = -2
-end
-
-function vora_ui:_ResolveESPPreviewWalkAnimationId(sourceCharacter)
+function Modern:_ResolveESPPreviewWalkAnimationId(sourceCharacter)
     if not sourceCharacter then
         return nil
     end
@@ -954,7 +1729,7 @@ function vora_ui:_ResolveESPPreviewWalkAnimationId(sourceCharacter)
     return nil
 end
 
-function vora_ui:_StartESPPreviewWalkAnimation(sourceCharacter)
+function Modern:_StartESPPreviewWalkAnimation(sourceCharacter)
     if self._espPreviewStaticMode then
         if self._espPreviewWalkTrack then
             pcall(function()
@@ -1026,7 +1801,7 @@ function vora_ui:_StartESPPreviewWalkAnimation(sourceCharacter)
     end
 end
 
-function vora_ui:_CreateESPPreviewFallbackCharacter()
+function Modern:_CreateESPPreviewFallbackCharacter()
     local fallbackModel = nil
     local created = false
     local previewUserId, previewImageUrl = resolve_avatar_3d(local_player.UserId)
@@ -1057,7 +1832,37 @@ function vora_ui:_CreateESPPreviewFallbackCharacter()
     return fallbackModel
 end
 
-function vora_ui:_EnsureESPPreviewCharacter()
+function Modern:_DestroyESPPreviewCharacter()
+    if self._espPreviewWalkTrack then
+        pcall(function()
+            self._espPreviewWalkTrack:Stop(0.1)
+        end)
+        pcall(function()
+            self._espPreviewWalkTrack:Destroy()
+        end)
+    end
+    self._espPreviewWalkTrack = nil
+    self._espPreviewAnimationId = nil
+    if self._espPreviewHighlight then
+        self._espPreviewHighlight.Adornee = nil
+        self._espPreviewHighlight.Enabled = false
+    end
+    self._espPreviewPartDefaults = {}
+    self._espPreviewHeadPart = nil
+    self._espPreviewRootPart = nil
+    self._espPreviewVisualState = nil
+    self._espPreviewVisualDirty = false
+    self._espPreviewProjectionCache = nil
+    self._espPreviewProjectionDirty = true
+    if self._espPreviewCharacter and self._espPreviewCharacter.Parent then
+        self._espPreviewCharacter:Destroy()
+    end
+    self._espPreviewCharacter = nil
+    self._espPreviewLastCharacter = nil
+    self._espPreviewPivotYOffset = -2
+end
+
+function Modern:_EnsureESPPreviewCharacter()
     if not self._espPreviewWorldModel then
         return
     end
@@ -1283,7 +2088,7 @@ function vora_ui:_EnsureESPPreviewCharacter()
     end
 end
 
-function vora_ui:_CreateESPPreviewPanel()
+function Modern:_CreateESPPreviewPanel()
     if self._espPreviewPanel and self._espPreviewPanel.Parent then
         return
     end
@@ -1589,7 +2394,7 @@ function vora_ui:_CreateESPPreviewPanel()
     self:_UpdateESPPreview(0)
 end
 
-function vora_ui:_ResolveESPPreviewState()
+function Modern:_ResolveESPPreviewState()
     local state = {
         Enabled = true,
         ShowBox = false,
@@ -1881,7 +2686,7 @@ function vora_ui:_ResolveESPPreviewState()
     return state
 end
 
-function vora_ui:_ApplyESPPreviewPartVisualState(showChams, previewColor, chamsTransparency)
+function Modern:_ApplyESPPreviewPartVisualState(showChams, previewColor, chamsTransparency)
     local targetShowChams = showChams == true
     local targetChamsTransparency = math.clamp(chamsTransparency or 0.55, 0, 0.92)
     local lastVisualState = self._espPreviewVisualState or {}
@@ -1940,7 +2745,7 @@ function vora_ui:_ApplyESPPreviewPartVisualState(showChams, previewColor, chamsT
     self._espPreviewVisualDirty = false
 end
 
-function vora_ui:_UpdateESPPreview(dt)
+function Modern:_UpdateESPPreview(dt)
     local shouldShow = self.is_visible and self._uiVisualSettings.ESPSelfPreview
     if not shouldShow then
         if self._espPreviewPanel then
@@ -2265,606 +3070,7 @@ function vora_ui:_UpdateESPPreview(dt)
     end
 end
 
---#endregion═════════════════════════════════════════════════════════════════════
-
-
---#region ══╗ Core Methods ╔═════════════════════════════════════════════════════
-
-function vora_ui:_TrackConnection(conn)
-    if conn then
-        table.insert(self._connections, conn)
-        if #self._connections % 100 == 0 then
-            local activeConnections = {}
-            for _, item in ipairs(self._connections) do
-                if item then
-                    if typeof(item) == "RBXScriptConnection" then
-                        if item.Connected then
-                            table.insert(activeConnections, item)
-                        end
-                    else
-                        table.insert(activeConnections, item)
-                    end
-                end
-            end
-            self._connections = activeConnections
-        end
-    end
-    return conn
-end
-
-function vora_ui:RegisterControl(flag, getter, setter)
-    if type(flag) ~= "string" or flag == "" then return end
-    if type(getter) ~= "function" or type(setter) ~= "function" then return end
-    self._trackedControls[flag] = {
-        get = getter,
-        set = setter
-    }
-    self._lastControlRegistration = os.clock()
-end
-
-function vora_ui:_RegisterRefreshJob(interval, isAliveFn, stepFn)
-    if type(stepFn) ~= "function" then
-        return nil
-    end
-
-    local job = {
-        Interval = math.max(tonumber(interval) or 0.5, 0.05),
-        IsAlive = isAliveFn,
-        Step = stepFn,
-        Accumulator = 0
-    }
-
-    table.insert(self._refreshJobs, job)
-    return job
-end
-
-function vora_ui:_StepRefreshJobs(dt)
-    if not self._refreshJobs then
-        return
-    end
-
-    local resolvedDt = tonumber(dt) or 0
-    for index = #self._refreshJobs, 1, -1 do
-        local job = self._refreshJobs[index]
-        local keepJob = true
-
-        if type(job) ~= "table" or type(job.Step) ~= "function" then
-            keepJob = false
-        elseif type(job.IsAlive) == "function" then
-            local okAlive, isAlive = pcall(job.IsAlive)
-            keepJob = okAlive and isAlive ~= false
-        end
-
-        if not keepJob then
-            table.remove(self._refreshJobs, index)
-        else
-            job.Accumulator = (job.Accumulator or 0) + resolvedDt
-            if job.Accumulator >= (job.Interval or 0.5) then
-                job.Accumulator = 0
-                local okStep, keepResult = pcall(job.Step)
-                if not okStep or keepResult == false then
-                    table.remove(self._refreshJobs, index)
-                end
-            end
-        end
-    end
-end
-
-function vora_ui:_BuildAutoConfigSnapshot()
-    local controlsSnapshot = {}
-    local trackedFlags = {}
-
-    for flag in pairs(self._trackedControls) do
-        table.insert(trackedFlags, flag)
-    end
-
-    table.sort(trackedFlags)
-
-    for _, flag in ipairs(trackedFlags) do
-        local control = self._trackedControls[flag]
-        if control and type(control.get) == "function" then
-            local ok, value = pcall(control.get)
-            if ok then
-                controlsSnapshot[flag] = serialize_value(value)
-            end
-        end
-    end
-
-    local okEncode, encoded = pcall(function()
-        return http_service:JSONEncode(controlsSnapshot)
-    end)
-
-    if okEncode then
-        return encoded
-    end
-
-    return nil
-end
-
-function vora_ui:_TryAutoSaveConfig(forceSave)
-    if self._destroyed or not self._autoConfigEnabled or self._isApplyingConfig then
-        return false
-    end
-
-    if not writefile or next(self._trackedControls) == nil then
-        return false
-    end
-
-    local snapshot = self:_BuildAutoConfigSnapshot()
-    if not snapshot then
-        return false
-    end
-
-    if not forceSave and snapshot == self._autoConfigSnapshot then
-        return false
-    end
-
-    local okSave = self:SaveConfig(self._autoConfigName)
-    if okSave then
-        self._autoConfigSnapshot = snapshot
-    end
-
-    return okSave == true
-end   
-
-function vora_ui:_TryAutoLoadConfig(forceAttempt)
-    if self._destroyed then
-        return false
-    end
-
-    if self._autoConfigLoadAttempted and not forceAttempt then
-        return false
-    end
-
-    if not readfile or next(self._trackedControls) == nil then
-        return false
-    end
-
-    self._isApplyingConfig = true
-    local okLoad = self:LoadConfig(self._autoConfigName)
-    self._isApplyingConfig = false
-    self._autoConfigLoadAttempted = true
-    self._autoConfigAccumulator = 0
-    self._autoConfigSnapshot = self:_BuildAutoConfigSnapshot()
-    return okLoad == true
-end
-
-function vora_ui:_RefreshViewportMetrics()
-    local viewportSize = (self.screen_gui and self.screen_gui.AbsoluteSize) or Vector2.new(0, 0)
-    local width = math.max(200, math.floor(viewportSize.X > 0 and viewportSize.X or 1280))
-    local height = math.max(320, math.floor(viewportSize.Y > 0 and viewportSize.Y or 720))
-    self._cachedViewportSize = Vector2.new(width, height)
-    self._cachedViewportWidth = width
-    self._cachedViewportHeight = height
-    self._cachedViewportAreaScale = math.clamp(math.sqrt((width * height) / (1280 * 720)), is_mobile and 0.52 or 0.68, 1.12)
-end
-
-function vora_ui:_InvalidateESPPreviewProjection(clearCache)
-    self._espPreviewProjectionDirty = true
-    if clearCache then
-        self._espPreviewProjectionCache = nil
-    end
-end
-
-function vora_ui:_EnsureBlurEffect()
-    if self._blurEffectRef and self._blurEffectRef.Parent then
-        return self._blurEffectRef
-    end
-    local existingBlur = lighting:FindFirstChild("VoraHubBlurEffect")
-    if existingBlur and existingBlur:IsA("BlurEffect") then
-        self._blurEffectRef = existingBlur
-        return existingBlur
-    end
-    self._blurEffectRef = create("BlurEffect", {
-        Name = "VoraHubBlurEffect",
-        Size = 0,
-        Enabled = true,
-        Parent = lighting
-    })
-    return self._blurEffectRef
-end
-
-function vora_ui:_SetBlurActive(active, instant)
-    local blur = self:_EnsureBlurEffect()
-    local shouldEnable = self._uiVisualSettings.Blur and active
-    local targetSize = shouldEnable and (is_mobile and 14 or 18) or 0
-    if instant then
-        blur.Size = targetSize
-        return
-    end
-    tween_to(blur, {Size = targetSize}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-end
-
-function vora_ui:_ClearSnowflakes()
-    for i = #self._snowflakes, 1, -1 do
-        local snowObj = self._snowflakes[i]
-        if snowObj and snowObj.instance and snowObj.instance.Parent then
-            snowObj.instance:Destroy()
-        end
-        self._snowflakes[i] = nil
-    end
-end
-
-function vora_ui:_SpawnSnowflake()
-    if not self.snow_layer or not self.snow_layer.Parent then
-        return
-    end
-    local width = self._cachedViewportWidth or 200
-    local size = math.random(2, 7) * scale_factor
-    local startX = math.random(-18, width + 18)
-    local flake = create("ImageLabel", {
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://3570695787",
-        ImageColor3 = Color3.fromRGB(236 + math.random(0, 19), 243 + math.random(0, 12), 255),
-        ImageTransparency = math.random(22, 56) / 100,
-        Size = UDim2.new(0, size, 0, size),
-        Position = UDim2.new(0, startX, 0, -math.random(6, 80)),
-        Rotation = math.random(0, 359),
-        ZIndex = 2,
-        Parent = self.snow_layer
-    })
-    table.insert(self._snowflakes, {
-        overlayType = "Snow",
-        instance = flake,
-        baseX = startX,
-        fallSpeed = math.random(16, 42) * scale_factor,
-        driftAmount = math.random(12, 42) * scale_factor,
-        swirlAmount = math.random(2, 10) * scale_factor,
-        driftSpeed = math.random(5, 15) / 10,
-        twinkleSpeed = math.random(6, 15) / 10,
-        baseTransparency = flake.ImageTransparency,
-        phase = math.random() * math.pi * 2,
-        spin = math.random(-14, 14),
-        size = size,
-        yOffset = flake.Position.Y.Offset
-    })
-end
-
-function vora_ui:_SpawnRainDrop()
-    if not self.snow_layer or not self.snow_layer.Parent then
-        return
-    end
-    local width = self._cachedViewportWidth or 200
-    local depthScale = math.random(62, 150) / 100
-    local length = (math.random(12, 30) * depthScale + 3) * scale_factor
-    local thickness = math.max(1, math.floor((0.8 + depthScale * 0.9) * scale_factor + 0.5))
-    local startX = math.random(-58, width + 58)
-    local startY = -math.random(30, 180)
-    local windSpeed = (math.random(26, 88) * depthScale) * scale_factor
-    local fallSpeed = (math.random(270, 560) * depthScale) * scale_factor
-    local angle = math.deg(math.atan(fallSpeed / windSpeed)) - 90
-    local drop = create("Frame", {
-        BorderSizePixel = 0,
-        BackgroundColor3 = Color3.fromRGB(176 + math.random(0, 26), 208 + math.random(0, 26), 255),
-        BackgroundTransparency = math.random(15, 45) / 100,
-        Position = UDim2.new(0, startX, 0, startY),
-        Size = UDim2.new(0, thickness, 0, length),
-        Rotation = angle,
-        ZIndex = depthScale > 1 and 3 or 2,
-        Parent = self.snow_layer
-    })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = drop})
-    table.insert(self._snowflakes, {
-        overlayType = "RainDrop",
-        instance = drop,
-        xOffset = startX,
-        yOffset = startY,
-        velocityX = windSpeed,
-        velocityY = fallSpeed,
-        angle = angle,
-        width = thickness,
-        length = length,
-        baseTransparency = drop.BackgroundTransparency,
-        driftSpeed = math.random(11, 24) / 10,
-        windJitter = math.random(6, 18) * scale_factor,
-        stretchPulse = math.random(16, 30) / 10,
-        splashChance = 0.55 + math.random() * 0.25,
-        phase = math.random() * math.pi * 2
-    })
-end
-
-function vora_ui:_SpawnRainSplash(xPosition, yPosition)
-    if not self.snow_layer or not self.snow_layer.Parent then
-        return
-    end
-    local startSize = math.random(2, 5) * scale_factor
-    local splash = create("Frame", {
-        BorderSizePixel = 0,
-        BackgroundColor3 = Color3.fromRGB(194 + math.random(0, 20), 224 + math.random(0, 22), 255),
-        BackgroundTransparency = math.random(24, 42) / 100,
-        Position = UDim2.new(0, xPosition, 0, yPosition),
-        Size = UDim2.new(0, startSize, 0, math.max(1 * scale_factor, startSize * 0.5)),
-        ZIndex = 3,
-        Parent = self.snow_layer
-    })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = splash})
-    local life = math.random(8, 14) / 100
-    table.insert(self._snowflakes, {
-        overlayType = "RainSplash",
-        instance = splash,
-        baseX = xPosition,
-        yOffset = yPosition,
-        life = life,
-        totalLife = life,
-        startSize = startSize,
-        startThickness = math.max(1 * scale_factor, startSize * 0.5),
-        endSize = math.random(10, 20) * scale_factor,
-        driftX = math.random(-14, 14) * scale_factor,
-        baseTransparency = splash.BackgroundTransparency
-    })
-end
-
-function vora_ui:_SpawnStarParticle()
-    if not self.snow_layer or not self.snow_layer.Parent then
-        return
-    end
-    local width = self._cachedViewportWidth or 200
-    local height = self._cachedViewportHeight or 320
-    local size = (math.random(10, 28) / 10) * scale_factor
-    local startX = math.random(0, width)
-    local startY = math.random(0, height)
-    local star = create("ImageLabel", {
-        BackgroundTransparency = 1,
-        Image = "rbxassetid://3570695787",
-        ImageColor3 = Color3.fromRGB(224 + math.random(0, 28), 233 + math.random(0, 20), 255),
-        ImageTransparency = math.random(22, 56) / 100,
-        Position = UDim2.new(0, startX, 0, startY),
-        Size = UDim2.new(0, size, 0, size),
-        ZIndex = 3,
-        Parent = self.snow_layer
-    })
-    table.insert(self._snowflakes, {
-        overlayType = "Stars",
-        instance = star,
-        xOffset = startX,
-        yOffset = startY,
-        velocityX = (math.random(-16, 16) / 10) * scale_factor,
-        velocityY = (math.random(-9, 9) / 10) * scale_factor,
-        baseSize = size,
-        driftAmount = math.random(5, 18) * scale_factor,
-        driftLift = math.random(4, 14) * scale_factor,
-        driftSpeed = math.random(3, 10) / 10,
-        twinkleSpeed = math.random(7, 18) / 10,
-        pulseAmount = (math.random(8, 24) / 100),
-        baseTransparency = star.ImageTransparency,
-        phase = math.random() * math.pi * 2
-    })
-end
-
-function vora_ui:_SetSnowEnabled(enabled)
-    self._uiVisualSettings.Snow = enabled == true
-    if self.snow_layer then
-        self.snow_layer.Visible = self._uiVisualSettings.Snow and self.is_visible and self._overlayMode ~= "None"
-    end
-    if not self._uiVisualSettings.Snow or not self.is_visible or self._overlayMode == "None" then
-        self._overlayUpdateAccumulator = 0
-        self._snowSpawnAccumulator = 0
-        self:_ClearSnowflakes()
-    end
-end
-
-function vora_ui:_SetOverlayMode(mode)
-    local normalized = string.lower(tostring(mode or "snow"))
-    local resolved = "Snow"
-    if normalized == "rain" then
-        resolved = "Rain"
-    elseif normalized == "stars" or normalized == "star" then
-        resolved = "Stars"
-    elseif normalized == "none" or normalized == "off" then
-        resolved = "None"
-    end
-    local changed = self._overlayMode ~= resolved
-    self._overlayMode = resolved
-    if self.overlay_mode_label then
-        self.overlay_mode_label.Text = resolved
-    end
-    if self.snow_layer then
-        self.snow_layer.Visible = self.is_visible and self._uiVisualSettings.Snow and resolved ~= "None"
-    end
-    if changed or resolved == "None" then
-        self._overlayUpdateAccumulator = 0
-        self._snowSpawnAccumulator = 0
-        self:_ClearSnowflakes()
-    end
-end
-
-function vora_ui:_SetBackgroundEffectsEnabled(enabled)
-    self._uiVisualSettings.BackgroundEffects = enabled == true
-    if not self._uiVisualSettings.BackgroundEffects then
-        self._backgroundFxAccumulator = 0
-    end
-    if self.bg_effects_frame then
-        self.bg_effects_frame.Visible = self._uiVisualSettings.BackgroundEffects
-    end
-end
-
-function vora_ui:_SetNameHidden(enabled)
-    self._uiVisualSettings.HideName = enabled == true
-    local hideName = self._uiVisualSettings.HideName == true
-
-    if self.user_name_label then
-        self.user_name_label.Visible = not hideName
-        if not hideName then
-            self.user_name_label.Text = "@" .. tostring(local_player.Name)
-        end
-    end
-
-    if self._espPreviewHeaderTag then
-        self._espPreviewHeaderTag.Visible = not hideName
-        if not hideName then
-            self._espPreviewHeaderTag.Text = "@" .. tostring(local_player.Name)
-        end
-    end
-
-    if self._espPreviewPanel then
-        self:_UpdateESPPreview(0)
-    end
-end
-
-function vora_ui:_SetTextGradientEnabled(enabled)
-    self._uiVisualSettings.TextGradient = enabled == true
-    if not self._uiVisualSettings.TextGradient then
-        self._gradientAnimationAccumulator = 0
-    end
-    local accent = self.config.AccentColor
-    local gradientSweepSpeed = 0.9
-    local animationTime = tonumber(self._textGradientAnimationTime) or 0
-    local sweepX = ((animationTime * gradientSweepSpeed) % 2) - 1
-    for i = #self._gradientObjects, 1, -1 do
-        self._gradientObjects[i] = nil
-    end
-    for _, label in ipairs(self._gradientLabels) do
-        if label and label.Parent then
-            local gradientObj = label:FindFirstChild("VoraHubTextGradient")
-            if self._uiVisualSettings.TextGradient then
-                if not gradientObj then
-                    gradientObj = create("UIGradient", {
-                        Name = "VoraHubTextGradient",
-                        Rotation = 0,
-                        Parent = label
-                    })
-                end
-                gradientObj.Rotation = 0
-                gradientObj.Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0, accent:Lerp(Color3.new(1, 1, 1), 0.2)),
-                    ColorSequenceKeypoint.new(0.55, Color3.new(1, 1, 1)),
-                    ColorSequenceKeypoint.new(1, accent:Lerp(Color3.new(1, 1, 1), 0.35))
-                })
-                gradientObj.Offset = Vector2.new(sweepX, 0)
-                table.insert(self._gradientObjects, gradientObj)
-            elseif gradientObj then
-                gradientObj:Destroy()
-            end
-        end
-    end
-end
-
-function vora_ui:_AnimateTextGradients(dt)
-    if not self._uiVisualSettings.TextGradient then
-        return
-    end
-
-    self._gradientAnimationAccumulator = (tonumber(self._gradientAnimationAccumulator) or 0) + (dt or 0)
-    if self._gradientAnimationAccumulator < (1 / 30) then
-        return
-    end
-    local resolvedDt = self._gradientAnimationAccumulator
-    self._gradientAnimationAccumulator = 0
-
-    local gradientSweepSpeed = 0.9
-    self._textGradientAnimationTime = (tonumber(self._textGradientAnimationTime) or 0) + resolvedDt
-    local sweepX = ((self._textGradientAnimationTime * gradientSweepSpeed) % 2) - 1
-    local animatedOffset = Vector2.new(sweepX, 0)
-
-    for i = #self._gradientObjects, 1, -1 do
-        local gradientObj = self._gradientObjects[i]
-        if gradientObj and gradientObj.Parent then
-            gradientObj.Rotation = 0
-            gradientObj.Offset = animatedOffset
-        else
-            table.remove(self._gradientObjects, i)
-        end
-    end
-end
-
-function vora_ui:SetFontPreset(index)
-    if #self._fontPresets == 0 then
-        return
-    end
-    local normalizedIndex = tonumber(index) or (self._fontPresetIndex + 1)
-    if normalizedIndex > #self._fontPresets then
-        normalizedIndex = 1
-    elseif normalizedIndex < 1 then
-        normalizedIndex = #self._fontPresets
-    end
-    self._fontPresetIndex = normalizedIndex
-    local preset = self._fontPresets[self._fontPresetIndex]
-    local targetFontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
-    if preset.Family then
-        local okFont, generatedFont = pcall(function()
-            return Font.new(preset.Family, preset.Weight or Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
-        end)
-        if okFont then
-            targetFontFace = generatedFont
-        end
-    elseif preset.EnumFont then
-        pcall(function()
-            targetFontFace = Font.fromEnum(preset.EnumFont)
-        end)
-    end
-    if self.screen_gui and self.screen_gui.Parent then
-        for _, obj in ipairs(self.screen_gui:GetDescendants()) do
-            if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-                if preset.EnumFont then
-                    pcall(function()
-                        obj.Font = preset.EnumFont
-                    end)
-                end
-                apply_font(obj, targetFontFace, preset.EnumFont or default_font_enum)
-            end
-        end
-    end
-    if self.uiSettingsFontValueLabel then
-        self.uiSettingsFontValueLabel.Text = preset.Name
-    end
-end
-
-function vora_ui:_RefreshAccentCore()
-    local accent = self.config.AccentColor
-    if self._accentTopLine then
-        self._accentTopLine.BackgroundColor3 = accent
-    end
-    if self.toggle_icon then
-        self.toggle_icon.ImageColor3 = accent
-    end
-    if self.bg_accent_glow then
-        self.bg_accent_glow.ImageColor3 = accent
-    end
-    if self.accent_preview then
-        self.accent_preview.BackgroundColor3 = accent
-    end
-    if self.settings_btn_stroke then
-        self.settings_btn_stroke.Color = self.settings_open and accent:Lerp(Color3.fromRGB(20, 20, 20), 0.45) or Color3.fromRGB(45, 45, 45)
-    end
-    if self.active_tab and self.active_tab.button_frame then
-        self.active_tab.button_frame.BackgroundColor3 = accent
-    end
-    if self._scrollbarRefreshers then
-        for index = #self._scrollbarRefreshers, 1, -1 do
-            local refresher = self._scrollbarRefreshers[index]
-            local okRefresh, keepRefresher = pcall(refresher)
-            if not okRefresh or keepRefresher == false then
-                table.remove(self._scrollbarRefreshers, index)
-            end
-        end
-    end
-    self:_SetTextGradientEnabled(self._uiVisualSettings.TextGradient)
-end
-
-function vora_ui:_ApplyOpenCloseVisuals(instant)
-    self:_SetBlurActive(self.is_visible, instant)
-    if self.backdrop_dim then
-        local targetTransparency = (self.is_visible and self._uiVisualSettings.Blur) and 0.55 or 1
-        if instant then
-            self.backdrop_dim.BackgroundTransparency = targetTransparency
-        else
-            tween_to(self.backdrop_dim, {
-                BackgroundTransparency = targetTransparency
-            }, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-        end
-    end
-    if self.snow_layer then
-        self.snow_layer.Visible = self.is_visible and self._uiVisualSettings.Snow and self._overlayMode ~= "None"
-    end
-    if not self.is_visible or not self._uiVisualSettings.Snow or self._overlayMode == "None" then
-        self._overlayUpdateAccumulator = 0
-        self._snowSpawnAccumulator = 0
-        self:_ClearSnowflakes()
-    end
-    self:_UpdateESPPreview(0)
-end
-
-function vora_ui:SetSmoothScroll(scrollFrame, smoothSpeed)
+function Modern:SetSmoothScroll(scrollFrame, smoothSpeed)
     if not scrollFrame or self._smoothScrollFrames[scrollFrame] then return end
     if scrollFrame:GetAttribute("FlowDisableSmoothScroll") == true then
         scrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
@@ -2887,7 +3093,7 @@ function vora_ui:SetSmoothScroll(scrollFrame, smoothSpeed)
     end))
 end
 
-function vora_ui:SetSearchFilter(rawQuery)
+function Modern:SetSearchFilter(rawQuery)
     local query = normalize_search(rawQuery)
     self._searchQuery = query
     local firstVisibleTab = nil
@@ -2952,7 +3158,7 @@ function vora_ui:SetSearchFilter(rawQuery)
     end
 end
 
-function vora_ui:SaveConfig(fileName)
+function Modern:SaveConfig(fileName)
     if not writefile then
         return false, "writefile API is unavailable in this executor."
     end
@@ -2974,7 +3180,7 @@ function vora_ui:SaveConfig(fileName)
     local encoded = http_service:JSONEncode(payload)
     local writableCandidates = {}
     local fileOnlyName = get_config_filename(configName)
-    local okFolder, folderPath = ensure_config_folder()
+    local okFolder, folderPath = ensure_config_folder(self.config.ConfigFolder)
     if okFolder then
         table.insert(writableCandidates, folderPath .. "/" .. fileOnlyName)
         table.insert(writableCandidates, folderPath .. "\\" .. fileOnlyName)
@@ -3010,7 +3216,7 @@ function vora_ui:SaveConfig(fileName)
     return true, savedPath
 end
 
-function vora_ui:LoadConfig(fileName)
+function Modern:LoadConfig(fileName)
     if not readfile then
         return false, "readfile API is unavailable in this executor."
     end
@@ -3018,7 +3224,7 @@ function vora_ui:LoadConfig(fileName)
     local configName = sanitize_config_name(fileName)
     local path = nil
     local rawConfig = nil
-    local readableCandidates = get_readable_config_paths(configName)
+    local readableCandidates = get_readable_config_paths(configName, self.config.ConfigFolder)
     local hintedPath = self._configPathHints and self._configPathHints[configName]
 
     if type(hintedPath) == "string" and hintedPath ~= "" then
@@ -3053,7 +3259,7 @@ function vora_ui:LoadConfig(fileName)
         end
     end
     if not path then
-        return false, "Config file not found: " .. get_config_folder() .. "/" .. get_config_filename(configName)
+        return false, "Config file not found: " .. get_config_folder(self.config.ConfigFolder) .. "/" .. get_config_filename(configName)
     end
 
     local okDecode, data = pcall(function()
@@ -3076,9 +3282,9 @@ function vora_ui:LoadConfig(fileName)
     return true, path
 end
 
-function vora_ui:BuildUI()
+function Modern:BuildUI()
     self.screen_gui = create("ScreenGui", {
-        Name = "VoraHub",
+        Name = "Modern",
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
         ResetOnSpawn = false,
         IgnoreGuiInset = true
@@ -3148,10 +3354,23 @@ function vora_ui:BuildUI()
         end
     end))
     
+    -- AutoLoad config if enabled
+    if self.config.AutoLoad then
+        task.delay(1, function()
+            pcall(function() self:LoadConfig(self._autoConfigName) end)
+        end)
+    end
+    
+    -- AutoLoad config if enabled
+    if self.config.AutoLoad then
+        task.delay(1, function()
+            pcall(function() self:LoadConfig(self._autoConfigName) end)
+        end)
+    end
+    
     self:_TrackConnection(run_service.RenderStepped:Connect(function(dt)
         if self._destroyed then return end
         
-        -- FPS Counter
         local rollingIndex = self._fpsRollingIndex or 1
         local previousDt = self._fpsRollingWindow[rollingIndex] or 0
         if (self._fpsRollingCount or 0) >= self._fpsRollingSize then
@@ -3170,7 +3389,6 @@ function vora_ui:BuildUI()
             self._latestFPSValue = math.clamp(math.floor(((self._fpsRollingCount or 0) / self._fpsRollingTotal) + 0.5), 1, 360)
         end
 
-        -- Auto Config
         local nowClock = os.clock()
         if not self._autoConfigLoadAttempted then
             if next(self._trackedControls) ~= nil and (nowClock - (self._lastControlRegistration or nowClock)) >= 0.5 then
@@ -3186,7 +3404,6 @@ function vora_ui:BuildUI()
             self._autoConfigAccumulator = 0
         end
         
-        -- Smooth Scroll
         for scrollingFrame, state in pairs(self._smoothScrollFrames) do
             if not scrollingFrame or not scrollingFrame.Parent then
                 self._smoothScrollFrames[scrollingFrame] = nil
@@ -3206,25 +3423,17 @@ function vora_ui:BuildUI()
             end
         end
 
-        -- ESP Preview
         if self._uiVisualSettings.ESPSelfPreview or self._espPreviewWasShowing then
             self:_UpdateESPPreview(dt)
         end
-        
-        -- Refresh Jobs
         self:_StepRefreshJobs(dt)
-        
-        -- Watermark
         self:_UpdateWatermark(dt)
-        
-        -- Text Gradient Animation
         if self._uiVisualSettings.TextGradient and #self._gradientObjects > 0 then
             self:_AnimateTextGradients(dt)
         end
 
         local currentFps = self._latestFPSValue
 
-        -- Background Effects
         if self.is_visible and self._uiVisualSettings.BackgroundEffects and self.bg_effects_frame and self.bg_effects_frame.Visible then
             self._backgroundFxAccumulator = (self._backgroundFxAccumulator or 0) + dt
             local backgroundStep
@@ -3254,7 +3463,6 @@ function vora_ui:BuildUI()
             self._backgroundFxAccumulator = 0
         end
 
-        -- Snow/Rain/Stars Overlay
         if self.is_visible and self._uiVisualSettings.Snow and self.snow_layer and self.snow_layer.Visible and self._overlayMode ~= "None" then
             self._overlayUpdateAccumulator = (self._overlayUpdateAccumulator or 0) + dt
             local overlayStep
@@ -3418,7 +3626,7 @@ function vora_ui:BuildUI()
     end))
 end
 
-function vora_ui:Toggle()
+function Modern:Toggle()
     self.is_visible = not self.is_visible
     local openPosition = self._mainFrameOpenPosition or UDim2.new(0.5, -392 * scale_factor, 0.5, -262 * scale_factor)
     local closedPosition = self._mainFrameClosedPosition or UDim2.new(0.5, openPosition.X.Offset, 1.5, 0)
@@ -3428,18 +3636,18 @@ function vora_ui:Toggle()
     self:_ApplyOpenCloseVisuals(false)
 end
 
-function vora_ui:SetToggleVisible(visible)
+function Modern:SetToggleVisible(visible)
     self.toggleButtonVisible = visible
     if self.toggle_frame then
         self.toggle_frame.Visible = visible
     end
 end
 
-function vora_ui:SetToggleKey(keyCode)
+function Modern:SetToggleKey(keyCode)
     self.toggleKeyCode = keyCode
 end
 
-function vora_ui:BuildToggleButton()
+function Modern:BuildToggleButton()
     local btn_size = 55 * scale_factor
 
     self.toggle_frame = create("Frame", {
@@ -3476,7 +3684,7 @@ function vora_ui:BuildToggleButton()
     self.toggle_icon = create("ImageLabel", {
         Name = "ToggleIcon",
         BackgroundTransparency = 1,
-        Image = vora_logo,
+        Image = self.config.Image or modern_logo,
         ImageColor3 = Color3.new(1, 1, 1),
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(0.5, 0, 0.5, 0),
@@ -3530,13 +3738,14 @@ function vora_ui:BuildToggleButton()
     end))
 end
 
-function vora_ui:BuildWatermark()
+function Modern:BuildWatermark()
     local initialText = self.config.Name .. " | 00:00:00 | 60 FPS | 0ms"
     local initialWidth = measure_text_width(initialText, 14, Enum.Font.GothamSemibold) + 45
     
     self.watermark_frame = create("Frame", {
         Name = "WatermarkCuzWeNeedFlexing",
         BackgroundColor3 = Color3.fromRGB(16, 16, 16),
+        BackgroundTransparency = self.config.Uitransparent or 0,
         AnchorPoint = Vector2.new(0.5, 0),
         Position = UDim2.new(0.5, 0, 0, 6),
         BorderSizePixel = 0,
@@ -3547,7 +3756,7 @@ function vora_ui:BuildWatermark()
     create("UICorner", {CornerRadius = UDim.new(1,0), Parent = self.watermark_frame})
     
     create("ImageLabel", {
-        Image = vora_logo, BackgroundTransparency = 1,
+        Image = self.config.Image or modern_logo, BackgroundTransparency = 1,
         AnchorPoint = Vector2.new(0, 0.5),
         Position = UDim2.new(0, 8, 0.5, 0),
         Size = UDim2.new(0, 20 * scale_factor, 0, 20 * scale_factor),
@@ -3567,7 +3776,7 @@ function vora_ui:BuildWatermark()
     make_draggable(self.watermark_frame, nil, self)
 end
 
-function vora_ui:_UpdateWatermark(dt)
+function Modern:_UpdateWatermark(dt)
     if not (self.watermark_frame and self.watermark_frame.Parent and self.watermark_textLabel and self.watermark_textLabel.Parent) then
         return
     end
@@ -3596,7 +3805,7 @@ function vora_ui:_UpdateWatermark(dt)
     end
 end
 
-function vora_ui:_ResizeLayout(newWidth, newHeight)
+function Modern:_ResizeLayout(newWidth, newHeight)
     local min_w = 600 * scale_factor
     local min_h = 380 * scale_factor
     local max_w = 1200 * scale_factor
@@ -3628,7 +3837,7 @@ function vora_ui:_ResizeLayout(newWidth, newHeight)
         self.content_holder.Size = UDim2.new(0, content_w, 0, content_h)
     end
 
-    if self.search_frame then
+    if self.search_frame and self.search_frame.Parent then
         self.search_frame.Position = UDim2.new(0, search_x, 0, 16 * scale_factor)
     end
 
@@ -3663,7 +3872,7 @@ function vora_ui:_ResizeLayout(newWidth, newHeight)
     end
 end
 
-function vora_ui:BuildMainFrame()
+function Modern:BuildMainFrame()
     local frameWidth = 830 * scale_factor
     local frameHeight = 530 * scale_factor
     local headerLeftPadding = 10 * scale_factor
@@ -3682,6 +3891,7 @@ function vora_ui:BuildMainFrame()
     self.main_frame = create("Frame", {
         Name = "MainFrameIsAwesome",
         BackgroundColor3 = Color3.fromRGB(13, 13, 13),
+        BackgroundTransparency = self.config.Uitransparent or 0,
         Position = self._mainFrameOpenPosition,
         ClipsDescendants = true,
         BorderSizePixel = 0,
@@ -3879,14 +4089,16 @@ function vora_ui:BuildMainFrame()
         Position = UDim2.new(0, headerLeftPadding, 0, 32 * scale_factor), TextSize = 12 * scale_factor,
         Size = UDim2.new(0, 120 * scale_factor, 0, 16 * scale_factor),
         TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-        Parent = self.main_frame
+        Parent = self.main_frame,
+        Visible = self.config.ShowUser ~= false
     })
     self:_SetNameHidden(self._uiVisualSettings.HideName)
     
     self.avatar_image = create("ImageLabel", {
         Image = get_player_avatar(local_player.UserId), BackgroundTransparency = 1,
         Position = UDim2.new(0, avatarX, 0, 17 * scale_factor),
-        Size = UDim2.new(0, headerAvatarSize, 0, headerAvatarSize), Parent = self.main_frame
+        Size = UDim2.new(0, headerAvatarSize, 0, headerAvatarSize), Parent = self.main_frame,
+        Visible = self.config.ShowUser ~= false
     })
     create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = self.avatar_image})
     
@@ -3955,7 +4167,8 @@ function vora_ui:BuildMainFrame()
         BackgroundColor3 = Color3.fromRGB(19, 19, 19),
         Position = UDim2.new(0, searchX, 0, 16 * scale_factor),
         Size = UDim2.new(0, searchWidth, 0, 28 * scale_factor),
-        Parent = self.main_frame
+        Parent = self.main_frame,
+        Visible = self.config.Search ~= false
     })
     create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = self.search_frame})
     create("UIStroke", {Color = Color3.fromRGB(33, 33, 33), Thickness = 1, Parent = self.search_frame})
@@ -4023,6 +4236,7 @@ function vora_ui:BuildMainFrame()
     
     create("UIPadding", {PaddingLeft = UDim.new(0, 2), PaddingRight = UDim.new(0, 2), PaddingTop = UDim.new(0, 2), Parent = self.section_scroll})
     self.section_layout = create("UIListLayout", {Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = self.section_scroll})
+    --self:SetSmoothScroll(self.section_scroll, 34)
     
     self.content_holder = create("Frame", {
         BackgroundTransparency = 1, Position = UDim2.new(0, contentStartX, 0, 62 * scale_factor),
@@ -4072,6 +4286,7 @@ function vora_ui:BuildMainFrame()
 
     self.settings_panel = create("Frame", {
         BackgroundColor3 = Color3.fromRGB(15, 15, 15),
+        BackgroundTransparency = self.config.Uitransparent or 0,
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.new(0, 10, 1, -36 * scale_factor),
         Size = UDim2.new(0, settingsPanelWidth, 0, 0),
@@ -4527,7 +4742,7 @@ function vora_ui:BuildMainFrame()
     end)
 end
 
-function vora_ui:BuildNotificationHolder()
+function Modern:BuildNotificationHolder()
     self.notification_holder = create("Frame", {
         BackgroundTransparency = 1, Position = UDim2.new(0, 20, 0.15, 0),
         AnchorPoint = Vector2.new(0, 0.5), Size = UDim2.new(0, 300 * scale_factor, 0, 400),
@@ -4536,13 +4751,13 @@ function vora_ui:BuildNotificationHolder()
     create("UIListLayout", {Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center, Parent = self.notification_holder})
 end
 
-function vora_ui:Notify(config)
+function Modern:Notify(config)
     config = config or {}
     config.Title = tostring(config.Title or "Notification")
     config.Description = tostring(config.Description or "")
     config.Duration = tonumber(config.Duration) or 3
     config.Duration = math.max(0.8, config.Duration)
-    config.Icon = config.Icon or vora_logo or "rbxassetid://10709768141"
+    config.Icon = config.Icon or modern_logo or "rbxassetid://10709768141"
 
     if self._destroyed or self._isApplyingConfig then
         return nil
@@ -4748,7 +4963,7 @@ function vora_ui:Notify(config)
     return notificationFrame
 end
 
-function vora_ui:AddSection(config)
+function Modern:AddSection(config)
     config = config or {}
     config.Name = config.Name or "Section"
     config.Icon = get_icon(config.Icon, default_icons.section)
@@ -4870,6 +5085,7 @@ function vora_ui:AddSection(config)
             AlwaysShowTrack = true,
             ZIndex = 6
         })
+        --sectionObj.Library:SetSmoothScroll(tabObj.content_scroll, 38)
         
         tabObj.left_column = create("Frame", {BackgroundTransparency = 1, Size = UDim2.new(0, 262 * scale_factor, 0, 1000), Parent = tabObj.content_scroll})
         tabObj.right_column = create("Frame", {BackgroundTransparency = 1, Position = UDim2.new(0, 272 * scale_factor, 0, 0), Size = UDim2.new(0, 262 * scale_factor, 0, 1000), Parent = tabObj.content_scroll})
@@ -5015,6 +5231,7 @@ function vora_ui:AddSection(config)
             end
 
             function groupObj:AddToggle(toggleConfig, config)
+                -- Support old API: AddToggle(Idx, config) - match Library.lua pattern
                 local Idx = nil
                 if type(toggleConfig) == "string" then
                     Idx = toggleConfig
@@ -5028,27 +5245,105 @@ function vora_ui:AddSection(config)
                 toggleConfig.Flag = toggleConfig.Flag or createAutoFlag(toggleConfig.Name)
                 addSearchTerm(toggleConfig.Name)
                 
-                local toggleObj = Elements.CreateToggle(groupObj.mainFrame, {
-                    Name = toggleConfig.Name,
-                    Default = toggleConfig.Default,
-                    Callback = toggleConfig.Callback,
-                    yPosition = groupObj.element_y
-                }, scale_factor, groupObj.Library.config.AccentColor)
+                local toggleObj = {}
+                toggleObj.value = toggleConfig.Default
+                setmetatable(toggleObj, {
+                    __index = function(self, key)
+                        if key == "Value" then
+                            return toggleObj.value
+                        end
+                        return rawget(toggleObj, key)
+                    end
+                })
+                local yPosition = groupObj.element_y
                 
-                table.insert(groupObj.elements, toggleObj)
+                toggleObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = toggleConfig.Text or toggleConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
+                    Size = UDim2.new(0, 195 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    Parent = groupObj.mainFrame
+                })
                 
-                groupObj.Library:RegisterControl(toggleConfig.Flag, toggleObj.Get, function(val) toggleObj:Set(val, false) end)
+                toggleObj.switchFrame = create("Frame", {
+                    BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
+                    Position = UDim2.new(1, -44 * scale_factor, 0, yPosition),
+                    Size = UDim2.new(0, 36 * scale_factor, 0, 22 * scale_factor), Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleObj.switchFrame})
                 
+                toggleObj.circleFrame = create("Frame", {
+                    BackgroundColor3 = toggleObj.value and Color3.new(1, 1, 1) or Color3.fromRGB(75, 75, 75),
+                    Position = toggleObj.value and UDim2.new(0.462, 0, 0.143, 0) or UDim2.new(0.0104, 0, 0.143, 0),
+                    Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor), Parent = toggleObj.switchFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleObj.circleFrame})
+                
+                local toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.switchFrame})
+                
+                toggleObj.Changed = toggleConfig.Callback
+                
+                function toggleObj:Set(value, silent)
+                    toggleObj.value = value == true
+                    toggleObj.Value = toggleObj.value
+                    if toggleObj.value then
+                        tween_to(toggleObj.switchFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
+                        tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.462, 0, 0.143, 0), BackgroundColor3 = Color3.new(1, 1, 1)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                    else
+                        tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.0104, 0, 0.143, 0), BackgroundColor3 = Color3.fromRGB(75, 75, 75)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                    end
+                    if not silent and toggleObj.Changed then
+                        toggleObj.Changed(toggleObj.value)
+                    end
+                end
+                function toggleObj:Get()
+                    return toggleObj.value
+                end
+                
+                function toggleObj:OnChanged(Func, callback)
+                    toggleObj.Changed = Func or callback
+                end
+                
+                -- Backward compatibility: SetValue method
+                function toggleObj:SetValue(value, silent)
+                    toggleObj:Set(value, silent)
+                end
+                
+                function toggleObj:SetVisible(visible)
+                    local isVisible = visible == true
+                    if toggleObj.labelText then
+                        toggleObj.labelText.Visible = isVisible
+                    end
+                    if toggleObj.switchFrame then
+                        toggleObj.switchFrame.Visible = isVisible
+                    end
+                end
+                
+                toggleClickButton.MouseButton1Click:Connect(function() toggleObj:Set(not toggleObj.value, false) end)
+                groupObj.Library:RegisterControl(toggleConfig.Flag, function()
+                    return toggleObj:Get()
+                end, function(value)
+                    toggleObj:Set(value == true, false)
+                    if toggleObj.Changed then
+                        toggleObj.Changed(value == true)
+                    end
+                end)
+                
+                -- Store in global Toggles table
                 local flagKey = Idx or toggleConfig.Flag or toggleConfig.Name
                 Toggles[flagKey] = toggleObj
-                toggleObj.Value = toggleObj.Get()
+                toggleObj.Value = toggleObj.value
                 
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
+                table.insert(groupObj.elements, toggleObj)
                 return toggleObj
             end
 
             function groupObj:AddSlider(sliderConfig, config)
+                -- Support old API: AddSlider(Idx, config) - match Library.lua pattern
                 local Idx = nil
                 if type(sliderConfig) == "string" then
                     Idx = sliderConfig
@@ -5076,54 +5371,251 @@ function vora_ui:AddSection(config)
                 sliderConfig.Flag = sliderConfig.Flag or createAutoFlag(sliderConfig.Name)
                 addSearchTerm(sliderConfig.Name)
                 
-                local sliderObj = Elements.CreateSlider(groupObj.mainFrame, {
-                    Name = sliderConfig.Name,
-                    Min = sliderConfig.Min,
-                    Max = sliderConfig.Max,
-                    Default = sliderConfig.Default,
-                    Increment = sliderConfig.Increment,
-                    Suffix = sliderConfig.Suffix,
-                    ShowMax = sliderConfig.ShowMax,
-                    Callback = sliderConfig.Callback,
-                    yPosition = groupObj.element_y
-                }, scale_factor, groupObj.Library.config.AccentColor)
+                local sliderPrecision = resolve_precision(sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderConfig.Default)
+                local sliderRange = sliderConfig.Max - sliderConfig.Min
+                local function getSliderPercentage(value)
+                    if sliderRange <= 0 then
+                        return 0
+                    end
+                    return math.clamp((value - sliderConfig.Min) / sliderRange, 0, 1)
+                end
+                local function formatDisplayValue(value)
+                    local text = format_slider_value(value, sliderPrecision) .. sliderConfig.Suffix
+                    if sliderConfig.ShowMax then
+                        return text .. " / " .. format_slider_value(sliderConfig.Max, sliderPrecision) .. sliderConfig.Suffix
+                    end
+                    return text
+                end
                 
-                table.insert(groupObj.elements, sliderObj)
+                local sliderObj = {}
+                sliderObj.value = normalize_slider_value(sliderConfig.Default, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
+                local yPosition = groupObj.element_y
+                local valueLabelWidth = 72 * scale_factor
+                local sliderHitHeight = 20 * scale_factor
+                local sliderTrackHeight = 8 * scale_factor
+                local sliderKnobWidth = 16 * scale_factor
+                local sliderKnobHeight = 16 * scale_factor
+                local slider_padding = 10 * scale_factor
                 
-                groupObj.Library:RegisterControl(sliderConfig.Flag, sliderObj.Get, function(val) sliderObj:Set(val, false) end)
+                sliderObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(118, 118, 130), Text = sliderConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, slider_padding, 0, yPosition), TextSize = 14.2 * scale_factor,
+                    Size = UDim2.new(1, -valueLabelWidth - slider_padding * 3, 0, 19 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    Parent = groupObj.mainFrame
+                })
                 
+                sliderObj.backgroundFrame = create("Frame", {
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, slider_padding, 0, yPosition + 20 * scale_factor),
+                    Size = UDim2.new(1, -slider_padding * 2, 0, sliderHitHeight),
+                    Parent = groupObj.mainFrame
+                })
+
+                sliderObj.trackFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(43, 43, 51),
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 0, 0.5, -sliderTrackHeight * 0.5),
+                    Size = UDim2.new(1, 0, 0, sliderTrackHeight),
+                    Parent = sliderObj.backgroundFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = sliderObj.trackFrame})
+
+                local percentage = getSliderPercentage(sliderObj.value)
+                sliderObj.fillFrame = create("Frame", {
+                    BackgroundColor3 = groupObj.Library.config.AccentColor,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(percentage, 0, 1, 0),
+                    Parent = sliderObj.trackFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = sliderObj.fillFrame})
+
+                sliderObj.knobFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(244, 244, 248),
+                    BorderSizePixel = 0,
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(percentage, 0, 0.5, 0),
+                    Size = UDim2.new(0, sliderKnobWidth, 0, sliderKnobHeight),
+                    ZIndex = 2,
+                    Parent = sliderObj.backgroundFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = sliderObj.knobFrame})
+                create("UIStroke", {
+                    Color = Color3.fromRGB(196, 196, 204),
+                    Thickness = 1,
+                    Parent = sliderObj.knobFrame
+                })
+                
+                sliderObj.valueLabelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(184, 184, 194), Text = formatDisplayValue(sliderObj.value),
+                    BackgroundTransparency = 1, Position = UDim2.new(1, -valueLabelWidth - slider_padding, 0, yPosition),
+                    TextSize = 14.2 * scale_factor, Size = UDim2.new(0, valueLabelWidth, 0, 19 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Right, Parent = groupObj.mainFrame
+                })
+                
+                local sliderClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = sliderObj.backgroundFrame})
+
+                local function updateSliderVisuals(animate)
+                    local currentPercentage = getSliderPercentage(sliderObj.value)
+                    local fillTarget = {Size = UDim2.new(currentPercentage, 0, 1, 0)}
+                    local knobTarget = {
+                        Position = UDim2.new(currentPercentage, 0, 0.5, 0)
+                    }
+                    if animate then
+                        tween_to(sliderObj.fillFrame, fillTarget, 0.12)
+                        tween_to(sliderObj.knobFrame, knobTarget, 0.12, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    else
+                        sliderObj.fillFrame.Size = fillTarget.Size
+                        sliderObj.knobFrame.Position = knobTarget.Position
+                    end
+                    sliderObj.valueLabelText.Text = formatDisplayValue(sliderObj.value)
+                end
+
+                sliderObj.Changed = sliderConfig.Callback
+                
+                function sliderObj:Set(value, instant, silent)
+                    value = normalize_slider_value(value, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
+                    sliderObj.value = value
+                    sliderObj.Value = sliderObj.value
+                    updateSliderVisuals(instant ~= true)
+                    if not silent and sliderObj.Changed then
+                        sliderObj.Changed(value)
+                    end
+                end
+                function sliderObj:Get()
+                    return sliderObj.value
+                end
+                
+                function sliderObj:OnChanged(Func, callback)
+                    sliderObj.Changed = Func or callback
+                end
+                
+                function sliderObj:SetVisible(visible)
+                    local isVisible = visible == true
+                    if sliderObj.labelText then
+                        sliderObj.labelText.Visible = isVisible
+                    end
+                    if sliderObj.valueLabelText then
+                        sliderObj.valueLabelText.Visible = isVisible
+                    end
+                    if sliderObj.backgroundFrame then
+                        sliderObj.backgroundFrame.Visible = isVisible
+                    end
+                end
+                
+                local isDraggingSlider = false
+                local activeSliderInput = nil
+                local function setSliderFromInput(input, instant)
+                    if not input then
+                        return
+                    end
+                    local percentageNow = math.clamp((input.Position.X - sliderObj.backgroundFrame.AbsolutePosition.X) / math.max(1, sliderObj.backgroundFrame.AbsoluteSize.X), 0, 1)
+                    local value = sliderConfig.Min + sliderRange * percentageNow
+                    sliderObj:Set(value, instant, false)
+                end
+                sliderClickButton.InputBegan:Connect(function(input)
+                    local isMouse = input.UserInputType == Enum.UserInputType.MouseButton1
+                        or input.UserInputType == Enum.UserInputType.Touch
+                    if not isMouse then
+                        return
+                    end
+                    isDraggingSlider = true
+                    activeSliderInput = isTouch and input or nil
+                    setSliderFromInput(input, true)
+                end)
+                groupObj.Library:_TrackConnection(input_service.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or (input.UserInputType == Enum.UserInputType.Touch and (activeSliderInput == nil or input == activeSliderInput)) then
+                        isDraggingSlider = false
+                        activeSliderInput = nil
+                    end
+                end))
+                groupObj.Library:_TrackConnection(input_service.InputChanged:Connect(function(input)
+                    if isDraggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and (activeSliderInput == nil or input == activeSliderInput))) then
+                        setSliderFromInput(input, true)
+                    end
+                end))
+
+                updateSliderVisuals(false)
+                groupObj.Library:RegisterControl(sliderConfig.Flag, function()
+                    return sliderObj:Get()
+                end, function(value)
+                    sliderObj:Set(tonumber(value) or sliderConfig.Min, true, false)
+                    if sliderObj.Changed then
+                        sliderObj.Changed(sliderObj.value)
+                    end
+                end)
+                
+                -- Store in global Options table
                 Options[Idx or sliderConfig.Name] = sliderObj
-                sliderObj.Value = sliderObj.Get()
+                sliderObj.Value = sliderObj.value
                 
                 groupObj.element_y = groupObj.element_y + 44 * scale_factor
                 update_group_size()
+                table.insert(groupObj.elements, sliderObj)
                 return sliderObj
             end
 
             function groupObj:AddButton(buttonConfig, callback)
+                -- Support old API: AddButton(text, callback)
                 if type(buttonConfig) == "string" then
                     buttonConfig = {Text = buttonConfig, Func = callback}
                 end
                 
                 buttonConfig = buttonConfig or {}
                 buttonConfig.Name = buttonConfig.Name or buttonConfig.Text or "Button"
-                buttonConfig.Icon = buttonConfig.Icon and get_icon(buttonConfig.Icon) or nil
+                buttonConfig.Icon = buttonConfig.Icon or nil
                 buttonConfig.Locked = buttonConfig.Locked or false
                 buttonConfig.Callback = buttonConfig.Callback or buttonConfig.Func or function() end
                 addSearchTerm(buttonConfig.Name)
                 
-                local buttonObj = Elements.CreateButton(groupObj.mainFrame, {
-                    Name = buttonConfig.Name,
-                    Icon = buttonConfig.Icon,
-                    Locked = buttonConfig.Locked,
-                    Callback = buttonConfig.Callback,
-                    yPosition = groupObj.element_y
-                }, scale_factor)
+                local buttonObj = {}
+                buttonObj.isLocked = buttonConfig.Locked
+                local yPosition = groupObj.element_y
                 
-                table.insert(groupObj.elements, buttonObj)
+                buttonObj.mainFrame = create("Frame", {
+                    BackgroundColor3 = buttonObj.isLocked and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(32, 32, 32),
+                    Position = UDim2.new(0, 10, 0, yPosition),
+                    Size = UDim2.new(1, -20 * scale_factor, 0, 28 * scale_factor), Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = buttonObj.mainFrame})
+                
+                local buttonStrokeThing = create("UIStroke", {Color = buttonObj.isLocked and Color3.fromRGB(32, 32, 32) or Color3.fromRGB(48, 48, 48), Parent = buttonObj.mainFrame})
+                create("UIGradient", {
+                    Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150,150,150)), ColorSequenceKeypoint.new(1, Color3.new(1,1,1))}),
+                    Rotation = 260, Parent = buttonStrokeThing
+                })
+                
+                local textXPos = 8
+                if buttonConfig.Icon then
+                    create("ImageLabel", {
+                        ImageColor3 = buttonObj.isLocked and Color3.fromRGB(50, 50, 50) or Color3.fromRGB(125, 125, 125),
+                        Image = buttonConfig.Icon, BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 8, 0.5, -8 * scale_factor),
+                        Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor), Parent = buttonObj.mainFrame
+                    })
+                    textXPos = 30
+                end
+                
+                buttonObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = buttonObj.isLocked and Color3.fromRGB(46, 46, 46) or Color3.fromRGB(120, 120, 120),
+                    Text = buttonConfig.Name .. (buttonObj.isLocked and " (locked)" or ""), BackgroundTransparency = 1,
+                    Position = UDim2.new(0, textXPos * scale_factor, 0, 0), TextSize = 14 * scale_factor,
+                    Size = UDim2.new(1, -textXPos * scale_factor - 10, 1, 0),
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    Parent = buttonObj.mainFrame
+                })
+                
+                local buttonClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = buttonObj.mainFrame})
+                buttonClickButton.MouseButton1Click:Connect(function() if not buttonObj.isLocked then buttonConfig.Callback() end end)
+                buttonClickButton.MouseEnter:Connect(function() if not buttonObj.isLocked then tween_to(buttonObj.mainFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2) end end)
+                buttonClickButton.MouseLeave:Connect(function() if not buttonObj.isLocked then tween_to(buttonObj.mainFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2) end end)
                 
                 groupObj.element_y = groupObj.element_y + 35 * scale_factor
                 update_group_size()
+                table.insert(groupObj.elements, buttonObj)
                 return buttonObj
             end
 
@@ -5141,23 +5633,170 @@ function vora_ui:AddSection(config)
                 addSearchTerm("hold")
                 addSearchTerm("toggle")
                 
-                local keybindObj = Elements.CreateKeybind(groupObj.mainFrame, {
-                    Name = keybindConfig.Name,
-                    Default = keybindConfig.Default,
-                    Mode = keybindConfig.Mode,
-                    Callback = keybindConfig.Callback,
-                    ChangedCallback = keybindConfig.ChangedCallback,
-                    ModeChangedCallback = keybindConfig.ModeChangedCallback,
-                    yPosition = groupObj.element_y
-                }, scale_factor)
+                local keybindObj = {}
+                keybindObj.value = keybindConfig.Default
+                keybindObj.mode = string.lower(keybindConfig.Mode) == "hold" and "Hold" or "Toggle"
+                keybindObj.isListening = false
+                keybindObj.holdActive = false
+                local yPosition = groupObj.element_y
                 
-                table.insert(groupObj.elements, keybindObj)
+                keybindObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = keybindConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
+                    Size = UDim2.new(0, 145 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    Parent = groupObj.mainFrame
+                })
                 
-                groupObj.Library:RegisterControl(keybindConfig.Flag, keybindObj.Get, function(val) keybindObj:Set(val, true) end)
-                groupObj.Library:RegisterControl(keybindConfig.ModeFlag, keybindObj.GetMode, function(val) keybindObj:SetMode(val, true) end)
+                local function normalizeMode(modeValue)
+                    return string.lower(tostring(modeValue or "toggle")) == "hold" and "Hold" or "Toggle"
+                end
+                
+                local function getKeyText()
+                    return keybindObj.value == Enum.KeyCode.Unknown and "None" or keybindObj.value.Name
+                end
+                
+                local keyText = getKeyText()
+                local keyWidth = math.max(48 * scale_factor, measure_text_width(keyText, 12 * scale_factor) + 30 * scale_factor)
+                
+                keybindObj.button_frame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(32, 32, 32), Position = UDim2.new(1, -keyWidth - 10, 0, yPosition),
+                    Size = UDim2.new(0, keyWidth, 0, 22 * scale_factor), Active = true, Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = keybindObj.button_frame})
+                
+                local keybindStrokeThing = create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Parent = keybindObj.button_frame})
+                create("UIGradient", {
+                    Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150,150,150)), ColorSequenceKeypoint.new(1, Color3.new(1,1,1))}),
+                    Rotation = 260, Parent = keybindStrokeThing
+                })
+                
+                keybindObj.keyLabelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(113, 113, 113), Text = keyText, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 2, 0, 0), TextSize = 12.8 * scale_factor,
+                    Size = UDim2.new(1, -24 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
+                    Parent = keybindObj.button_frame
+                })
+                create("UIPadding", {PaddingLeft = UDim.new(0, 2), Parent = keybindObj.keyLabelText})
+                
+                keybindObj.keyboardIconImg = create("ImageLabel", {
+                    ImageColor3 = Color3.fromRGB(76, 76, 76), Image = "rbxassetid://10723416765", BackgroundTransparency = 1,
+                    Position = UDim2.new(1, -18 * scale_factor, 0.5, -7.5 * scale_factor),
+                    Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = keybindObj.button_frame
+                })
+                
+                local keybindClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Active = true, Parent = keybindObj.button_frame})
+
+                local function updateKeybindSizeYay(text)
+                    local newWidth = math.max(48 * scale_factor, measure_text_width(text, 12 * scale_factor) + 30 * scale_factor)
+                    tween_to(keybindObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 22 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
+                end
+
+                function keybindObj:Set(key, silent)
+                    if keybindObj.holdActive then
+                        keybindObj.holdActive = false
+                        keybindConfig.Callback(false)
+                    end
+                    keybindObj.value = key
+                    local newKeyText = getKeyText()
+                    keybindObj.keyLabelText.Text = newKeyText
+                    updateKeybindSizeYay(newKeyText)
+                    if not silent then
+                        keybindConfig.ChangedCallback(key)
+                    end
+                end
+
+                function keybindObj:Get()
+                    return keybindObj.value
+                end
+                
+                function keybindObj:SetMode(modeValue, silent)
+                    local newMode = normalizeMode(modeValue)
+                    if newMode == keybindObj.mode then
+                        return
+                    end
+                    if keybindObj.holdActive then
+                        keybindObj.holdActive = false
+                        keybindConfig.Callback(false)
+                    end
+                    keybindObj.mode = newMode
+                    if not silent then
+                        keybindConfig.ModeChangedCallback(newMode)
+                    end
+                end
+                
+                function keybindObj:GetMode()
+                    return keybindObj.mode
+                end
+                
+                function keybindObj:Close()
+                    keybindObj.isListening = false
+                    if keybindObj.holdActive then
+                        keybindObj.holdActive = false
+                        keybindConfig.Callback(false)
+                    end
+                end
+                
+                keybindClickButton.MouseButton1Click:Connect(function()
+                    keybindObj.isListening = true
+                    keybindObj.keyLabelText.Text = "..."
+                    updateKeybindSizeYay("...")
+                    tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2)
+                end)
+                
+                groupObj.Library:_TrackConnection(input_service.InputBegan:Connect(function(input, gameProcessed)
+                    if keybindObj.isListening then
+                        if input.UserInputType == Enum.UserInputType.Keyboard then
+                            keybindObj.isListening = false
+                            keybindObj:Set(input.KeyCode, false)
+                            tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        end
+                    elseif not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
+                        if input.KeyCode == keybindObj.value and keybindObj.value ~= Enum.KeyCode.Unknown then
+                            if keybindObj.mode == "Hold" then
+                                if not keybindObj.holdActive then
+                                    keybindObj.holdActive = true
+                                    keybindConfig.Callback(true)
+                                end
+                            else
+                                keybindConfig.Callback()
+                            end
+                        end
+                    end
+                end))
+                
+                groupObj.Library:_TrackConnection(input_service.InputEnded:Connect(function(input)
+                    if keybindObj.mode == "Hold" and keybindObj.holdActive and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == keybindObj.value then
+                        keybindObj.holdActive = false
+                        keybindConfig.Callback(false)
+                    end
+                end))
+                
+                keybindClickButton.MouseEnter:Connect(function()
+                    if not keybindObj.isListening then tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2) end
+                end)
+                keybindClickButton.MouseLeave:Connect(function()
+                    if not keybindObj.isListening then tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2) end
+                end)
+                
+                groupObj.Library:RegisterControl(keybindConfig.Flag, function()
+                    return keybindObj:Get()
+                end, function(value)
+                    if typeof(value) == "EnumItem" and value.EnumType == Enum.KeyCode then
+                        keybindObj:Set(value, true)
+                    end
+                end)
+                groupObj.Library:RegisterControl(keybindConfig.ModeFlag, function()
+                    return keybindObj:GetMode()
+                end, function(value)
+                    keybindObj:SetMode(value, true)
+                end)
                 
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
+                table.insert(groupObj.elements, keybindObj)
                 return keybindObj
             end
 
@@ -5173,80 +5812,576 @@ function vora_ui:AddSection(config)
                 keybindToggleConfig.ToggleFlag = keybindToggleConfig.ToggleFlag or createAutoFlag(keybindToggleConfig.Name .. ".Enabled")
                 addSearchTerm(keybindToggleConfig.Name)
                 
-                local keybindToggleObj = Elements.CreateKeybindToggle(groupObj.mainFrame, {
-                    Name = keybindToggleConfig.Name,
-                    Default = keybindToggleConfig.Default,
-                    ToggleDefault = keybindToggleConfig.ToggleDefault,
-                    Callback = keybindToggleConfig.Callback,
-                    ToggleCallback = keybindToggleConfig.ToggleCallback,
-                    ChangedCallback = keybindToggleConfig.ChangedCallback,
-                    yPosition = groupObj.element_y
-                }, scale_factor, groupObj.Library.config.AccentColor)
+                local keybindToggleObj = {}
+                keybindToggleObj.keyValue = keybindToggleConfig.Default
+                keybindToggleObj.toggleValue = keybindToggleConfig.ToggleDefault
+                keybindToggleObj.isListening = false
+                local yPosition = groupObj.element_y
                 
-                table.insert(groupObj.elements, keybindToggleObj)
+                keybindToggleObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = keybindToggleConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
+                    Size = UDim2.new(0, 115 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    Parent = groupObj.mainFrame
+                })
                 
-                groupObj.Library:RegisterControl(keybindToggleConfig.Flag, keybindToggleObj.GetKey, function(val) keybindToggleObj:SetKey(val, true) end)
-                groupObj.Library:RegisterControl(keybindToggleConfig.ToggleFlag, keybindToggleObj.GetToggle, function(val) keybindToggleObj:SetToggle(val == true, true) end)
+                local keyText = keybindToggleObj.keyValue == Enum.KeyCode.Unknown and "None" or keybindToggleObj.keyValue.Name
+                local keyWidth = math.max(48 * scale_factor, measure_text_width(keyText, 12 * scale_factor) + 30 * scale_factor)
                 
+                keybindToggleObj.keybindButtonFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(32, 32, 32), Position = UDim2.new(1, -keyWidth - 10, 0, yPosition),
+                    Size = UDim2.new(0, keyWidth, 0, 22 * scale_factor), Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = keybindToggleObj.keybindButtonFrame})
+                
+                local keybindStrokeThing = create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Parent = keybindToggleObj.keybindButtonFrame})
+                
+                keybindToggleObj.keyLabelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(113, 113, 113), Text = keyText, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 6, 0, 0), TextSize = 12.8 * scale_factor,
+                    Size = UDim2.new(1, -24 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
+                    Parent = keybindToggleObj.keybindButtonFrame
+                })
+                
+                keybindToggleObj.keyboardIconImg = create("ImageLabel", {
+                    ImageColor3 = Color3.fromRGB(76, 76, 76), Image = "rbxassetid://10723416765", BackgroundTransparency = 1,
+                    Position = UDim2.new(1, -18 * scale_factor, 0.5, -7.5 * scale_factor),
+                    Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = keybindToggleObj.keybindButtonFrame
+                })
+                
+                keybindToggleObj.toggleSwitchFrame = create("Frame", {
+                    BackgroundColor3 = keybindToggleObj.toggleValue and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
+                    Position = UDim2.new(1, -keyWidth - 48 * scale_factor, 0, yPosition),
+                    Size = UDim2.new(0, 36 * scale_factor, 0, 22 * scale_factor), Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = keybindToggleObj.toggleSwitchFrame})
+                
+                keybindToggleObj.toggleCircleFrame = create("Frame", {
+                    BackgroundColor3 = keybindToggleObj.toggleValue and Color3.new(1, 1, 1) or Color3.fromRGB(75, 75, 75),
+                    Position = keybindToggleObj.toggleValue and UDim2.new(0.462, 0, 0.143, 0) or UDim2.new(0.0104, 0, 0.143, 0),
+                    Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor), Parent = keybindToggleObj.toggleSwitchFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = keybindToggleObj.toggleCircleFrame})
+                
+                local toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = keybindToggleObj.toggleSwitchFrame})
+                local keybindClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = keybindToggleObj.keybindButtonFrame})
+                
+                function keybindToggleObj:SetToggle(value, silent)
+                    keybindToggleObj.toggleValue = value == true
+                    if value then
+                        tween_to(keybindToggleObj.toggleSwitchFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
+                        tween_to(keybindToggleObj.toggleCircleFrame, {Position = UDim2.new(0.462, 0, 0.143, 0), BackgroundColor3 = Color3.new(1, 1, 1)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                    else
+                        tween_to(keybindToggleObj.toggleSwitchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        tween_to(keybindToggleObj.toggleCircleFrame, {Position = UDim2.new(0.0104, 0, 0.143, 0), BackgroundColor3 = Color3.fromRGB(75, 75, 75)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                    end
+                    if not silent then
+                        keybindToggleConfig.ToggleCallback(keybindToggleObj.toggleValue)
+                    end
+                end
+                
+                local function updateKeybindSizeYay(text)
+                    local newWidth = math.max(48 * scale_factor, measure_text_width(text, 12 * scale_factor) + 30 * scale_factor)
+                    tween_to(keybindToggleObj.keybindButtonFrame, {Size = UDim2.new(0, newWidth, 0, 22 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
+                    tween_to(keybindToggleObj.toggleSwitchFrame, {Position = UDim2.new(1, -newWidth - 48 * scale_factor, 0, yPosition)}, 0.15)
+                end
+                
+                function keybindToggleObj:SetKey(key, silent)
+                    keybindToggleObj.keyValue = key
+                    local keyText = key == Enum.KeyCode.Unknown and "None" or key.Name
+                    keybindToggleObj.keyLabelText.Text = keyText
+                    updateKeybindSizeYay(keyText)
+                    if not silent then
+                        keybindToggleConfig.ChangedCallback(key)
+                    end
+                end
+
+                function keybindToggleObj:GetKey()
+                    return keybindToggleObj.keyValue
+                end
+
+                function keybindToggleObj:GetToggle()
+                    return keybindToggleObj.toggleValue
+                end
+                
+                toggleClickButton.MouseButton1Click:Connect(function() keybindToggleObj:SetToggle(not keybindToggleObj.toggleValue, false) end)
+                keybindClickButton.MouseButton1Click:Connect(function()
+                    keybindToggleObj.isListening = true
+                    keybindToggleObj.keyLabelText.Text = "..."
+                    updateKeybindSizeYay("...")
+                    tween_to(keybindToggleObj.keybindButtonFrame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2)
+                end)
+                
+                groupObj.Library:_TrackConnection(input_service.InputBegan:Connect(function(input, gameProcessed)
+                    if keybindToggleObj.isListening then
+                        if input.UserInputType == Enum.UserInputType.Keyboard then
+                            keybindToggleObj.isListening = false
+                            keybindToggleObj:SetKey(input.KeyCode, false)
+                            tween_to(keybindToggleObj.keybindButtonFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        end
+                    elseif not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
+                        if input.KeyCode == keybindToggleObj.keyValue and keybindToggleObj.toggleValue then
+                            keybindToggleConfig.Callback()
+                        end
+                    end
+                end))
+                
+                keybindClickButton.MouseEnter:Connect(function() if not keybindToggleObj.isListening then tween_to(keybindToggleObj.keybindButtonFrame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2) end end)
+                keybindClickButton.MouseLeave:Connect(function() if not keybindToggleObj.isListening then tween_to(keybindToggleObj.keybindButtonFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2) end end)
+                
+                groupObj.Library:RegisterControl(keybindToggleConfig.Flag, function()
+                    return keybindToggleObj:GetKey()
+                end, function(value)
+                    if typeof(value) == "EnumItem" and value.EnumType == Enum.KeyCode then
+                        keybindToggleObj:SetKey(value, true)
+                    end
+                end)
+                groupObj.Library:RegisterControl(keybindToggleConfig.ToggleFlag, function()
+                    return keybindToggleObj:GetToggle()
+                end, function(value)
+                    keybindToggleObj:SetToggle(value == true, true)
+                end)
                 groupObj.element_y = groupObj.element_y + 31 * scale_factor
                 update_group_size()
+                table.insert(groupObj.elements, keybindToggleObj)
                 return keybindToggleObj
             end
 
             function groupObj:AddDropdown(dropdownConfig, config)
+                -- Support old API: AddDropdown(Idx, config) - match Library.lua pattern
                 local Idx = nil
                 if type(dropdownConfig) == "string" then
                     Idx = dropdownConfig
                     dropdownConfig = {Name = dropdownConfig, Flag = dropdownConfig, Text = config and config.Text or dropdownConfig, Values = config and config.Values or {}}
+                    -- Check for Multi parameter in old API format
                     if config and config.Multi == true then
+                        warn("[UI Debug] Redirecting to AddMultiDropdown:", Idx, "Values:", config.Values)
                         return groupObj:AddMultiDropdown(Idx, config)
                     end
                 end
                 
                 dropdownConfig = dropdownConfig or {}
+                -- Support Multi parameter in new API format
                 if dropdownConfig.Multi == true then
                     return groupObj:AddMultiDropdown(dropdownConfig)
                 end
                 dropdownConfig.Name = dropdownConfig.Name or dropdownConfig.Text or "Dropdown"
                 dropdownConfig.Options = dropdownConfig.Options or dropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
+                dropdownConfig.OptionsProvider = dropdownConfig.OptionsProvider or dropdownConfig.GetOptions
+                local dropdownHasProvider = type(dropdownConfig.OptionsProvider) == "function"
+                if dropdownConfig.AutoRefresh == nil then
+                    dropdownConfig.AutoRefresh = dropdownHasProvider
+                else
+                    dropdownConfig.AutoRefresh = dropdownConfig.AutoRefresh == true
+                end
+                dropdownConfig.RefreshInterval = math.max(tonumber(dropdownConfig.RefreshInterval) or 0.85, 0.35)
                 dropdownConfig.Callback = dropdownConfig.Callback or function() end
                 dropdownConfig.Flag = dropdownConfig.Flag or createAutoFlag(dropdownConfig.Name)
+                local dropdownOptionsSource = dropdownConfig.Options
+                if type(dropdownConfig.OptionsProvider) == "function" then
+                    local ok, providedOptions = pcall(dropdownConfig.OptionsProvider)
+                    if ok and type(providedOptions) == "table" then
+                        dropdownOptionsSource = providedOptions
+                    end
+                end
+                dropdownConfig.Options = normalize_dropdown(dropdownOptionsSource)
+                if dropdownConfig.AllowNull ~= true then
+                    dropdownConfig.Default = dropdownConfig.Default or dropdownConfig.Options[1] or "None"
+                end
+                if dropdownConfig.Default ~= nil and not table.find(dropdownConfig.Options, dropdownConfig.Default) then
+                    dropdownConfig.Default = dropdownConfig.Options[1] or "None"
+                end
                 addSearchTerm(dropdownConfig.Name)
                 for _, option in ipairs(dropdownConfig.Options) do
                     addSearchTerm(tostring(option))
                 end
                 
-                local dropdownObj = Elements.CreateDropdown(groupObj.mainFrame, {
-                    Name = dropdownConfig.Name,
-                    Options = dropdownConfig.Options,
-                    Default = dropdownConfig.Default,
-                    Callback = dropdownConfig.Callback,
-                    yPosition = groupObj.element_y
-                }, scale_factor, groupObj.Library.config.AccentColor, groupObj.Library.dropdown_holder)
+                local dropdownObj = {}
+                dropdownObj.value = dropdownConfig.Default
+                setmetatable(dropdownObj, {
+                    __index = function(self, key)
+                        if key == "Value" then
+                            return dropdownObj.value
+                        end
+                        return rawget(dropdownObj, key)
+                    end
+                })
+                dropdownObj.isOpen = false
+                dropdownObj._optionsSignature = get_dropdown_signature(dropdownOptionsSource)
+                if dropdownObj._optionsSignature == "0" then
+                    dropdownObj._optionsSignature = get_dropdown_signature(dropdownConfig.Options)
+                end
+                local yPosition = groupObj.element_y
                 
-                table.insert(groupObj.elements, dropdownObj)
+                dropdownObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = dropdownConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 13.8 * scale_factor,
+                    Size = UDim2.new(0, 130 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = groupObj.mainFrame
+                })
                 
-                groupObj.Library:RegisterControl(dropdownConfig.Flag, dropdownObj.Get, function(val) dropdownObj:Set(val, true) end)
+                local displayText = tostring(dropdownObj.value or "None")
+                local buttonWidth = math.max(70 * scale_factor, measure_text_width(displayText, 12 * scale_factor) + 30 * scale_factor)
                 
+                dropdownObj.button_frame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(32, 32, 32), Position = UDim2.new(1, -buttonWidth - 10, 0, yPosition),
+                    Size = UDim2.new(0, buttonWidth, 0, 23 * scale_factor), Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = dropdownObj.button_frame})
+                
+                local dropdownStrokeThing = create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = dropdownObj.button_frame})
+                
+                dropdownObj.selectedLabelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(84, 84, 84), Text = displayText, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 8, 0, 0), TextSize = 12.8 * scale_factor,
+                    Size = UDim2.new(1, -28 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd, Parent = dropdownObj.button_frame
+                })
+                
+                dropdownObj.arrowImg = create("ImageLabel", {
+                    ImageColor3 = Color3.fromRGB(80, 80, 80), Image = default_icons.expand, BackgroundTransparency = 1,
+                    Position = UDim2.new(1, -20 * scale_factor, 0.5, -7.5 * scale_factor),
+                    Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = dropdownObj.button_frame
+                })
+                
+                local dropdown_popup_w = math.max(180 * scale_factor, buttonWidth + 20 * scale_factor)
+                dropdownObj.optionHolderFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, dropdown_popup_w, 0, 0),
+                    ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = dropdownObj.optionHolderFrame})
+                create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Parent = dropdownObj.optionHolderFrame})
+
+                create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.new(1, 1, 1), Text = dropdownConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 12, 0, 7 * scale_factor), TextSize = 13 * scale_factor,
+                    Size = UDim2.new(1, -44 * scale_factor, 0, 20 * scale_factor), TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 10000, Parent = dropdownObj.optionHolderFrame
+                })
+
+                local dropdownCloseButton = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(26, 26, 26),
+                    Position = UDim2.new(1, -26 * scale_factor, 0, 6 * scale_factor),
+                    Size = UDim2.new(0, 18 * scale_factor, 0, 18 * scale_factor),
+                    ZIndex = 10002, Parent = dropdownObj.optionHolderFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = dropdownCloseButton})
+                local dropdownCloseIcon = create("ImageLabel", {
+                    Image = default_icons.close, ImageColor3 = Color3.fromRGB(130, 130, 130),
+                    BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0.6, 0, 0.6, 0),
+                    ZIndex = 10003, Parent = dropdownCloseButton
+                })
+                local dropdownCloseClickBtn = create("TextButton", {
+                    Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
+                    ZIndex = 10004, Parent = dropdownCloseButton
+                })
+                
+                dropdownObj.optionScrollFrame = create("ScrollingFrame", {
+                    BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 58 * scale_factor),
+                    Size = UDim2.new(1, 0, 1, -63 * scale_factor), ScrollBarThickness = 0,
+                    ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80), CanvasSize = UDim2.new(0, 0, 0, 0),
+                    ZIndex = 10000, Parent = dropdownObj.optionHolderFrame
+                })
+                attach_scrollbar(groupObj.Library, dropdownObj.optionScrollFrame, dropdownObj.optionHolderFrame, {
+                    TrackWidth = 7 * scale_factor,
+                    ThumbWidth = 3 * scale_factor,
+                    EdgeInset = 2 * scale_factor,
+                    VerticalInset = 4 * scale_factor,
+                    ZIndex = 10002
+                })
+                dropdownObj.optionScrollFrame:SetAttribute("FlowDisableSmoothScroll", true)
+                --groupObj.Library:SetSmoothScroll(dropdownObj.optionScrollFrame, 22)
+                
+                dropdownObj.optionContainerFrame = create("Frame", {
+                    BackgroundTransparency = 1, Size = UDim2.new(1, -6, 0, 0),
+                    ZIndex = 10000, Parent = dropdownObj.optionScrollFrame
+                })
+                
+                local maxDropdownHeight = 200 * scale_factor
+                local dropdownPositionUpdateConn = nil
+
+                local function closeDropdown(isInstant)
+                    dropdownObj.isOpen = false
+                    if dropdownPositionUpdateConn then
+                        dropdownPositionUpdateConn()
+                        dropdownPositionUpdateConn = nil
+                    end
+                    if search_textbox then
+                        search_textbox.Text = ""
+                        search_query = ""
+                    end
+                    if isInstant then
+                        dropdownObj.optionHolderFrame.Size = UDim2.new(0, dropdown_popup_w, 0, 0)
+                        dropdownObj.optionHolderFrame.Visible = false
+                        dropdownObj.arrowImg.Rotation = 0
+                        dropdownObj.button_frame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
+                        dropdownStrokeThing.Color = Color3.fromRGB(44, 44, 44)
+                        return
+                    end
+                    tween_to(dropdownObj.optionHolderFrame, {Size = UDim2.new(0, dropdown_popup_w, 0, 0)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+                    tween_to(dropdownObj.arrowImg, {Rotation = 0}, 0.2)
+                    tween_to(dropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.18)
+                    tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.18)
+                    task.delay(0.22, function()
+                        if dropdownObj.optionHolderFrame.Parent and not dropdownObj.isOpen then
+                            dropdownObj.optionHolderFrame.Visible = false
+                        end
+                    end)
+                end
+
+                dropdownCloseClickBtn.MouseButton1Click:Connect(function()
+                    closeDropdown(false)
+                end)
+                dropdownCloseClickBtn.MouseEnter:Connect(function()
+                    tween_to(dropdownCloseButton, {BackgroundColor3 = Color3.fromRGB(44, 44, 44)}, 0.12)
+                    tween_to(dropdownCloseIcon, {ImageColor3 = Color3.fromRGB(220, 220, 220)}, 0.12)
+                end)
+                dropdownCloseClickBtn.MouseLeave:Connect(function()
+                    tween_to(dropdownCloseButton, {BackgroundColor3 = Color3.fromRGB(26, 26, 26)}, 0.12)
+                    tween_to(dropdownCloseIcon, {ImageColor3 = Color3.fromRGB(130, 130, 130)}, 0.12)
+                end)
+
+                local search_query = ""
+                local search_textbox
+
+                local search_frame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(22, 22, 22), BorderSizePixel = 0,
+                    Position = UDim2.new(0, 8, 0, 32 * scale_factor),
+                    Size = UDim2.new(1, -16, 0, 22 * scale_factor),
+                    ZIndex = 10001, Parent = dropdownObj.optionHolderFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 5), Parent = search_frame})
+                create("UIStroke", {Color = Color3.fromRGB(50, 50, 50), Thickness = 1, Parent = search_frame})
+
+                search_textbox = create("TextBox", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular),
+                    TextColor3 = Color3.fromRGB(200, 200, 200), PlaceholderColor3 = Color3.fromRGB(70, 70, 70),
+                    PlaceholderText = "Search...", Text = "", BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 8, 0, 0), TextSize = 12 * scale_factor,
+                    Size = UDim2.new(1, -16, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
+                    ClearTextOnFocus = false, ZIndex = 10002, Parent = search_frame
+                })
+
+                local function createOptionsYay(filter_text)
+                    for _, child in pairs(dropdownObj.optionContainerFrame:GetChildren()) do
+                        if child:IsA("TextLabel") or child:IsA("TextButton") then child:Destroy() end
+                    end
+                    local filtered = {}
+                    for _, option in ipairs(dropdownConfig.Options) do
+                        if not filter_text or filter_text == "" or string.find(tostring(option):lower(), filter_text:lower(), 1, true) then
+                            table.insert(filtered, option)
+                        end
+                    end
+                    local optY = 0
+                    for _, option in ipairs(filtered) do
+                        local isSelected = dropdownObj.value == option
+                        local optionLabelText = create("TextLabel", {
+                            FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                            TextColor3 = isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124),
+                            Text = tostring(option), BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0, optY),
+                            TextSize = 14 * scale_factor, Size = UDim2.new(1, -24, 0, 18 * scale_factor),
+                            TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                            ZIndex = 10001, Parent = dropdownObj.optionContainerFrame
+                        })
+                        local optionClickButton = create("TextButton", {
+                            Text = "", BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, optY),
+                            Size = UDim2.new(1, 0, 0, 20 * scale_factor), ZIndex = 10002, Parent = dropdownObj.optionContainerFrame
+                        })
+                        optionClickButton.MouseButton1Click:Connect(function()
+                            dropdownObj.value = option
+                            dropdownObj.Value = dropdownObj.value
+                            closeDropdown(false)
+                            local optionText = tostring(option)
+                            dropdownObj.selectedLabelText.Text = optionText
+                            local newWidth = math.max(70 * scale_factor, measure_text_width(optionText, 12 * scale_factor) + 30 * scale_factor)
+                            tween_to(dropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
+                            if dropdownObj.Changed then
+                                dropdownObj.Changed(option)
+                            end
+                        end)
+                        optionClickButton.MouseEnter:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(180, 180, 180)}, 0.2) end end)
+                        optionClickButton.MouseLeave:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(124, 124, 124)}, 0.2) end end)
+                        optY = optY + 22 * scale_factor
+                    end
+                    dropdownObj.optionContainerFrame.Size = UDim2.new(1, -6, 0, optY)
+                    dropdownObj.optionScrollFrame.CanvasSize = UDim2.new(0, 0, 0, optY)
+                    if dropdownObj.isOpen then
+                        local target_h = math.min((63 + optY / scale_factor) * scale_factor, maxDropdownHeight)
+                        tween_to(dropdownObj.optionHolderFrame, {Size = UDim2.new(0, dropdown_popup_w, 0, target_h)}, 0.14, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    end
+                end
+
+                search_textbox:GetPropertyChangedSignal("Text"):Connect(function()
+                    search_query = search_textbox.Text
+                    createOptionsYay(search_query)
+                end)
+
+                createOptionsYay()
+                
+                local dropdownClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = dropdownObj.button_frame})
+                
+                local function updateDropdownPositionYay()
+                    local buttonAbsPos = dropdownObj.button_frame.AbsolutePosition
+                    local buttonAbsSize = dropdownObj.button_frame.AbsoluteSize
+                    local screen_size = workspace.CurrentCamera.ViewportSize
+                    local popup_h = dropdownObj.optionHolderFrame.AbsoluteSize.Y
+                    local raw_x = buttonAbsPos.X
+                    local raw_y = buttonAbsPos.Y + buttonAbsSize.Y + 5
+                    if raw_y + popup_h > screen_size.Y - 5 then
+                        raw_y = math.max(5, buttonAbsPos.Y - popup_h - 5)
+                    end
+                    local clamped_x = math.clamp(raw_x, 5, math.max(5, screen_size.X - dropdown_popup_w - 5))
+                    dropdownObj.optionHolderFrame.Position = UDim2.new(0, clamped_x, 0, raw_y)
+                end
+                
+                dropdownClickButton.MouseButton1Click:Connect(function()
+                    dropdownObj.isOpen = not dropdownObj.isOpen
+                    if dropdownObj.isOpen then
+                        updateDropdownPositionYay()
+                        dropdownObj.optionHolderFrame.Visible = true
+                        search_textbox.Text = ""
+                        search_query = ""
+                        createOptionsYay()
+                        local contentHeight = (63 + (#dropdownConfig.Options * 22)) * scale_factor
+                        local height = math.min(contentHeight, maxDropdownHeight)
+                        tween_to(dropdownObj.optionHolderFrame, {Size = UDim2.new(0, dropdown_popup_w, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        tween_to(dropdownObj.arrowImg, {Rotation = 180}, 0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        task.defer(function() if search_textbox and search_textbox.Parent then search_textbox:CaptureFocus() end end)
+                        if dropdownPositionUpdateConn then dropdownPositionUpdateConn() end
+                        dropdownPositionUpdateConn = start_position_tracker(groupObj.Library, dropdownObj.button_frame, function()
+                            if dropdownObj.isOpen then
+                                updateDropdownPositionYay()
+                            end
+                        end)
+                    else
+                        closeDropdown(false)
+                    end
+                end)
+                
+                dropdownClickButton.MouseEnter:Connect(function()
+                    tween_to(dropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2)
+                    tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(83, 83, 83)}, 0.2)
+                end)
+                dropdownClickButton.MouseLeave:Connect(function()
+                    if not dropdownObj.isOpen then
+                        tween_to(dropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.2)
+                    end
+                end)
+                
+                dropdownObj.Changed = dropdownConfig.Callback
+                
+                function dropdownObj:Set(value, silent)
+                    if value == nil then return end
+                    dropdownObj.value = value
+                    dropdownObj.Value = dropdownObj.value
+                    local displayValue = tostring(value)
+                    dropdownObj.selectedLabelText.Text = displayValue
+                    local newWidth = math.max(70 * scale_factor, measure_text_width(displayValue, 12 * scale_factor) + 30 * scale_factor)
+                    dropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
+                    dropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
+                    createOptionsYay()
+                    if not silent and dropdownObj.Changed then
+                        dropdownObj.Changed(value)
+                    end
+                end
+                function dropdownObj:Get()
+                    return dropdownObj.value
+                end
+                
+                function dropdownObj:OnChanged(callback)
+                    dropdownObj.Changed = callback
+                end
+                
+                function dropdownObj:UpdateOptions(newOptions)
+                    if type(newOptions) ~= "table" then
+                        return
+                    end
+                    dropdownOptionsSource = newOptions
+                    dropdownObj._optionsSignature = get_dropdown_signature(newOptions)
+                    dropdownConfig.Options = normalize_dropdown(newOptions)
+                    for _, option in ipairs(dropdownConfig.Options) do
+                        addSearchTerm(tostring(option))
+                    end
+                    if not table.find(dropdownConfig.Options, dropdownObj.value) then
+                        dropdownObj.value = dropdownConfig.Options[1] or "None"
+                    end
+                    local displayValue = tostring(dropdownObj.value or "None")
+                    dropdownObj.selectedLabelText.Text = displayValue
+                    local newWidth = math.max(70 * scale_factor, measure_text_width(displayValue, 12 * scale_factor) + 30 * scale_factor)
+                    dropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
+                    dropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
+                    createOptionsYay(search_query)
+                    if groupObj.Library._searchQuery ~= "" then
+                        groupObj.Library:SetSearchFilter(groupObj.Library._searchQuery)
+                    end
+                end
+                
+                function dropdownObj:SetValues(newOptions)
+                    dropdownObj:UpdateOptions(newOptions)
+                end
+
+                if dropdownConfig.AutoRefresh then
+                    groupObj.Library:_RegisterRefreshJob(dropdownConfig.RefreshInterval, function()
+                        return not groupObj.Library._destroyed and dropdownObj.button_frame and dropdownObj.button_frame.Parent
+                    end, function()
+                        local latestOptions = dropdownOptionsSource
+                        if type(dropdownConfig.OptionsProvider) == "function" then
+                            local ok, providedOptions = pcall(dropdownConfig.OptionsProvider)
+                            if ok and type(providedOptions) == "table" then
+                                latestOptions = providedOptions
+                            end
+                        end
+                        local latestSignature = get_dropdown_signature(latestOptions)
+                        if latestSignature ~= dropdownObj._optionsSignature then
+                            dropdownObj:UpdateOptions(latestOptions)
+                        end
+                        return true
+                    end)
+                end
+
+                function dropdownObj:Close()
+                    closeDropdown(true)
+                end
+                groupObj.Library:RegisterControl(dropdownConfig.Flag, function()
+                    return dropdownObj:Get()
+                end, function(value)
+                    if value ~= nil then
+                        dropdownObj:Set(value, true)
+                    end
+                end)
+                
+                -- Store in global Options table
                 local flagKey = Idx or dropdownConfig.Flag or dropdownConfig.Name
                 Options[flagKey] = dropdownObj
-                dropdownObj.Value = dropdownObj.Get()
+                dropdownObj.Value = dropdownObj.value
                 
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
+                table.insert(groupObj.elements, dropdownObj)
                 return dropdownObj
             end
 
             function groupObj:AddMultiDropdown(multiDropdownConfig, config)
+                -- Support old API: AddMultiDropdown(Idx, config) - match Library.lua pattern
                 local Idx = nil
                 if type(multiDropdownConfig) == "string" then
                     Idx = multiDropdownConfig
+                    -- Preserve all config options and map Values to Options
                     local oldConfig = config or {}
                     multiDropdownConfig = {
                         Name = oldConfig.Text or multiDropdownConfig,
                         Options = oldConfig.Values or {},
                         Default = oldConfig.Default,
                         Callback = oldConfig.Callback,
+                        Searchable = oldConfig.Searchable,
                         Flag = multiDropdownConfig
                     }
                 end
@@ -5254,40 +6389,436 @@ function vora_ui:AddSection(config)
                 multiDropdownConfig = multiDropdownConfig or {}
                 multiDropdownConfig.Name = multiDropdownConfig.Name or "Multi Dropdown"
                 multiDropdownConfig.Options = multiDropdownConfig.Options or multiDropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
+                multiDropdownConfig.OptionsProvider = multiDropdownConfig.OptionsProvider or multiDropdownConfig.GetOptions
+                local multiDropdownHasProvider = type(multiDropdownConfig.OptionsProvider) == "function"
+                if multiDropdownConfig.AutoRefresh == nil then
+                    multiDropdownConfig.AutoRefresh = multiDropdownHasProvider
+                else
+                    multiDropdownConfig.AutoRefresh = multiDropdownConfig.AutoRefresh == true
+                end
+                multiDropdownConfig.RefreshInterval = math.max(tonumber(multiDropdownConfig.RefreshInterval) or 0.85, 0.35)
                 multiDropdownConfig.Default = multiDropdownConfig.Default or {}
                 multiDropdownConfig.Callback = multiDropdownConfig.Callback or function() end
                 multiDropdownConfig.Flag = multiDropdownConfig.Flag or createAutoFlag(multiDropdownConfig.Name)
+                local multiDropdownOptionsSource = multiDropdownConfig.Options
+                if type(multiDropdownConfig.OptionsProvider) == "function" then
+                    if ok and type(providedOptions) == "table" then
+                        multiDropdownOptionsSource = providedOptions
+                    end
+                end
+                multiDropdownConfig.Options = normalize_dropdown(multiDropdownOptionsSource)
+                warn("[UI Debug] MultiDropdown " .. tostring(multiDropdownConfig.Name) .. " options:", multiDropdownConfig.Options)
                 addSearchTerm(multiDropdownConfig.Name)
                 for _, option in ipairs(multiDropdownConfig.Options) do
                     addSearchTerm(tostring(option))
                 end
                 
-                local multiDropdownObj = Elements.CreateMultiDropdown(groupObj.mainFrame, {
-                    Name = multiDropdownConfig.Name,
-                    Options = multiDropdownConfig.Options,
-                    Default = multiDropdownConfig.Default,
-                    Callback = multiDropdownConfig.Callback,
-                    yPosition = groupObj.element_y
-                }, scale_factor, groupObj.Library.config.AccentColor, groupObj.Library.dropdown_holder)
+                local multiDropdownObj = {}
+                multiDropdownObj.selectedValues = {}
+                for _, v in ipairs(multiDropdownConfig.Default) do
+                    if table.find(multiDropdownConfig.Options, v) then
+                        multiDropdownObj.selectedValues[v] = true
+                    end
+                end
+                setmetatable(multiDropdownObj, {
+                    __index = function(self, key)
+                        if key == "Value" then
+                            local arr = {}
+                            for option, isSelected in pairs(multiDropdownObj.selectedValues) do
+                                if isSelected then table.insert(arr, option) end
+                            end
+                            table.sort(arr, function(a, b)
+                                return tostring(a) < tostring(b)
+                            end)
+                            return arr
+                        end
+                        return rawget(multiDropdownObj, key)
+                    end
+                })
+                multiDropdownObj.isOpen = false
+                multiDropdownObj._optionsSignature = get_dropdown_signature(multiDropdownOptionsSource)
+                if multiDropdownObj._optionsSignature == "0" then
+                    multiDropdownObj._optionsSignature = get_dropdown_signature(multiDropdownConfig.Options)
+                end
+                multiDropdownObj.Changed = multiDropdownConfig.Callback
+
+                function multiDropdownObj:OnChanged(callback)
+                    multiDropdownObj.Changed = callback
+                end
+
+                local yPosition = groupObj.element_y
                 
-                table.insert(groupObj.elements, multiDropdownObj)
+                multiDropdownObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = multiDropdownConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14 * scale_factor,
+                    Size = UDim2.new(0, 100 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, Parent = groupObj.mainFrame
+                })
                 
-                groupObj.Library:RegisterControl(multiDropdownConfig.Flag, multiDropdownObj.Get, function(val) multiDropdownObj:Set(val, true) end)
+                local function getDisplayText()
+                    local selected = {}
+                    for option, isSelected in pairs(multiDropdownObj.selectedValues) do
+                        if isSelected then table.insert(selected, option) end
+                    end
+                    table.sort(selected, function(a, b)
+                        return tostring(a) < tostring(b)
+                    end)
+                    if #selected == 0 then return "None"
+                    elseif #selected == 1 then return selected[1]
+                    elseif #selected <= 2 then return table.concat(selected, ", ")
+                    else return #selected .. " selected" end
+                end
                 
-                local flagKey = Idx or multiDropdownConfig.Flag or multiDropdownConfig.Name
+                local function getSelectedArray()
+                    local arr = {}
+                    for option, isSelected in pairs(multiDropdownObj.selectedValues) do
+                        if isSelected then table.insert(arr, option) end
+                    end
+                    table.sort(arr, function(a, b)
+                        return tostring(a) < tostring(b)
+                    end)
+                    return arr
+                end
+                
+                local displayText = getDisplayText()
+                local buttonWidth = math.max(85 * scale_factor, measure_text_width(displayText, 12 * scale_factor) + 35 * scale_factor)
+                
+                multiDropdownObj.button_frame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(32, 32, 32), Position = UDim2.new(1, -buttonWidth - 10, 0, yPosition),
+                    Size = UDim2.new(0, buttonWidth, 0, 21 * scale_factor), Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = multiDropdownObj.button_frame})
+                
+                local dropdownStrokeThing = create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = multiDropdownObj.button_frame})
+                
+                multiDropdownObj.selectedLabelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(84, 84, 84), Text = displayText, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 8, 0, 0), TextSize = 12 * scale_factor,
+                    Size = UDim2.new(1, -28 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd, Parent = multiDropdownObj.button_frame
+                })
+                
+                multiDropdownObj.arrowImg = create("ImageLabel", {
+                    ImageColor3 = Color3.fromRGB(80, 80, 80), Image = default_icons.expand, BackgroundTransparency = 1,
+                    Position = UDim2.new(1, -20 * scale_factor, 0.5, -7 * scale_factor),
+                    Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor), Parent = multiDropdownObj.button_frame
+                })
+                
+                multiDropdownObj.optionHolderFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, 160 * scale_factor, 0, 0),
+                    ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = multiDropdownObj.optionHolderFrame})
+                create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Parent = multiDropdownObj.optionHolderFrame})
+                
+                create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.new(1, 1, 1), Text = multiDropdownConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 12, 0, 8 * scale_factor), TextSize = 14 * scale_factor,
+                    Size = UDim2.new(1, -44 * scale_factor, 0, 20 * scale_factor), TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 10000, Parent = multiDropdownObj.optionHolderFrame
+                })
+
+                local multiDropdownCloseButton = create("TextButton", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+                    Text = "X", TextColor3 = Color3.fromRGB(170, 170, 170), TextSize = 14 * scale_factor,
+                    BackgroundColor3 = Color3.fromRGB(24, 24, 24), AutoButtonColor = false,
+                    Position = UDim2.new(1, -25 * scale_factor, 0, 5 * scale_factor),
+                    Size = UDim2.new(0, 18 * scale_factor, 0, 18 * scale_factor),
+                    ZIndex = 10002, Parent = multiDropdownObj.optionHolderFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = multiDropdownCloseButton})
+                
+                multiDropdownObj.optionScrollFrame = create("ScrollingFrame", {
+                    BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 30 * scale_factor),
+                    Size = UDim2.new(1, 0, 1, -35 * scale_factor), ScrollBarThickness = 0,
+                    ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80), CanvasSize = UDim2.new(0, 0, 0, 0),
+                    ZIndex = 10000, Parent = multiDropdownObj.optionHolderFrame
+                })
+                attach_scrollbar(groupObj.Library, multiDropdownObj.optionScrollFrame, multiDropdownObj.optionHolderFrame, {
+                    TrackWidth = 7 * scale_factor,
+                    ThumbWidth = 3 * scale_factor,
+                    EdgeInset = 2 * scale_factor,
+                    VerticalInset = 4 * scale_factor,
+                    ZIndex = 10002
+                })
+                multiDropdownObj.optionScrollFrame:SetAttribute("FlowDisableSmoothScroll", true)
+                --groupObj.Library:SetSmoothScroll(multiDropdownObj.optionScrollFrame, 22)
+                
+                multiDropdownObj.optionContainerFrame = create("Frame", {
+                    BackgroundTransparency = 1, Size = UDim2.new(1, -6, 0, 0),
+                    ZIndex = 10000, Parent = multiDropdownObj.optionScrollFrame
+                })
+                
+                local maxMultiDropdownHeight = 220 * scale_factor
+                local multiDropdownPositionConn = nil
+
+                local function closeMultiDropdown(isInstant)
+                    multiDropdownObj.isOpen = false
+                    if multiDropdownPositionConn then
+                        multiDropdownPositionConn()
+                        multiDropdownPositionConn = nil
+                    end
+                    if isInstant then
+                        multiDropdownObj.optionHolderFrame.Size = UDim2.new(0, 160 * scale_factor, 0, 0)
+                        multiDropdownObj.optionHolderFrame.Visible = false
+                        multiDropdownObj.arrowImg.Rotation = 0
+                        multiDropdownObj.button_frame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
+                        dropdownStrokeThing.Color = Color3.fromRGB(44, 44, 44)
+                        return
+                    end
+                    tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, 0)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+                    tween_to(multiDropdownObj.arrowImg, {Rotation = 0}, 0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+                    tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.18)
+                    tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.18)
+                    task.delay(0.22, function()
+                        if multiDropdownObj.optionHolderFrame.Parent and not multiDropdownObj.isOpen then
+                            multiDropdownObj.optionHolderFrame.Visible = false
+                        end
+                    end)
+                end
+
+                multiDropdownCloseButton.MouseButton1Click:Connect(function()
+                    closeMultiDropdown(false)
+                end)
+                multiDropdownCloseButton.MouseEnter:Connect(function()
+                    tween_to(multiDropdownCloseButton, {BackgroundColor3 = Color3.fromRGB(44, 44, 44), TextColor3 = Color3.fromRGB(220, 220, 220)}, 0.12)
+                end)
+                multiDropdownCloseButton.MouseLeave:Connect(function()
+                    tween_to(multiDropdownCloseButton, {BackgroundColor3 = Color3.fromRGB(24, 24, 24), TextColor3 = Color3.fromRGB(138, 138, 138)}, 0.12)
+                end)
+
+                local function createMultiOptionsYay()
+                    for _, child in pairs(multiDropdownObj.optionContainerFrame:GetChildren()) do
+                        if child:IsA("Frame") or child:IsA("TextButton") then child:Destroy() end
+                    end
+                    local optY = 0
+                    for _, option in ipairs(multiDropdownConfig.Options) do
+                        local isSelected = multiDropdownObj.selectedValues[option] == true
+                        
+                        local optionFrame = create("Frame", {
+                            BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, optY),
+                            Size = UDim2.new(1, 0, 0, 22 * scale_factor), ZIndex = 10001,
+                            Parent = multiDropdownObj.optionContainerFrame
+                        })
+                        
+                        local checkboxFrame = create("Frame", {
+                            BackgroundColor3 = isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
+                            Position = UDim2.new(0, 12, 0.5, -8 * scale_factor),
+                            Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor),
+                            ZIndex = 10002, Parent = optionFrame
+                        })
+                        create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = checkboxFrame})
+                        
+                        local checkmarkImg = create("ImageLabel", {
+                            Image = "rbxassetid://10709790644", ImageColor3 = Color3.new(1, 1, 1),
+                            ImageTransparency = isSelected and 0 or 1, BackgroundTransparency = 1,
+                            Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+                            Size = UDim2.new(0, 12 * scale_factor, 0, 12 * scale_factor),
+                            ZIndex = 10003, Parent = checkboxFrame
+                        })
+                        
+                        local optionLabelText = create("TextLabel", {
+                            FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                            TextColor3 = isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124),
+                            Text = tostring(option), BackgroundTransparency = 1, Position = UDim2.new(0, 34, 0, 0),
+                            TextSize = 14 * scale_factor, Size = UDim2.new(1, -46, 1, 0),
+                            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 10002, Parent = optionFrame
+                        })
+                        
+                        local optionClickButton = create("TextButton", {
+                            Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
+                            ZIndex = 10004, Parent = optionFrame
+                        })
+                        
+                        optionClickButton.MouseButton1Click:Connect(function()
+                            multiDropdownObj.selectedValues[option] = not multiDropdownObj.selectedValues[option]
+                            local nowSelected = multiDropdownObj.selectedValues[option]
+                            
+                            tween_to(checkboxFrame, {BackgroundColor3 = nowSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32)}, 0.15)
+                            tween_to(checkmarkImg, {ImageTransparency = nowSelected and 0 or 1}, 0.15)
+                            tween_to(optionLabelText, {TextColor3 = nowSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124)}, 0.15)
+                            
+                            local newDisplayText = getDisplayText()
+                            multiDropdownObj.selectedLabelText.Text = newDisplayText
+                            local newWidth = math.max(85 * scale_factor, measure_text_width(newDisplayText, 12 * scale_factor) + 35 * scale_factor)
+                            tween_to(multiDropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
+                            
+                            if multiDropdownObj.Changed then
+                                multiDropdownObj.Changed(getSelectedArray())
+                            end
+                        end)
+                        
+                        optionClickButton.MouseEnter:Connect(function()
+                            if not multiDropdownObj.selectedValues[option] then
+                                tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(180, 180, 180)}, 0.15)
+                                tween_to(checkboxFrame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.15)
+                            end
+                        end)
+                        optionClickButton.MouseLeave:Connect(function()
+                            if not multiDropdownObj.selectedValues[option] then
+                                tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(124, 124, 124)}, 0.15)
+                                tween_to(checkboxFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.15)
+                            end
+                        end)
+                        
+                        optY = optY + 24 * scale_factor
+                    end
+                    multiDropdownObj.optionContainerFrame.Size = UDim2.new(1, -6, 0, optY)
+                    multiDropdownObj.optionScrollFrame.CanvasSize = UDim2.new(0, 0, 0, optY)
+                end
+                createMultiOptionsYay()
+                
+                local dropdownClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = multiDropdownObj.button_frame})
+                
+                local function updateDropdownPositionYay()
+                    local buttonAbsPos = multiDropdownObj.button_frame.AbsolutePosition
+                    local buttonAbsSize = multiDropdownObj.button_frame.AbsoluteSize
+                    multiDropdownObj.optionHolderFrame.Position = UDim2.new(0, buttonAbsPos.X, 0, buttonAbsPos.Y + buttonAbsSize.Y + 5)
+                end
+                
+                dropdownClickButton.MouseButton1Click:Connect(function()
+                    multiDropdownObj.isOpen = not multiDropdownObj.isOpen
+                    if multiDropdownObj.isOpen then
+                        updateDropdownPositionYay()
+                        multiDropdownObj.optionHolderFrame.Visible = true
+                        local contentHeight = (38 + (#multiDropdownConfig.Options * 24)) * scale_factor
+                        local height = math.min(contentHeight, maxMultiDropdownHeight)
+                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        tween_to(multiDropdownObj.arrowImg, {Rotation = 180}, 0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        if multiDropdownPositionConn then multiDropdownPositionConn() end
+                        multiDropdownPositionConn = start_position_tracker(groupObj.Library, multiDropdownObj.button_frame, function()
+                            if multiDropdownObj.isOpen then
+                                updateDropdownPositionYay()
+                            end
+                        end)
+                    else
+                        closeMultiDropdown(false)
+                    end
+                end)
+                
+                dropdownClickButton.MouseEnter:Connect(function()
+                    tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2)
+                    tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(83, 83, 83)}, 0.2)
+                end)
+                dropdownClickButton.MouseLeave:Connect(function()
+                    if not multiDropdownObj.isOpen then
+                        tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.2)
+                    end
+                end)
+                
+                function multiDropdownObj:Set(values, silent)
+                    if type(values) ~= "table" then
+                        values = {}
+                    end
+                    multiDropdownObj.selectedValues = {}
+                    for _, v in ipairs(values) do
+                        if table.find(multiDropdownConfig.Options, v) then
+                            multiDropdownObj.selectedValues[v] = true
+                        end
+                    end
+                    local newDisplayText = getDisplayText()
+                    multiDropdownObj.selectedLabelText.Text = newDisplayText
+                    local newWidth = math.max(85 * scale_factor, measure_text_width(newDisplayText, 12 * scale_factor) + 35 * scale_factor)
+                    multiDropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
+                    multiDropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
+                    createMultiOptionsYay()
+                    if not silent and multiDropdownObj.Changed then
+                        multiDropdownObj.Changed(getSelectedArray())
+                    end
+                end
+                
+                function multiDropdownObj:UpdateOptions(newOptions)
+                    if type(newOptions) ~= "table" then
+                        return
+                    end
+                    multiDropdownOptionsSource = newOptions
+                    multiDropdownObj._optionsSignature = get_dropdown_signature(newOptions)
+                    multiDropdownConfig.Options = normalize_dropdown(newOptions)
+                    for _, option in ipairs(multiDropdownConfig.Options) do
+                        addSearchTerm(tostring(option))
+                    end
+                    local filteredSelectedValues = {}
+                    for option, isSelected in pairs(multiDropdownObj.selectedValues) do
+                        if isSelected and table.find(multiDropdownConfig.Options, option) then
+                            filteredSelectedValues[option] = true
+                        end
+                    end
+                    multiDropdownObj.selectedValues = filteredSelectedValues
+                    local newDisplayText = getDisplayText()
+                    multiDropdownObj.selectedLabelText.Text = newDisplayText
+                    local newWidth = math.max(85 * scale_factor, measure_text_width(newDisplayText, 12 * scale_factor) + 35 * scale_factor)
+                    multiDropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
+                    multiDropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
+                    createMultiOptionsYay()
+                    if groupObj.Library._searchQuery ~= "" then
+                        groupObj.Library:SetSearchFilter(groupObj.Library._searchQuery)
+                    end
+                end
+
+                -- Backward compatibility: SetValues method
+                function multiDropdownObj:SetValues(newOptions)
+                    multiDropdownObj:UpdateOptions(newOptions)
+                end
+
+                if multiDropdownConfig.AutoRefresh then
+                    groupObj.Library:_RegisterRefreshJob(multiDropdownConfig.RefreshInterval, function()
+                        return not groupObj.Library._destroyed and multiDropdownObj.button_frame and multiDropdownObj.button_frame.Parent
+                    end, function()
+                        local latestOptions = multiDropdownOptionsSource
+                        if type(multiDropdownConfig.OptionsProvider) == "function" then
+                            local ok, providedOptions = pcall(multiDropdownConfig.OptionsProvider)
+                            if ok and type(providedOptions) == "table" then
+                                latestOptions = providedOptions
+                            end
+                        end
+                        local latestSignature = get_dropdown_signature(latestOptions)
+                        if latestSignature ~= multiDropdownObj._optionsSignature then
+                            multiDropdownObj:UpdateOptions(latestOptions)
+                        end
+                        return true
+                    end)
+                end
+                
+                function multiDropdownObj:Get() return getSelectedArray() end
+
+                function multiDropdownObj:Close()
+                    closeMultiDropdown(true)
+                end
+                local flagKey = multiDropdownConfig.Flag or multiDropdownConfig.Name
                 Options[flagKey] = multiDropdownObj
-                
+
+                groupObj.Library:RegisterControl(multiDropdownConfig.Flag, function()
+                    return multiDropdownObj:Get()
+                end, function(value)
+                    if type(value) == "table" then
+                        multiDropdownObj:Set(value, true)
+                    end
+                end)
+
                 groupObj.element_y = groupObj.element_y + 31 * scale_factor
                 update_group_size()
+                table.insert(groupObj.elements, multiDropdownObj)
                 return multiDropdownObj
             end
 
             function groupObj:AddDivider()
-                local dividerObj = Elements.CreateDivider(groupObj.mainFrame, { yPosition = groupObj.element_y }, scale_factor)
-                table.insert(groupObj.elements, dividerObj)
+                local yPosition = groupObj.element_y
+                local dividerFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(36, 36, 36),
+                    Position = UDim2.new(0, 10, 0, yPosition + 4 * scale_factor),
+                    Size = UDim2.new(0.92, 0, 0, 1), Parent = groupObj.mainFrame
+                })
+                create("UIGradient", {
+                    Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(108, 108, 108)), ColorSequenceKeypoint.new(0.514, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(1, Color3.fromRGB(108, 108, 108))}),
+                    Parent = dividerFrame
+                })
                 groupObj.element_y = groupObj.element_y + 12 * scale_factor
                 update_group_size()
-                return dividerObj
+                return dividerFrame
             end
             
             function groupObj:AddLabel(labelConfig)
@@ -5296,31 +6827,52 @@ function vora_ui:AddSection(config)
                 labelConfig.Wrap = labelConfig.Wrap == true
                 labelConfig.RichText = labelConfig.RichText ~= false
                 addSearchTerm(labelConfig.Text)
-                
-                local labelObj = Elements.CreateLabel(groupObj.mainFrame, {
-                    Text = labelConfig.Text,
-                    Wrap = labelConfig.Wrap,
+                local yPosition = groupObj.element_y
+                local labelMaxWidth = 238 * scale_factor
+                local labelTextSize = 14 * scale_factor
+                local measuredBounds = text_service:GetTextSize(
+                    tostring(labelConfig.Text),
+                    labelTextSize,
+                    Enum.Font.GothamSemibold,
+                    Vector2.new(labelMaxWidth, labelConfig.Wrap and math.huge or (labelTextSize + 4))
+                )
+                local labelHeight = labelConfig.Wrap and math.max(20 * scale_factor, measuredBounds.Y) or (20 * scale_factor)
+                local labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = labelConfig.Text, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = labelTextSize,
+                    Size = UDim2.new(0, labelMaxWidth, 0, labelHeight), TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = labelConfig.Wrap,
+                    TextTruncate = labelConfig.Wrap and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
                     RichText = labelConfig.RichText,
-                    yPosition = groupObj.element_y
-                }, scale_factor)
+                    ClipsDescendants = true,
+                    Parent = groupObj.mainFrame
+                })
                 
-                table.insert(groupObj.elements, labelObj)
-                
-                local labelHeight = 20 * scale_factor
-                if labelConfig.Wrap then
-                    local bounds = text_service:GetTextSize(labelConfig.Text, 14 * scale_factor, Enum.Font.GothamSemibold, Vector2.new(238 * scale_factor, math.huge))
-                    labelHeight = math.max(20 * scale_factor, bounds.Y)
+                local labelObj = {}
+                labelObj.Instance = labelText
+                function labelObj:SetText(text)
+                    labelText.Text = tostring(text)
                 end
+                function labelObj:SetName(text)
+                    labelText.Text = tostring(text)
+                end
+                function labelObj:SetVisible(visible)
+                    labelObj.Instance.Visible = visible
+                end
+                
                 groupObj.element_y = groupObj.element_y + labelHeight + 6 * scale_factor
                 update_group_size()
                 return labelObj
             end
             
             function groupObj:AddInput(textInputConfig, config)
+                -- Support old API: AddInput(name, config) - same as AddTextInput
                 return groupObj:AddTextInput(textInputConfig, config)
             end
             
             function groupObj:AddTextInput(textInputConfig, config)
+                -- Support old API: AddTextInput(name, config)
                 if type(textInputConfig) == "string" then
                     textInputConfig = {Name = textInputConfig, Flag = textInputConfig, Text = config and config.Text or textInputConfig, Placeholder = config and config.Placeholder or "Enter text...", Default = config and config.Default, Callback = config and config.Callback}
                 end
@@ -5336,24 +6888,101 @@ function vora_ui:AddSection(config)
                 addSearchTerm(textInputConfig.Name)
                 addSearchTerm(textInputConfig.Placeholder)
                 
-                local textInputObj = Elements.CreateTextInput(groupObj.mainFrame, {
-                    Name = textInputConfig.Name,
-                    Placeholder = textInputConfig.Placeholder,
-                    Default = textInputConfig.Default,
-                    Callback = textInputConfig.Callback,
-                    Numeric = textInputConfig.Numeric,
-                    Finished = textInputConfig.Finished,
-                    yPosition = groupObj.element_y
-                }, scale_factor)
+                local textInputObj = {}
+                textInputObj.value = textInputConfig.Default
+                textInputObj.Flag = textInputConfig.Flag
+                textInputObj.Name = textInputConfig.Name
+                local yPosition = groupObj.element_y
                 
-                table.insert(groupObj.elements, textInputObj)
+                textInputObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = textInputConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
+                    Size = UDim2.new(0, 80 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, Parent = groupObj.mainFrame
+                })
                 
-                groupObj.Library:RegisterControl(textInputConfig.Flag, textInputObj.Get, function(val) textInputObj:Set(tostring(val or "")) end)
+                textInputObj.inputFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+                    Position = UDim2.new(0, 10, 0, yPosition + 23 * scale_factor),
+                    Size = UDim2.new(0, 240 * scale_factor, 0, 28 * scale_factor),
+                    Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = textInputObj.inputFrame})
+                create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = textInputObj.inputFrame})
                 
+                textInputObj.textBox = create("TextBox", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    PlaceholderText = textInputConfig.Placeholder,
+                    PlaceholderColor3 = Color3.fromRGB(80, 80, 80),
+                    Text = textInputConfig.Default,
+                    TextColor3 = Color3.fromRGB(200, 200, 200),
+                    TextSize = 13.8 * scale_factor,
+                    BackgroundTransparency = 1,
+                    ClearTextOnFocus = false,
+                    Position = UDim2.new(0, 8, 0, 0),
+                    Size = UDim2.new(1, -16, 1, 0),
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Parent = textInputObj.inputFrame
+                })
+                
+                if textInputConfig.Numeric then
+                    textInputObj.textBox.ClearTextOnFocus = true
+                end
+
+                textInputObj.textBox.Focused:Connect(function()
+                    tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2)
+                end)
+                
+                textInputObj.textBox.FocusLost:Connect(function(enterPressed)
+                    tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                    textInputObj.value = textInputObj.textBox.Text
+                    if textInputConfig.Finished then
+                        if enterPressed then
+                            textInputConfig.Callback(textInputObj.value, enterPressed)
+                        end
+                    else
+                        textInputConfig.Callback(textInputObj.value, enterPressed)
+                    end
+                end)
+                
+                function textInputObj:Set(text)
+                    local asString = tostring(text or "")
+                    textInputObj.value = asString
+                    textInputObj.textBox.Text = asString
+                end
+                
+                function textInputObj:Get()
+                    textInputObj.value = textInputObj.textBox.Text
+                    return textInputObj.value
+                end
+
+                function textInputObj:GetValue()
+                    return textInputObj:Get()
+                end
+
+                function textInputObj:SetValue(text, silent)
+                    textInputObj:Set(tostring(text or ""))
+                    if not silent then
+                        textInputConfig.Callback(textInputObj.value, false)
+                    end
+                end
+
+                function textInputObj:ResetValue()
+                    textInputObj:Set(textInputConfig.Default)
+                end
+
                 Options[textInputConfig.Flag] = textInputObj
+                
+                groupObj.Library:RegisterControl(textInputConfig.Flag, function()
+                    return textInputObj:Get()
+                end, function(value)
+                    textInputObj:Set(tostring(value or ""))
+                end)
                 
                 groupObj.element_y = groupObj.element_y + 58 * scale_factor
                 update_group_size()
+                table.insert(groupObj.elements, textInputObj)
                 return textInputObj
             end
 
@@ -5386,6 +7015,16 @@ function vora_ui:AddSection(config)
                     end
                 end
 
+                local function fireTextboxCallbacksForced(value, enterPressed)
+                    primaryCallback(value, enterPressed)
+                    if type(changedCallback) == "function" then
+                        changedCallback(value, enterPressed)
+                    end
+                    if type(signalCallback) == "function" then
+                        signalCallback(value, enterPressed)
+                    end
+                end
+
                 local textInputObj = groupObj:AddTextInput({
                     Name = textboxConfig.Name or textboxConfig.Title or textboxConfig.Text or "Textbox",
                     Placeholder = textboxConfig.Placeholder or textboxConfig.PlaceholderText or textboxConfig.Hint or "Enter text...",
@@ -5397,6 +7036,14 @@ function vora_ui:AddSection(config)
                 textInputObj.Title = textboxConfig.Title or textboxConfig.Text or textboxConfig.Name or "Textbox"
                 textInputObj.ConfigId = tostring(textboxConfig.ConfigId or textInputObj.Flag or textInputObj.Title)
                 textInputObj.Box = textInputObj.textBox
+
+                local baseSetValue = textInputObj.SetValue
+                function textInputObj:SetValue(text, silent)
+                    baseSetValue(self, text, true)
+                    if not silent then
+                        fireTextboxCallbacksForced(self:Get(), false)
+                    end
+                end
 
                 return textInputObj
             end
@@ -5413,19 +7060,300 @@ function vora_ui:AddSection(config)
                 colorPickerConfig.Flag = colorPickerConfig.Flag or createAutoFlag(colorPickerConfig.Name)
                 addSearchTerm(colorPickerConfig.Name)
                 
-                local colorPickerObj = Elements.CreateColorPicker(groupObj.mainFrame, {
-                    Name = colorPickerConfig.Name,
-                    Default = colorPickerConfig.Default,
-                    Callback = colorPickerConfig.Callback,
-                    yPosition = groupObj.element_y
-                }, scale_factor, groupObj.Library.config.AccentColor, groupObj.Library.dropdown_holder)
+                local colorPickerObj = {}
+                colorPickerObj.value = colorPickerConfig.Default
+                colorPickerObj.isOpen = false
+                local yPosition = groupObj.element_y
                 
-                table.insert(groupObj.elements, colorPickerObj)
+                -- Convert Color3 to HSV
+                local function rgbToHsv(color)
+                    local r, g, b = color.R, color.G, color.B
+                    local max, min = math.max(r, g, b), math.min(r, g, b)
+                    local h, s, v = 0, 0, max
+                    local d = max - min
+                    s = max == 0 and 0 or d / max
+                    if max ~= min then
+                        if max == r then h = (g - b) / d + (g < b and 6 or 0)
+                        elseif max == g then h = (b - r) / d + 2
+                        elseif max == b then h = (r - g) / d + 4 end
+                        h = h / 6
+                    end
+                    return h, s, v
+                end
                 
-                groupObj.Library:RegisterControl(colorPickerConfig.Flag, colorPickerObj.Get, function(val) colorPickerObj:Set(val, true) end)
+                local currentH, currentS, currentV = rgbToHsv(colorPickerConfig.Default)
                 
+                colorPickerObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = colorPickerConfig.Name, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14 * scale_factor,
+                    Size = UDim2.new(0, 100 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, Parent = groupObj.mainFrame
+                })
+                
+                -- Color preview button
+                colorPickerObj.colorPreview = create("Frame", {
+                    BackgroundColor3 = colorPickerObj.value,
+                    Position = UDim2.new(1, -40 * scale_factor, 0, yPosition),
+                    Size = UDim2.new(0, 30 * scale_factor, 0, 20 * scale_factor),
+                    Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = colorPickerObj.colorPreview})
+                create("UIStroke", {Color = Color3.fromRGB(60, 60, 60), Parent = colorPickerObj.colorPreview})
+                
+                -- Picker popup holder
+                colorPickerObj.pickerHolder = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(24, 24, 24),
+                    Size = UDim2.new(0, 200 * scale_factor, 0, 0),
+                    ClipsDescendants = true, Visible = false, ZIndex = 9999,
+                    Parent = groupObj.Library.dropdown_holder
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = colorPickerObj.pickerHolder})
+                create("UIStroke", {Color = Color3.fromRGB(50, 50, 50), Parent = colorPickerObj.pickerHolder})
+                
+                -- Saturation/Value gradient box
+                colorPickerObj.svBox = create("Frame", {
+                    BackgroundColor3 = Color3.fromHSV(currentH, 1, 1),
+                    Position = UDim2.new(0, 10, 0, 10),
+                    Size = UDim2.new(1, -20, 0, 100 * scale_factor),
+                    ZIndex = 10000, Parent = colorPickerObj.pickerHolder
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = colorPickerObj.svBox})
+                
+                -- White to transparent gradient (saturation)
+                create("UIGradient", {
+                    Color = ColorSequence.new({
+                        ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+                        ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
+                    }),
+                    Transparency = NumberSequence.new({
+                        NumberSequenceKeypoint.new(0, 0),
+                        NumberSequenceKeypoint.new(1, 1)
+                    }), Parent = colorPickerObj.svBox
+                })
+                
+                -- Black overlay for value
+                local valueOverlay = create("Frame", {
+                    BackgroundColor3 = Color3.new(0, 0, 0),
+                    Size = UDim2.new(1, 0, 1, 0), ZIndex = 10001, Parent = colorPickerObj.svBox
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = valueOverlay})
+                create("UIGradient", {
+                    Color = ColorSequence.new(Color3.new(0, 0, 0)),
+                    Transparency = NumberSequence.new({
+                        NumberSequenceKeypoint.new(0, 1),
+                        NumberSequenceKeypoint.new(1, 0)
+                    }),
+                    Rotation = 90, Parent = valueOverlay
+                })
+                
+                -- SV cursor
+                colorPickerObj.svCursor = create("Frame", {
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(currentS, -6, 1 - currentV, -6),
+                    Size = UDim2.new(0, 12, 0, 12), ZIndex = 10003, Parent = colorPickerObj.svBox
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = colorPickerObj.svCursor})
+                create("UIStroke", {Color = Color3.new(1, 1, 1), Thickness = 2, Parent = colorPickerObj.svCursor})
+                
+                -- Hue slider
+                colorPickerObj.hueSlider = create("Frame", {
+                    BackgroundColor3 = Color3.new(1, 1, 1),
+                    Position = UDim2.new(0, 10, 0, 120 * scale_factor),
+                    Size = UDim2.new(1, -20, 0, 14 * scale_factor),
+                    ZIndex = 10000, Parent = colorPickerObj.pickerHolder
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = colorPickerObj.hueSlider})
+                create("UIGradient", {
+                    Color = ColorSequence.new({
+                        ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 1, 1)),
+                        ColorSequenceKeypoint.new(0.167, Color3.fromHSV(0.167, 1, 1)),
+                        ColorSequenceKeypoint.new(0.333, Color3.fromHSV(0.333, 1, 1)),
+                        ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5, 1, 1)),
+                        ColorSequenceKeypoint.new(0.667, Color3.fromHSV(0.667, 1, 1)),
+                        ColorSequenceKeypoint.new(0.833, Color3.fromHSV(0.833, 1, 1)),
+                        ColorSequenceKeypoint.new(1, Color3.fromHSV(1, 1, 1))
+                    }), Parent = colorPickerObj.hueSlider
+                })
+                
+                -- Hue cursor
+                colorPickerObj.hueCursor = create("Frame", {
+                    BackgroundColor3 = Color3.new(1, 1, 1),
+                    Position = UDim2.new(currentH, -7, 0.5, -7),
+                    Size = UDim2.new(0, 14, 0, 14), ZIndex = 10001, Parent = colorPickerObj.hueSlider
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = colorPickerObj.hueCursor})
+                create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Thickness = 2, Parent = colorPickerObj.hueCursor})
+                
+                -- Preset colors
+                local presetColors = {
+                    Color3.fromRGB(38, 70, 83), Color3.fromRGB(42, 157, 143), 
+                    Color3.fromRGB(233, 196, 106), Color3.fromRGB(244, 162, 97),
+                    Color3.fromRGB(231, 111, 81), Color3.fromRGB(190, 49, 49),
+                    Color3.fromRGB(40, 55, 114), Color3.fromRGB(68, 114, 196),
+                    Color3.fromRGB(78, 166, 206), Color3.fromRGB(108, 225, 226)
+                }
+                
+                local presetY = 145 * scale_factor
+                for i, preset in ipairs(presetColors) do
+                    local col = (i - 1) % 5
+                    local row = math.floor((i - 1) / 5)
+                    local presetBtn = create("Frame", {
+                        BackgroundColor3 = preset,
+                        Position = UDim2.new(0, 10 + col * 38 * scale_factor, 0, presetY + row * 28 * scale_factor),
+                        Size = UDim2.new(0, 32 * scale_factor, 0, 22 * scale_factor),
+                        ZIndex = 10000, Parent = colorPickerObj.pickerHolder
+                    })
+                    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = presetBtn})
+                    
+                    local presetClick = create("TextButton", {
+                        Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
+                        ZIndex = 10001, Parent = presetBtn
+                    })
+                    presetClick.MouseButton1Click:Connect(function()
+                        currentH, currentS, currentV = rgbToHsv(preset)
+                        colorPickerObj.value = preset
+                        colorPickerObj.colorPreview.BackgroundColor3 = preset
+                        colorPickerObj.svBox.BackgroundColor3 = Color3.fromHSV(currentH, 1, 1)
+                        colorPickerObj.svCursor.Position = UDim2.new(currentS, -6, 1 - currentV, -6)
+                        colorPickerObj.hueCursor.Position = UDim2.new(currentH, -7, 0.5, -7)
+                        colorPickerConfig.Callback(preset)
+                    end)
+                end
+                
+                local function updateColor()
+                    colorPickerObj.value = Color3.fromHSV(currentH, currentS, currentV)
+                    colorPickerObj.colorPreview.BackgroundColor3 = colorPickerObj.value
+                    colorPickerObj.svBox.BackgroundColor3 = Color3.fromHSV(currentH, 1, 1)
+                    colorPickerConfig.Callback(colorPickerObj.value)
+                end
+                
+                -- SV box interaction
+                local svClickBtn = create("TextButton", {
+                    Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
+                    ZIndex = 10002, Parent = colorPickerObj.svBox
+                })
+                
+                local svDragging = false
+                svClickBtn.MouseButton1Down:Connect(function() svDragging = true end)
+                groupObj.Library:_TrackConnection(input_service.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        svDragging = false
+                    end
+                end))
+                groupObj.Library:_TrackConnection(input_service.InputChanged:Connect(function(input)
+                    if svDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                        local absPos, absSize = colorPickerObj.svBox.AbsolutePosition, colorPickerObj.svBox.AbsoluteSize
+                        currentS = math.clamp((input.Position.X - absPos.X) / absSize.X, 0, 1)
+                        currentV = math.clamp(1 - (input.Position.Y - absPos.Y) / absSize.Y, 0, 1)
+                        colorPickerObj.svCursor.Position = UDim2.new(currentS, -6, 1 - currentV, -6)
+                        updateColor()
+                    end
+                end))
+                
+                -- Hue slider interaction
+                local hueClickBtn = create("TextButton", {
+                    Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
+                    ZIndex = 10002, Parent = colorPickerObj.hueSlider
+                })
+                
+                local hueDragging = false
+                hueClickBtn.MouseButton1Down:Connect(function() hueDragging = true end)
+                groupObj.Library:_TrackConnection(input_service.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        hueDragging = false
+                    end
+                end))
+                groupObj.Library:_TrackConnection(input_service.InputChanged:Connect(function(input)
+                    if hueDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                        local absPos, absSize = colorPickerObj.hueSlider.AbsolutePosition, colorPickerObj.hueSlider.AbsoluteSize
+                        currentH = math.clamp((input.Position.X - absPos.X) / absSize.X, 0, 1)
+                        colorPickerObj.hueCursor.Position = UDim2.new(currentH, -7, 0.5, -7)
+                        updateColor()
+                    end
+                end))
+                
+                -- Open/close picker
+                local pickerClickBtn = create("TextButton", {
+                    Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
+                    Parent = colorPickerObj.colorPreview
+                })
+                
+                local colorPickerPositionConn = nil
+                local function closeColorPicker(isInstant)
+                    colorPickerObj.isOpen = false
+                    if colorPickerPositionConn then
+                        colorPickerPositionConn()
+                        colorPickerPositionConn = nil
+                    end
+                    if isInstant then
+                        colorPickerObj.pickerHolder.Size = UDim2.new(0, 200 * scale_factor, 0, 0)
+                        colorPickerObj.pickerHolder.Visible = false
+                        return
+                    end
+                    tween_to(colorPickerObj.pickerHolder, {
+                        Size = UDim2.new(0, 200 * scale_factor, 0, 0)
+                    }, 0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+                    task.delay(0.2, function()
+                        if colorPickerObj.pickerHolder.Parent and not colorPickerObj.isOpen then
+                            colorPickerObj.pickerHolder.Visible = false
+                        end
+                    end)
+                end
+
+                local function updatePickerPosition()
+                    local absPos = colorPickerObj.colorPreview.AbsolutePosition
+                    local absSize = colorPickerObj.colorPreview.AbsoluteSize
+                    colorPickerObj.pickerHolder.Position = UDim2.new(0, absPos.X - 160 * scale_factor, 0, absPos.Y + absSize.Y + 5)
+                end
+                
+                pickerClickBtn.MouseButton1Click:Connect(function()
+                    colorPickerObj.isOpen = not colorPickerObj.isOpen
+                    if colorPickerObj.isOpen then
+                        updatePickerPosition()
+                        colorPickerObj.pickerHolder.Visible = true
+                        tween_to(colorPickerObj.pickerHolder, {
+                            Size = UDim2.new(0, 200 * scale_factor, 0, 210 * scale_factor)
+                        }, 0.26, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        if colorPickerPositionConn then colorPickerPositionConn() end
+                        colorPickerPositionConn = start_position_tracker(groupObj.Library, colorPickerObj.colorPreview, function()
+                            if colorPickerObj.isOpen then
+                                updatePickerPosition()
+                            end
+                        end)
+                    else
+                        closeColorPicker(false)
+                    end
+                end)
+                
+                function colorPickerObj:Set(color, silent)
+                    colorPickerObj.value = color
+                    currentH, currentS, currentV = rgbToHsv(color)
+                    colorPickerObj.colorPreview.BackgroundColor3 = color
+                    colorPickerObj.svBox.BackgroundColor3 = Color3.fromHSV(currentH, 1, 1)
+                    colorPickerObj.svCursor.Position = UDim2.new(currentS, -6, 1 - currentV, -6)
+                    colorPickerObj.hueCursor.Position = UDim2.new(currentH, -7, 0.5, -7)
+                    if not silent then
+                        colorPickerConfig.Callback(color)
+                    end
+                end
+                
+                function colorPickerObj:Get() return colorPickerObj.value end
+
+                function colorPickerObj:Close()
+                    closeColorPicker(true)
+                end
+                groupObj.Library:RegisterControl(colorPickerConfig.Flag, function()
+                    return colorPickerObj:Get()
+                end, function(value)
+                    if typeof(value) == "Color3" then
+                        colorPickerObj:Set(value, true)
+                    end
+                end)
+
                 groupObj.element_y = groupObj.element_y + 31 * scale_factor
                 update_group_size()
+                table.insert(groupObj.elements, colorPickerObj)
                 return colorPickerObj
             end
             
@@ -5456,12 +7384,11 @@ function vora_ui:AddSection(config)
     return sectionObj
 end
 
-function vora_ui:SetAccentColor(color)
+function Modern:SetAccentColor(color)
     if typeof(color) ~= "Color3" then
         return
     end
     self.config.AccentColor = color
-    
     for _, section in ipairs(self.sections) do
         for _, tab in ipairs(section.tabs or {}) do
             if tab.isActive and tab.button_frame then
@@ -5469,16 +7396,31 @@ function vora_ui:SetAccentColor(color)
             end
             for _, group in ipairs(tab.groups or {}) do
                 for _, element in ipairs(group.elements or {}) do
-                    if type(element) == "table" and element._updateAccent then
-                        element:_updateAccent(color)
+                    if type(element) == "table" then
+                        if element.switchFrame and element.value == true then
+                            element.switchFrame.BackgroundColor3 = color
+                        end
+                        if element.fillFrame then
+                            element.fillFrame.BackgroundColor3 = color
+                        end
+                        if element.knobCore then
+                            element.knobCore.BackgroundColor3 = color
+                        end
+                        if element.knobGlow then
+                            element.knobGlow.BackgroundColor3 = color
+                        end
+                        if element.knobStroke then
+                            element.knobStroke.Color = color:Lerp(Color3.fromRGB(26, 26, 28), 0.2)
+                        end
+                        if element.toggleSwitchFrame and element.toggleValue == true then
+                            element.toggleSwitchFrame.BackgroundColor3 = color
+                        end
                     end
                 end
             end
         end
     end
-    
     self:_RefreshAccentCore()
-    
     if self.settings_toggle_refs then
         for _, toggleRef in ipairs(self.settings_toggle_refs) do
             if toggleRef and type(toggleRef.Get) == "function" and type(toggleRef.Set) == "function" then
@@ -5486,11 +7428,10 @@ function vora_ui:SetAccentColor(color)
             end
         end
     end
-    
     self:_UpdateESPPreview(0)
 end
 
-function vora_ui:Destroy()
+function Modern:Destroy()
     if self._destroyed then return end
 
     pcall(function()
@@ -5600,11 +7541,21 @@ function vora_ui:Destroy()
     end
 end
 
-function vora_ui.Demo()
-    local lib = vora_ui.new({
-        Name = "VoraHub Demo",
-        AccentColor = Color3.fromRGB(0, 133, 255),
-        AutoConfig = false
+function Modern.Demo()
+    local lib = Modern:Window({
+        Title = "Modern Demo",
+        Color = Color3.fromRGB(0, 200, 255),
+        Image = "101833678008843",
+        Uitransparent = 0.15,
+        Keybind = Enum.KeyCode.RightShift,
+        ShowUser = true,
+        Search = true,
+        Config = {
+            ConfigFolder = "Modern/Config/",
+            AutoSaveFile = "Default",
+            AutoSave = false,
+            AutoLoad = false,
+        },
     })
 
     local main_section = lib:AddSection({Name = "Main", Icon = "sword"})
@@ -5735,7 +7686,7 @@ function vora_ui.Demo()
 
     misc_group:AddDivider()
 
-    misc_group:AddLabel({Name = "v1.0.0 - VoraHub Demo"})
+    misc_group:AddLabel({Name = "v1.0.0 - Modern Demo"})
 
     local settings_section = lib:AddSection({Name = "Config", Icon = "settings"})
 
@@ -5768,8 +7719,8 @@ function vora_ui.Demo()
     info_group:AddLabel({Name = "Player: " .. tostring(local_player.Name)})
 
     lib:Notify({
-        Title = "VoraHub Demo",
-        Description = "UI loaded. Press RightCtrl to toggle.",
+        Title = "Modern Demo",
+        Description = "UI loaded. Press RightShift to toggle.",
         Duration = 5
     })
 
@@ -5778,4 +7729,4 @@ end
 
 --#endregion═════════════════════════════════════════════════════════════════════
 
-return vora_ui
+return Modern
