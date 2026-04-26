@@ -23,15 +23,7 @@ local icons_module = nil
 local icons_cache = {}
 
 local function load_icons_module()
-    if icons_module then return icons_module end
-    local ok, result = pcall(function()
-        return loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua"))()
-    end)
-    if ok and result then
-        icons_module = result
-        pcall(function() icons_module.SetIconsType("lucide") end)
-    end
-    return icons_module
+    return nil
 end
 
 local function get_icon(name, fallback)
@@ -71,9 +63,8 @@ local default_icons = {
     dropdown_arrow  = "rbxassetid://111626678408582",
 }
 
--- Custom Logo Image
-local modern_img      = writefile("modern_logo.png", game:HttpGet("https://github.com/Andrazx23/voralib/blob/main/Modern.G7_20260405143108.png?raw=true"))
-local modern_logo     = getcustomasset("modern_logo.png")
+-- Custom Logo Image (fallback, no external fetch)
+local modern_logo     = "rbxassetid://10709768141"
 
 local function resolve_image(imageInput)
     if not imageInput then
@@ -89,25 +80,7 @@ local function resolve_image(imageInput)
     return modern_logo
 end
 
-
-
-local function resolve_image(imageInput)
-    if not imageInput then
-        return modern_logo
-    end
-    local inputStr = tostring(imageInput)
-    if inputStr:match("^rbxassetid://") or inputStr:match("^rbxasset://") or inputStr:match("^http") then
-        return inputStr
-    end
-    if inputStr:match("^%d+$") then
-        return "rbxassetid://" .. inputStr
-    end
-    return modern_logo
-end
-
-
-
---#endregion═════════════════════════════════════════════════════════════════════
+--#endregion
 
 
 --#region ══╗ Core ╔═════════════════════════════════════════════════════════════
@@ -3353,13 +3326,6 @@ function Modern:BuildUI()
             self:Toggle()
         end
     end))
-    
-    -- AutoLoad config if enabled
-    if self.config.AutoLoad then
-        task.delay(1, function()
-            pcall(function() self:LoadConfig(self._autoConfigName) end)
-        end)
-    end
     
     -- AutoLoad config if enabled
     if self.config.AutoLoad then
