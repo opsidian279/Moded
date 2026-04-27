@@ -882,6 +882,7 @@ function Modern:Window(config)
         {Name = "Gotham Medium", EnumFont = Enum.Font.GothamMedium, Family = "rbxasset://fonts/families/GothamSSm.json", Weight = Enum.FontWeight.Medium},
         {Name = "Montserrat", EnumFont = Enum.Font.Gotham, Family = "rbxasset://fonts/families/Montserrat.json", Weight = Enum.FontWeight.SemiBold},
         {Name = "Nunito", EnumFont = Enum.Font.Gotham, Family = "rbxasset://fonts/families/Nunito.json", Weight = Enum.FontWeight.SemiBold},
+        {Name = "Luckiest Guy", EnumFont = Enum.Font.Gotham, Family = "rbxasset://fonts/families/LuckiestGuy.json", Weight = Enum.FontWeight.Regular},
         {Name = "Bodoni", EnumFont = Enum.Font.Bodoni},
         {Name = "Garamond", EnumFont = Enum.Font.Garamond},
         {Name = "Source Sans", EnumFont = Enum.Font.SourceSans, Family = "rbxasset://fonts/families/SourceSansPro.json", Weight = Enum.FontWeight.SemiBold},
@@ -3256,6 +3257,141 @@ function Modern:LoadConfig(fileName)
     return true, path
 end
 
+function Modern:CreateConfigFile(fileName)
+    if not writefile then
+        return false, "writefile API is unavailable in this executor."
+    end
+
+    local configName = sanitize_config_name(fileName)
+    local okFolder, folderPath = ensure_config_folder(self.config.ConfigFolder)
+    local filePath = get_config_filename(configName)
+    if okFolder then
+        folderPath = folderPath:gsub("[\\/]+$", "")
+        filePath = folderPath .. "/" .. filePath
+    end
+
+    local payload = {
+        version = 1,
+        ui = self.config.Name,
+        controls = {}
+    }
+    local encoded = http_service:JSONEncode(payload)
+
+    local okWrite, errWrite = pcall(function()
+        writefile(filePath, encoded)
+    end)
+    if not okWrite then
+        return false, "Failed to create config file: " .. tostring(errWrite)
+    end
+
+    self._configPathHints[configName] = filePath
+    return true, filePath
+end
+
+function Modern:CreateConFigFile(fileName)
+    return self:CreateConfigFile(fileName)
+end
+
+function Modern:DeleteConfigFile(fileName)
+    if not delfile then
+        return false, "delfile API is unavailable in this executor."
+    end
+
+    local configName = sanitize_config_name(fileName)
+    local readableCandidates = get_readable_config_paths(configName, self.config.ConfigFolder)
+    local deleted = false
+    local lastError = nil
+
+    for _, candidatePath in ipairs(readableCandidates) do
+        local canDelete = true
+        if isfile then
+            local okExists, exists = pcall(function()
+                return isfile(candidatePath)
+            end)
+            canDelete = okExists and exists == true
+        end
+
+        if canDelete then
+            local okDelete, errDelete = pcall(function()
+                delfile(candidatePath)
+            end)
+            if okDelete then
+                deleted = true
+                break
+            else
+                lastError = errDelete
+            end
+        end
+    end
+
+    if not deleted then
+        return false, "Failed to delete config file: " .. tostring(lastError or "not found")
+    end
+
+    self._configPathHints[sanitize_config_name(fileName)] = nil
+    return true
+end
+
+function Modern:ResetSlotConfig(fileName)
+    local configName = sanitize_config_name(fileName)
+    self._configPathHints[configName] = nil
+    pcall(function()
+        self:DeleteConfigFile(configName)
+    end)
+    return self:CreateConfigFile(configName)
+end
+
+function Modern:listConfig()
+    local folder = get_config_folder(self.config.ConfigFolder)
+    folder = folder:gsub("[\\/]+$", "")
+
+    if not isfolder then
+        return false, "isfolder API is unavailable in this executor."
+    end
+
+    local okFolder, folderExists = pcall(function()
+        return isfolder(folder)
+    end)
+    if not okFolder then
+        return false, "Failed to check config folder existence."
+    end
+    if not folderExists then
+        return true, {}
+    end
+
+    local filePaths = nil
+    if type(listfiles) == "function" then
+        local ok, result = pcall(listfiles, folder)
+        if ok and type(result) == "table" then
+            filePaths = result
+        end
+    end
+    if not filePaths and type(listdir) == "function" then
+        local ok, result = pcall(listdir, folder)
+        if ok and type(result) == "table" then
+            filePaths = {}
+            for _, entry in ipairs(result) do
+                table.insert(filePaths, folder .. "/" .. entry)
+            end
+        end
+    end
+
+    if not filePaths then
+        return false, "Unable to enumerate config folder contents."
+    end
+
+    local configs = {}
+    for _, path in ipairs(filePaths) do
+        local fileName = path:match("([^\\/]+)%.json$")
+        if fileName then
+            table.insert(configs, fileName)
+        end
+    end
+
+    table.sort(configs)
+    return true, configs
+end
+
 function Modern:BuildUI()
     self.screen_gui = create("ScreenGui", {
         Name = "Modern",
@@ -3865,7 +4001,7 @@ function Modern:_ResizeLayout(newWidth, newHeight)
     local content_start_x = 198 * scale_factor
     local content_right_pad = 7 * scale_factor
     local search_w = 214 * scale_factor
-    local search_right_pad = 12 * scale_factor
+    local search_right_pad = 74 * scale_factor
 
     self.main_frame.Size = UDim2.new(0, newWidth, 0, newHeight)
 
@@ -3925,7 +4061,7 @@ function Modern:BuildMainFrame()
     local headerAvatarSize = 30 * scale_factor
     local headerAvatarGap = 10 * scale_factor
     local searchWidth = 214 * scale_factor
-    local searchRightPadding = 12 * scale_factor
+    local searchRightPadding = 74 * scale_factor
     local contentStartX = 198 * scale_factor
     local contentRightPadding = 7 * scale_factor
     local sectionScrollHeight = 441 * scale_factor
