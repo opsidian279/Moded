@@ -4317,18 +4317,19 @@ function Modern:BuildMainFrame()
     })
 
     self.minimize_btn = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(22, 22, 22), AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -12 * scale_factor, 0, 32 * scale_factor),
+        BackgroundColor3 = Color3.fromRGB(22, 22, 22), AnchorPoint = Vector2.new(0, 0.5),
+        Position = UDim2.new(0, 12 * scale_factor, 0, 32 * scale_factor),
         Size = UDim2.new(0, 20 * scale_factor, 0, 20 * scale_factor),
         ZIndex = 3, Parent = self.main_frame
     })
     create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = self.minimize_btn})
     create("UIStroke", {Color = Color3.fromRGB(38, 38, 38), Thickness = 1, Parent = self.minimize_btn})
-    create("ImageLabel", {
-        Image = default_icons.close, ImageColor3 = Color3.fromRGB(75, 75, 75),
+    create("TextLabel", {
+        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+        Text = "-", TextColor3 = Color3.fromRGB(75, 75, 75),
         BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0.55, 0, 0.55, 0),
-        ZIndex = 4, Parent = self.minimize_btn
+        Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0.8, 0, 0.8, 0),
+        TextSize = 16 * scale_factor, ZIndex = 4, Parent = self.minimize_btn
     })
     local minimize_click = create("TextButton", {
         Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
@@ -4337,16 +4338,16 @@ function Modern:BuildMainFrame()
     minimize_click.MouseButton1Click:Connect(function() self:Toggle() end)
     minimize_click.MouseEnter:Connect(function()
         tween_to(self.minimize_btn, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.15)
-        tween_to(self.minimize_btn:FindFirstChildOfClass("ImageLabel"), {ImageColor3 = Color3.fromRGB(160, 60, 60)}, 0.15)
+        tween_to(self.minimize_btn:FindFirstChildOfClass("TextLabel"), {TextColor3 = Color3.fromRGB(160, 60, 60)}, 0.15)
     end)
     minimize_click.MouseLeave:Connect(function()
         tween_to(self.minimize_btn, {BackgroundColor3 = Color3.fromRGB(22, 22, 22)}, 0.15)
-        tween_to(self.minimize_btn:FindFirstChildOfClass("ImageLabel"), {ImageColor3 = Color3.fromRGB(75, 75, 75)}, 0.15)
+        tween_to(self.minimize_btn:FindFirstChildOfClass("TextLabel"), {TextColor3 = Color3.fromRGB(75, 75, 75)}, 0.15)
     end)
 
     self.destroy_btn = create("Frame", {
         BackgroundColor3 = Color3.fromRGB(22, 22, 22), AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -42 * scale_factor, 0, 32 * scale_factor),
+        Position = UDim2.new(1, -12 * scale_factor, 0, 32 * scale_factor),
         Size = UDim2.new(0, 20 * scale_factor, 0, 20 * scale_factor),
         ZIndex = 3, Parent = self.main_frame
     })
@@ -4968,8 +4969,8 @@ end
 
 function Modern:BuildNotificationHolder()
     self.notification_holder = create("Frame", {
-        BackgroundTransparency = 1, Position = UDim2.new(1, -20 * scale_factor, 0.5, 0),
-        AnchorPoint = Vector2.new(1, 0.5), Size = UDim2.new(0, 300 * scale_factor, 0, 400),
+        BackgroundTransparency = 1, Position = UDim2.new(0, 20 * scale_factor, 0.5, 0),
+        AnchorPoint = Vector2.new(0, 0.5), Size = UDim2.new(0, 300 * scale_factor, 0, 400),
         Parent = self.screen_gui
     })
     create("UIListLayout", {Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center, Parent = self.notification_holder})
@@ -5017,7 +5018,7 @@ function Modern:Notify(config)
     
     local notificationFrame = create("Frame", {
         BackgroundColor3 = Color3.fromRGB(14, 14, 14),
-        Position = UDim2.new(1.25, 0, 0, 0),
+        Position = UDim2.new(-0.25, 0, 0, 0),
         Size = UDim2.new(0, notifWidth, 0, notifHeight),
         BackgroundTransparency = 0.18,
         ClipsDescendants = true,
@@ -5170,7 +5171,7 @@ function Modern:Notify(config)
             if notifDescription then
                 tween_to(notifDescription, {TextTransparency = 1}, 0.2)
             end
-            tween_to(notificationFrame, {Position = UDim2.new(1.25, 0, 0, 0), BackgroundTransparency = 1}, 0.38, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+            tween_to(notificationFrame, {Position = UDim2.new(-0.25, 0, 0, 0), BackgroundTransparency = 1}, 0.38, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
             tween_to(uiScaleRef, {Scale = 0.9}, 0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
             task.wait(0.4)
             if notificationFrame and notificationFrame.Parent then
@@ -5253,7 +5254,7 @@ function Modern:AddSection(config)
     
     self:_TrackConnection(sectionObj.tab_layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(update_container_size))
     
-    if not isSectionless then
+    if not isSectionless and expandButtonImg then
         self:_TrackConnection(expandButtonImg.MouseButton1Click:Connect(function()
             sectionObj.isExpanded = not sectionObj.isExpanded
             tween_to(expandButtonImg, {Rotation = sectionObj.isExpanded and 0 or -90}, 0.25)
