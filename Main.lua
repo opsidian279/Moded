@@ -808,6 +808,7 @@ function Modern:Window(config)
     self.config.Uitransparent = config.Uitransparent or 0
     self.config.ShowUser = config.ShowUser ~= false
     self.config.Search = config.Search ~= false
+    self.config.Watermark = config.Watermark
     
     -- Config system
     local cfg = config.Config or {}
@@ -3742,13 +3743,73 @@ function Modern:BuildWatermark()
     make_draggable(self.watermark_frame, nil, self)
 end
 
+function Modern:Watermark(config)
+    config = config or {}
+
+    self._watermarkConfig = {
+        Text = config.Text or config.text or "{name} | {time} | {fps} FPS | {ping} ms",
+        Position = config.Position or config.position,
+        Visible = config.Visible ~= false,
+        BackgroundTransparency = config.Transparent or config.BackgroundTransparency or self.config.Uitransparent or 0,
+        Size = config.Size or config.size,
+        Image = config.Image and resolve_image(config.Image) or nil,
+        Font = config.Font or config.font,
+        TextColor = config.TextColor or config.TextColor3 or Color3.new(1, 1, 1),
+        Color = config.Color or config.color or self.config.AccentColor or Color3.fromRGB(0, 200, 255),
+        UpdateInterval = config.UpdateInterval or config.updateInterval or 0.6,
+        Callback = config.Callback or config.callback
+    }
+
+    if not self.watermark_frame or not self.watermark_frame.Parent then
+        self:BuildWatermark()
+    end
+
+    if self.watermark_frame then
+        self.watermark_frame.Visible = self._watermarkConfig.Visible
+        self.watermark_frame.BackgroundTransparency = self._watermarkConfig.BackgroundTransparency
+
+        if self._watermarkConfig.Position then
+            self.watermark_frame.Position = self._watermarkConfig.Position
+        end
+        if self._watermarkConfig.Size then
+            self.watermark_frame.Size = self._watermarkConfig.Size
+        end
+
+        if self._watermarkConfig.Image then
+            for _, child in ipairs(self.watermark_frame:GetChildren()) do
+                if child:IsA("ImageLabel") and child.Name ~= "WaterMarkIcon" then
+                    child.Image = self._watermarkConfig.Image
+                    break
+                end
+            end
+        end
+    end
+
+    if self.watermark_textLabel then
+        self.watermark_textLabel.TextColor3 = self._watermarkConfig.TextColor
+        if self._watermarkConfig.Font then
+            pcall(function()
+                self.watermark_textLabel.Font = self._watermarkConfig.Font
+            end)
+        end
+    end
+
+    self._watermarkUpdateAccumulator = self._watermarkConfig.UpdateInterval
+    self:_UpdateWatermark(0)
+
+    return self.watermark_frame
+end
+
 function Modern:_UpdateWatermark(dt)
     if not (self.watermark_frame and self.watermark_frame.Parent and self.watermark_textLabel and self.watermark_textLabel.Parent) then
         return
     end
 
+    local cfg = self._watermarkConfig or {}
+    local interval = cfg.UpdateInterval or 0.6
+
     self._watermarkUpdateAccumulator = (self._watermarkUpdateAccumulator or 0) + (tonumber(dt) or 0)
-    if self._watermarkUpdateAccumulator < 0.6 then
+    if self._watermarkUpdateAccumulator < interval then
         return
     end
     self._watermarkUpdateAccumulator = 0
@@ -3759,7 +3820,25 @@ function Modern:_UpdateWatermark(dt)
     pcall(function()
         ping_now = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
     end)
-    local newText = self.config.Name .. " | " .. timeNow .. " | " .. fpsCount .. " FPS | " .. ping_now .. " ms"
+
+    local newText
+    if type(cfg.Callback) == "function" then
+        local ok, result = pcall(cfg.Callback, timeNow, fpsCount, ping_now, self.config.Name)
+        if ok and result then
+            newText = tostring(result)
+        else
+            newText = self.config.Name .. " | " .. timeNow .. " | " .. fpsCount .. " FPS | " .. ping_now .. " ms"
+        end
+    elseif cfg.Text then
+        newText = cfg.Text
+            :gsub("{name}", tostring(self.config.Name))
+            :gsub("{time}", timeNow)
+            :gsub("{fps}", tostring(fpsCount))
+            :gsub("{ping}", tostring(ping_now))
+    else
+        newText = self.config.Name .. " | " .. timeNow .. " | " .. fpsCount .. " FPS | " .. ping_now .. " ms"
+    end
+
     if self.watermark_textLabel.Text ~= newText then
         self.watermark_textLabel.Text = newText
     end
@@ -5232,33 +5311,72 @@ function Modern:AddSection(config)
                     Parent = groupObj.mainFrame
                 })
                 
-                toggleObj.switchFrame = create("Frame", {
-                    BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
-                    Position = UDim2.new(1, -44 * scale_factor, 0, yPosition),
-                    Size = UDim2.new(0, 36 * scale_factor, 0, 22 * scale_factor), Parent = groupObj.mainFrame
-                })
-                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleObj.switchFrame})
+                local isCheckbox = toggleConfig.Type == "Checkbox"
+                local toggleClickButton
                 
-                toggleObj.circleFrame = create("Frame", {
-                    BackgroundColor3 = toggleObj.value and Color3.new(1, 1, 1) or Color3.fromRGB(75, 75, 75),
-                    Position = toggleObj.value and UDim2.new(0.462, 0, 0.143, 0) or UDim2.new(0.0104, 0, 0.143, 0),
-                    Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor), Parent = toggleObj.switchFrame
-                })
-                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleObj.circleFrame})
-                
-                local toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.switchFrame})
+                if isCheckbox then
+                    toggleObj.checkboxFrame = create("Frame", {
+                        BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
+                        Position = UDim2.new(1, -36 * scale_factor, 0, yPosition + 1 * scale_factor),
+                        Size = UDim2.new(0, 20 * scale_factor, 0, 20 * scale_factor),
+                        Parent = groupObj.mainFrame
+                    })
+                    create("UICorner", {CornerRadius = UDim.new(0, 4 * scale_factor), Parent = toggleObj.checkboxFrame})
+                    
+                    toggleObj.checkmark = create("TextLabel", {
+                        Text = "✓",
+                        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+                        TextColor3 = Color3.new(1, 1, 1),
+                        TextSize = 14 * scale_factor,
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 1, 0),
+                        TextXAlignment = Enum.TextXAlignment.Center,
+                        TextYAlignment = Enum.TextYAlignment.Center,
+                        Visible = toggleObj.value,
+                        Parent = toggleObj.checkboxFrame
+                    })
+                    
+                    toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.checkboxFrame})
+                else
+                    toggleObj.switchFrame = create("Frame", {
+                        BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
+                        Position = UDim2.new(1, -44 * scale_factor, 0, yPosition),
+                        Size = UDim2.new(0, 36 * scale_factor, 0, 22 * scale_factor), Parent = groupObj.mainFrame
+                    })
+                    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleObj.switchFrame})
+                    
+                    toggleObj.circleFrame = create("Frame", {
+                        BackgroundColor3 = toggleObj.value and Color3.new(1, 1, 1) or Color3.fromRGB(75, 75, 75),
+                        Position = toggleObj.value and UDim2.new(0.462, 0, 0.143, 0) or UDim2.new(0.0104, 0, 0.143, 0),
+                        Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor), Parent = toggleObj.switchFrame
+                    })
+                    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleObj.circleFrame})
+                    
+                    toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.switchFrame})
+                end
                 
                 toggleObj.Changed = toggleConfig.Callback
                 
                 function toggleObj:Set(value, silent)
                     toggleObj.value = value == true
                     toggleObj.Value = toggleObj.value
-                    if toggleObj.value then
-                        tween_to(toggleObj.switchFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
-                        tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.462, 0, 0.143, 0), BackgroundColor3 = Color3.new(1, 1, 1)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                    if isCheckbox then
+                        if toggleObj.value then
+                            tween_to(toggleObj.checkboxFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
+                        else
+                            tween_to(toggleObj.checkboxFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        end
+                        if toggleObj.checkmark then
+                            toggleObj.checkmark.Visible = toggleObj.value
+                        end
                     else
-                        tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
-                        tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.0104, 0, 0.143, 0), BackgroundColor3 = Color3.fromRGB(75, 75, 75)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                        if toggleObj.value then
+                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
+                            tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.462, 0, 0.143, 0), BackgroundColor3 = Color3.new(1, 1, 1)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                        else
+                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                            tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.0104, 0, 0.143, 0), BackgroundColor3 = Color3.fromRGB(75, 75, 75)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                        end
                     end
                     if not silent and toggleObj.Changed then
                         toggleObj.Changed(toggleObj.value)
@@ -5284,6 +5402,9 @@ function Modern:AddSection(config)
                     end
                     if toggleObj.switchFrame then
                         toggleObj.switchFrame.Visible = isVisible
+                    end
+                    if toggleObj.checkboxFrame then
+                        toggleObj.checkboxFrame.Visible = isVisible
                     end
                 end
                 
@@ -5934,7 +6055,7 @@ function Modern:AddSection(config)
                 if dropdownConfig.Multi == true then
                     return groupObj:AddMultiDropdown(dropdownConfig)
                 end
-                dropdownConfig.Name = dropdownConfig.Name or dropdownConfig.Text or "Dropdown"
+                dropdownConfig.Name = dropdownConfig.Name or dropdownConfig.Title or dropdownConfig.Text or "Dropdown"
                 dropdownConfig.Options = dropdownConfig.Options or dropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 dropdownConfig.OptionsProvider = dropdownConfig.OptionsProvider or dropdownConfig.GetOptions
                 local dropdownHasProvider = type(dropdownConfig.OptionsProvider) == "function"
@@ -6353,7 +6474,7 @@ function Modern:AddSection(config)
                 end
                 
                 multiDropdownConfig = multiDropdownConfig or {}
-                multiDropdownConfig.Name = multiDropdownConfig.Name or "Multi Dropdown"
+                multiDropdownConfig.Name = multiDropdownConfig.Name or multiDropdownConfig.Title or "Multi Dropdown"
                 multiDropdownConfig.Options = multiDropdownConfig.Options or multiDropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 multiDropdownConfig.OptionsProvider = multiDropdownConfig.OptionsProvider or multiDropdownConfig.GetOptions
                 local multiDropdownHasProvider = type(multiDropdownConfig.OptionsProvider) == "function"
@@ -6368,6 +6489,7 @@ function Modern:AddSection(config)
                 multiDropdownConfig.Flag = multiDropdownConfig.Flag or createAutoFlag(multiDropdownConfig.Name)
                 local multiDropdownOptionsSource = multiDropdownConfig.Options
                 if type(multiDropdownConfig.OptionsProvider) == "function" then
+                    local ok, providedOptions = pcall(multiDropdownConfig.OptionsProvider)
                     if ok and type(providedOptions) == "table" then
                         multiDropdownOptionsSource = providedOptions
                     end
@@ -7366,6 +7488,9 @@ function Modern:SetAccentColor(color)
                         if element.switchFrame and element.value == true then
                             element.switchFrame.BackgroundColor3 = color
                         end
+                        if element.checkboxFrame and element.value == true then
+                            element.checkboxFrame.BackgroundColor3 = color
+                        end
                         if element.fillFrame then
                             element.fillFrame.BackgroundColor3 = color
                         end
@@ -7505,6 +7630,224 @@ function Modern:Destroy()
     if rawget(sharedEnv, RUNTIME_INSTANCE_KEY) == self then
         rawset(sharedEnv, RUNTIME_INSTANCE_KEY, nil)
     end
+end
+
+function Modern:Dialog(config)
+    config = config or {}
+    local dialogTitle = config.Title or config.Name or "Dialog"
+    local dialogContent = config.Content or config.Description or config.Text or ""
+    local dialogButtons = config.Buttons or {}
+    if #dialogButtons == 0 then
+        dialogButtons = {{Text = "OK", Primary = true}}
+    end
+    local dialogAccent = config.AccentColor or self.config.AccentColor or Color3.fromRGB(0, 200, 255)
+    local dialogIcon = config.Icon
+    local dismissOnBackdrop = config.DismissOnBackdrop ~= false
+    local dialogWidth = math.clamp(tonumber(config.Width) or 340, 260, 520) * scale_factor
+    local dialogPadding = 18 * scale_factor
+
+    local dialogScreenGui = create("ScreenGui", {
+        Name = "ModernDialog",
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+        DisplayOrder = 10000
+    })
+
+    if syn then
+        syn.protect_gui(dialogScreenGui)
+        dialogScreenGui.Parent = core_gui
+    elseif gethui then
+        dialogScreenGui.Parent = core_gui
+    else
+        dialogScreenGui.Parent = core_gui
+    end
+
+    local backdrop = create("Frame", {
+        Name = "DialogBackdrop",
+        BackgroundColor3 = Color3.new(0, 0, 0),
+        BackgroundTransparency = 0.45,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 1, 0),
+        ZIndex = 1,
+        Parent = dialogScreenGui
+    })
+
+    local card = create("Frame", {
+        Name = "DialogCard",
+        BackgroundColor3 = Color3.fromRGB(16, 16, 16),
+        BorderSizePixel = 0,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, dialogWidth, 0, 0),
+        ClipsDescendants = true,
+        ZIndex = 2,
+        Parent = dialogScreenGui
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 12), Parent = card})
+    create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Thickness = 1, Parent = card})
+
+    local contentLayoutY = dialogPadding
+
+    if dialogIcon and tostring(dialogIcon) ~= "" then
+        local iconSize = 36 * scale_factor
+        create("ImageLabel", {
+            Image = resolve_image(dialogIcon),
+            BackgroundTransparency = 1,
+            AnchorPoint = Vector2.new(0.5, 0),
+            Position = UDim2.new(0.5, 0, 0, contentLayoutY),
+            Size = UDim2.new(0, iconSize, 0, iconSize),
+            ZIndex = 3,
+            Parent = card
+        })
+        contentLayoutY = contentLayoutY + iconSize + 10 * scale_factor
+    end
+
+    local titleLabel = create("TextLabel", {
+        Name = "DialogTitle",
+        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+        TextColor3 = Color3.new(1, 1, 1),
+        Text = dialogTitle,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, dialogPadding, 0, contentLayoutY),
+        Size = UDim2.new(1, -dialogPadding * 2, 0, 22 * scale_factor),
+        TextSize = 16 * scale_factor,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        ZIndex = 3,
+        Parent = card
+    })
+    contentLayoutY = contentLayoutY + 26 * scale_factor
+
+    local contentTextBounds = text_service:GetTextSize(
+        dialogContent,
+        13 * scale_factor,
+        Enum.Font.GothamSemibold,
+        Vector2.new(dialogWidth - dialogPadding * 2, math.huge)
+    )
+    local contentHeight = math.max(18 * scale_factor, contentTextBounds.Y)
+
+    local contentLabel = create("TextLabel", {
+        Name = "DialogContent",
+        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular),
+        TextColor3 = Color3.fromRGB(170, 170, 170),
+        Text = dialogContent,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, dialogPadding, 0, contentLayoutY),
+        Size = UDim2.new(1, -dialogPadding * 2, 0, contentHeight),
+        TextSize = 13 * scale_factor,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        TextWrapped = true,
+        ZIndex = 3,
+        Parent = card
+    })
+    contentLayoutY = contentLayoutY + contentHeight + 18 * scale_factor
+
+    local btnCount = #dialogButtons
+    local btnHeight = 34 * scale_factor
+    local btnGap = 10 * scale_factor
+    local availableWidth = dialogWidth - dialogPadding * 2
+    local btnWidth = math.max(80 * scale_factor, (availableWidth - (btnCount - 1) * btnGap) / btnCount)
+
+    local dialogObj = {
+        _screenGui = dialogScreenGui,
+        _card = card,
+        _buttons = {},
+        _closed = false,
+        _result = nil
+    }
+
+    for i, btnConfig in ipairs(dialogButtons) do
+        local btnText = btnConfig.Text or btnConfig.Name or "Button"
+        local isPrimary = btnConfig.Primary == true
+        local btnFrame = create("TextButton", {
+            Name = "DialogButton_" .. tostring(i),
+            Text = "",
+            AutoButtonColor = false,
+            BackgroundColor3 = isPrimary and dialogAccent or Color3.fromRGB(32, 32, 32),
+            Position = UDim2.new(0, dialogPadding + (i - 1) * (btnWidth + btnGap), 0, contentLayoutY),
+            Size = UDim2.new(0, btnWidth, 0, btnHeight),
+            ZIndex = 3,
+            Parent = card
+        })
+        create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = btnFrame})
+        create("UIStroke", {
+            Color = isPrimary and dialogAccent:Lerp(Color3.fromRGB(20, 20, 20), 0.4) or Color3.fromRGB(50, 50, 50),
+            Thickness = 1,
+            Parent = btnFrame
+        })
+
+        local btnTextLabel = create("TextLabel", {
+            FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+            TextColor3 = isPrimary and Color3.new(1, 1, 1) or Color3.fromRGB(190, 190, 190),
+            Text = btnText,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            TextSize = 13 * scale_factor,
+            ZIndex = 4,
+            Parent = btnFrame
+        })
+
+        btnFrame.MouseEnter:Connect(function()
+            if not dialogObj._closed then
+                tween_to(btnFrame, {BackgroundColor3 = isPrimary and dialogAccent:Lerp(Color3.new(1, 1, 1), 0.15) or Color3.fromRGB(48, 48, 48)}, 0.15)
+            end
+        end)
+        btnFrame.MouseLeave:Connect(function()
+            if not dialogObj._closed then
+                tween_to(btnFrame, {BackgroundColor3 = isPrimary and dialogAccent or Color3.fromRGB(32, 32, 32)}, 0.15)
+            end
+        end)
+
+        btnFrame.MouseButton1Click:Connect(function()
+            if dialogObj._closed then return end
+            dialogObj._result = btnConfig.ReturnValue or btnConfig.Value or btnText
+            dialogObj:Close()
+            if type(btnConfig.Callback) == "function" then
+                pcall(btnConfig.Callback, dialogObj._result, dialogObj)
+            end
+            if type(config.Callback) == "function" then
+                pcall(config.Callback, dialogObj._result, dialogObj)
+            end
+        end)
+
+        table.insert(dialogObj._buttons, btnFrame)
+    end
+
+    contentLayoutY = contentLayoutY + btnHeight + dialogPadding
+
+    tween_to(card, {Size = UDim2.new(0, dialogWidth, 0, contentLayoutY)}, 0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+    function dialogObj:SetVisible(visible)
+        if dialogObj._closed then return end
+        dialogScreenGui.Enabled = visible == true
+    end
+
+    function dialogObj:Close()
+        if dialogObj._closed then return end
+        dialogObj._closed = true
+        tween_to(backdrop, {BackgroundTransparency = 1}, 0.18)
+        tween_to(card, {Size = UDim2.new(0, dialogWidth, 0, 0)}, 0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+        task.delay(0.22, function()
+            if dialogScreenGui and dialogScreenGui.Parent then
+                dialogScreenGui:Destroy()
+            end
+        end)
+    end
+
+    if dismissOnBackdrop then
+        backdrop.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                if not dialogObj._closed then
+                    dialogObj._result = nil
+                    dialogObj:Close()
+                end
+            end
+        end)
+    end
+
+    return dialogObj
 end
 
 function Modern.Demo()
