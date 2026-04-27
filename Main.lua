@@ -4208,6 +4208,49 @@ function Modern:BuildMainFrame()
         tween_to(self.minimize_btn:FindFirstChildOfClass("ImageLabel"), {ImageColor3 = Color3.fromRGB(75, 75, 75)}, 0.15)
     end)
 
+    self.destroy_btn = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(22, 22, 22), AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -42 * scale_factor, 0, 32 * scale_factor),
+        Size = UDim2.new(0, 20 * scale_factor, 0, 20 * scale_factor),
+        ZIndex = 3, Parent = self.main_frame
+    })
+    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = self.destroy_btn})
+    create("UIStroke", {Color = Color3.fromRGB(38, 38, 38), Thickness = 1, Parent = self.destroy_btn})
+    create("ImageLabel", {
+        Image = default_icons.close, ImageColor3 = Color3.fromRGB(175, 70, 70),
+        BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0.55, 0, 0.55, 0),
+        ZIndex = 4, Parent = self.destroy_btn
+    })
+    local destroy_click = create("TextButton", {
+        Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
+        ZIndex = 5, Parent = self.destroy_btn
+    })
+    destroy_click.MouseButton1Click:Connect(function()
+        self:Dialog({
+            Title = "Destroy Window?",
+            Content = "Are you sure you want to destroy the window?",
+            Buttons = {
+                {Text = "Cancel", Primary = false, ReturnValue = "Cancel"},
+                {Text = "Destroy", Primary = true, ReturnValue = "Destroy"}
+            },
+            DismissOnBackdrop = true,
+            Callback = function(result)
+                if result == "Destroy" then
+                    self:Destroy()
+                end
+            end
+        })
+    end)
+    destroy_click.MouseEnter:Connect(function()
+        tween_to(self.destroy_btn, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.15)
+        tween_to(self.destroy_btn:FindFirstChildOfClass("ImageLabel"), {ImageColor3 = Color3.fromRGB(255, 100, 100)}, 0.15)
+    end)
+    destroy_click.MouseLeave:Connect(function()
+        tween_to(self.destroy_btn, {BackgroundColor3 = Color3.fromRGB(22, 22, 22)}, 0.15)
+        tween_to(self.destroy_btn:FindFirstChildOfClass("ImageLabel"), {ImageColor3 = Color3.fromRGB(175, 70, 70)}, 0.15)
+    end)
+
     self.search_frame = create("Frame", {
         BackgroundColor3 = Color3.fromRGB(19, 19, 19),
         Position = UDim2.new(0, searchX, 0, 16 * scale_factor),
@@ -4789,8 +4832,8 @@ end
 
 function Modern:BuildNotificationHolder()
     self.notification_holder = create("Frame", {
-        BackgroundTransparency = 1, Position = UDim2.new(0, 20, 0.15, 0),
-        AnchorPoint = Vector2.new(0, 0.5), Size = UDim2.new(0, 300 * scale_factor, 0, 400),
+        BackgroundTransparency = 1, Position = UDim2.new(1, -20 * scale_factor, 0.5, 0),
+        AnchorPoint = Vector2.new(1, 0.5), Size = UDim2.new(0, 300 * scale_factor, 0, 400),
         Parent = self.screen_gui
     })
     create("UIListLayout", {Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, VerticalAlignment = Enum.VerticalAlignment.Center, Parent = self.notification_holder})
@@ -4838,7 +4881,7 @@ function Modern:Notify(config)
     
     local notificationFrame = create("Frame", {
         BackgroundColor3 = Color3.fromRGB(14, 14, 14),
-        Position = UDim2.new(-1.25, 0, 0, 0),
+        Position = UDim2.new(1.25, 0, 0, 0),
         Size = UDim2.new(0, notifWidth, 0, notifHeight),
         BackgroundTransparency = 0.18,
         ClipsDescendants = true,
@@ -4991,7 +5034,7 @@ function Modern:Notify(config)
             if notifDescription then
                 tween_to(notifDescription, {TextTransparency = 1}, 0.2)
             end
-            tween_to(notificationFrame, {Position = UDim2.new(-1.25, 0, 0, 0), BackgroundTransparency = 1}, 0.38, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+            tween_to(notificationFrame, {Position = UDim2.new(1.25, 0, 0, 0), BackgroundTransparency = 1}, 0.38, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
             tween_to(uiScaleRef, {Scale = 0.9}, 0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
             task.wait(0.4)
             if notificationFrame and notificationFrame.Parent then
@@ -5010,6 +5053,7 @@ end
 
 function Modern:AddSection(config)
     config = config or {}
+    local isSectionless = config.Sectionless == true
     config.Name = config.Name or "Section"
     config.Icon = get_icon(config.Icon, default_icons.section)
     
@@ -5019,38 +5063,43 @@ function Modern:AddSection(config)
     sectionObj.Library = self
     
     sectionObj.container = create("Frame", {
-        BackgroundTransparency = 1, Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor),
-        ClipsDescendants = true, Parent = self.section_scroll
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 160 * scale_factor, 0, isSectionless and 0 or 34 * scale_factor),
+        ClipsDescendants = true,
+        Parent = self.section_scroll
     })
     
-    sectionObj.mainFrame = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(16, 16, 16), Position = UDim2.new(0, 1, 0, 2),
-        Size = UDim2.new(0, 158 * scale_factor, 0, 30 * scale_factor), Parent = sectionObj.container
-    })
-    create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = sectionObj.mainFrame})
-    
-    create("ImageLabel", {
-        Image = config.Icon, BackgroundTransparency = 1,
-        Position = UDim2.new(0, 10, 0.5, -7.5 * scale_factor),
-        Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = sectionObj.mainFrame
-    })
-    
-    create("TextLabel", {
-        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-        TextColor3 = Color3.new(1, 1, 1), Text = config.Name, BackgroundTransparency = 1,
-        Position = UDim2.new(0, 33, 0.5, -9 * scale_factor), TextSize = 15.5 * scale_factor,
-        Size = UDim2.new(0, 84, 0, 18 * scale_factor), TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = sectionObj.mainFrame
-    })
-    
-    local expandButtonImg = create("ImageButton", {
-        Image = default_icons.expand, BackgroundTransparency = 1,
-        Position = UDim2.new(1, -24, 0.5, -8.5 * scale_factor),
-        Size = UDim2.new(0, 17 * scale_factor, 0, 17 * scale_factor), Parent = sectionObj.mainFrame
-    })
+    if not isSectionless then
+        sectionObj.mainFrame = create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(16, 16, 16), Position = UDim2.new(0, 1, 0, 2),
+            Size = UDim2.new(0, 158 * scale_factor, 0, 30 * scale_factor), Parent = sectionObj.container
+        })
+        create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = sectionObj.mainFrame})
+
+        create("ImageLabel", {
+            Image = config.Icon, BackgroundTransparency = 1,
+            Position = UDim2.new(0, 10, 0.5, -7.5 * scale_factor),
+            Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = sectionObj.mainFrame
+        })
+        
+        create("TextLabel", {
+            FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+            TextColor3 = Color3.new(1, 1, 1), Text = config.Name, BackgroundTransparency = 1,
+            Position = UDim2.new(0, 33, 0.5, -9 * scale_factor), TextSize = 15.5 * scale_factor,
+            Size = UDim2.new(0, 84, 0, 18 * scale_factor), TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = sectionObj.mainFrame
+        })
+        
+        local expandButtonImg = create("ImageButton", {
+            Image = default_icons.expand, BackgroundTransparency = 1,
+            Position = UDim2.new(1, -24, 0.5, -8.5 * scale_factor),
+            Size = UDim2.new(0, 17 * scale_factor, 0, 17 * scale_factor), Parent = sectionObj.mainFrame
+        })
+    end
     
     sectionObj.tab_holder = create("Frame", {
-        BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 40 * scale_factor),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 10, 0, isSectionless and 0 or 40 * scale_factor),
         Size = UDim2.new(0, 148 * scale_factor, 0, 0), ClipsDescendants = true, Parent = sectionObj.container
     })
     
@@ -5059,23 +5108,27 @@ function Modern:AddSection(config)
     local function update_container_size()
         local tabsHeight = sectionObj.tab_layout.AbsoluteContentSize.Y
         sectionObj.tab_holder.Size = UDim2.new(0, 148 * scale_factor, 0, tabsHeight)
-        if sectionObj.isExpanded then
+        if isSectionless then
+            tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, tabsHeight + 10)}, 0.25)
+        elseif sectionObj.isExpanded then
             tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor + tabsHeight + 10)}, 0.25)
         end
     end
     
     self:_TrackConnection(sectionObj.tab_layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(update_container_size))
     
-    self:_TrackConnection(expandButtonImg.MouseButton1Click:Connect(function()
-        sectionObj.isExpanded = not sectionObj.isExpanded
-        tween_to(expandButtonImg, {Rotation = sectionObj.isExpanded and 0 or -90}, 0.25)
-        if sectionObj.isExpanded then
-            local tabsHeight = sectionObj.tab_layout.AbsoluteContentSize.Y
-            tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor + tabsHeight + 10)}, 0.25)
-        else
-            tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor)}, 0.25)
-        end
-    end))
+    if not isSectionless then
+        self:_TrackConnection(expandButtonImg.MouseButton1Click:Connect(function()
+            sectionObj.isExpanded = not sectionObj.isExpanded
+            tween_to(expandButtonImg, {Rotation = sectionObj.isExpanded and 0 or -90}, 0.25)
+            if sectionObj.isExpanded then
+                local tabsHeight = sectionObj.tab_layout.AbsoluteContentSize.Y
+                tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor + tabsHeight + 10)}, 0.25)
+            else
+                tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor)}, 0.25)
+            end
+        end))
+    end
 
     function sectionObj:AddTab(tabConfig)
         tabConfig = tabConfig or {}
@@ -6112,7 +6165,7 @@ function Modern:AddSection(config)
                 })
                 
                 local displayText = tostring(dropdownObj.value or "None")
-                local buttonWidth = math.max(70 * scale_factor, measure_text_width(displayText, 12 * scale_factor) + 30 * scale_factor)
+                local buttonWidth = math.max(80 * scale_factor, measure_text_width(displayText, 12 * scale_factor) + 36 * scale_factor)
                 
                 dropdownObj.button_frame = create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(32, 32, 32), Position = UDim2.new(1, -buttonWidth - 10, 0, yPosition),
@@ -6136,7 +6189,7 @@ function Modern:AddSection(config)
                     Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = dropdownObj.button_frame
                 })
                 
-                local dropdown_popup_w = math.max(180 * scale_factor, buttonWidth + 20 * scale_factor)
+                local dropdown_popup_w = math.max(220 * scale_factor, buttonWidth + 34 * scale_factor)
                 dropdownObj.optionHolderFrame = create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, dropdown_popup_w, 0, 0),
                     ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
@@ -6191,7 +6244,7 @@ function Modern:AddSection(config)
                     ZIndex = 10000, Parent = dropdownObj.optionScrollFrame
                 })
                 
-                local maxDropdownHeight = 200 * scale_factor
+                local maxDropdownHeight = 240 * scale_factor
                 local dropdownPositionUpdateConn = nil
 
                 local function closeDropdown(isInstant)
@@ -6340,7 +6393,6 @@ function Modern:AddSection(config)
                         local height = math.min(contentHeight, maxDropdownHeight)
                         tween_to(dropdownObj.optionHolderFrame, {Size = UDim2.new(0, dropdown_popup_w, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                         tween_to(dropdownObj.arrowImg, {Rotation = 180}, 0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                        task.defer(function() if search_textbox and search_textbox.Parent then search_textbox:CaptureFocus() end end)
                         if dropdownPositionUpdateConn then dropdownPositionUpdateConn() end
                         dropdownPositionUpdateConn = start_position_tracker(groupObj.Library, dropdownObj.button_frame, function()
                             if dropdownObj.isOpen then
@@ -7198,6 +7250,35 @@ function Modern:AddSection(config)
                 })
                 create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = colorPickerObj.pickerHolder})
                 create("UIStroke", {Color = Color3.fromRGB(50, 50, 50), Parent = colorPickerObj.pickerHolder})
+
+                local colorPickerCloseFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(26, 26, 26),
+                    Position = UDim2.new(1, -26 * scale_factor, 0, 6 * scale_factor),
+                    Size = UDim2.new(0, 18 * scale_factor, 0, 18 * scale_factor),
+                    ZIndex = 10002, Parent = colorPickerObj.pickerHolder
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = colorPickerCloseFrame})
+                local colorPickerCloseIcon = create("ImageLabel", {
+                    Image = default_icons.close, ImageColor3 = Color3.fromRGB(170, 170, 170),
+                    BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0.55, 0, 0.55, 0),
+                    ZIndex = 10003, Parent = colorPickerCloseFrame
+                })
+                local colorPickerCloseBtn = create("TextButton", {
+                    Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
+                    ZIndex = 10004, Parent = colorPickerCloseFrame
+                })
+                colorPickerCloseBtn.MouseButton1Click:Connect(function()
+                    closeColorPicker(false)
+                end)
+                colorPickerCloseBtn.MouseEnter:Connect(function()
+                    tween_to(colorPickerCloseFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.12)
+                    tween_to(colorPickerCloseIcon, {ImageColor3 = Color3.fromRGB(240, 240, 240)}, 0.12)
+                end)
+                colorPickerCloseBtn.MouseLeave:Connect(function()
+                    tween_to(colorPickerCloseFrame, {BackgroundColor3 = Color3.fromRGB(26, 26, 26)}, 0.12)
+                    tween_to(colorPickerCloseIcon, {ImageColor3 = Color3.fromRGB(170, 170, 170)}, 0.12)
+                end)
                 
                 -- Saturation/Value gradient box
                 colorPickerObj.svBox = create("Frame", {
@@ -7470,6 +7551,10 @@ function Modern:AddSection(config)
     
     table.insert(self.sections, sectionObj)
     return sectionObj
+end
+
+function Modern:AddTab(tabConfig)
+    return self:AddSection({Sectionless = true}):AddTab(tabConfig)
 end
 
 function Modern:SetAccentColor(color)
