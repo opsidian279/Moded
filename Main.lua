@@ -4317,8 +4317,8 @@ function Modern:BuildMainFrame()
     })
 
     self.minimize_btn = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(22, 22, 22), AnchorPoint = Vector2.new(0, 0.5),
-        Position = UDim2.new(0, 12 * scale_factor, 0, 32 * scale_factor),
+        BackgroundColor3 = Color3.fromRGB(22, 22, 22), AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -42 * scale_factor, 0, 32 * scale_factor),
         Size = UDim2.new(0, 20 * scale_factor, 0, 20 * scale_factor),
         ZIndex = 3, Parent = self.main_frame
     })
@@ -4424,7 +4424,7 @@ function Modern:BuildMainFrame()
     end))
     
     self.section_scroll = create("ScrollingFrame", {
-        BackgroundTransparency = 1, Position = UDim2.new(0, 17, 0, 75 * scale_factor),
+        BackgroundTransparency = 1, Position = UDim2.new(0, 4, 0, 75 * scale_factor),
         Size = UDim2.new(0, 162 * scale_factor, 0, sectionScrollHeight),
         ScrollBarThickness = 0, CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y, ClipsDescendants = true, Parent = self.main_frame
@@ -4517,6 +4517,7 @@ function Modern:BuildMainFrame()
         Size = UDim2.new(0, settingsPanelWidth, 0, 0),
         ClipsDescendants = true,
         Visible = false,
+        ZIndex = 10,
         Parent = self.main_frame
     })
     create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = self.settings_panel})
@@ -5191,6 +5192,7 @@ end
 function Modern:AddSection(config)
     config = config or {}
     local isSectionless = config.Sectionless == true
+    local noCollapse = config.NoCollapse == true
     config.Name = config.Name or "Section"
     config.Icon = get_icon(config.Icon, default_icons.section)
     
@@ -5227,11 +5229,14 @@ function Modern:AddSection(config)
             Parent = sectionObj.mainFrame
         })
         
-        local expandButtonImg = create("ImageButton", {
-            Image = default_icons.expand, BackgroundTransparency = 1,
-            Position = UDim2.new(1, -24, 0.5, -8.5 * scale_factor),
-            Size = UDim2.new(0, 17 * scale_factor, 0, 17 * scale_factor), Parent = sectionObj.mainFrame
-        })
+        local expandButtonImg
+        if not noCollapse then
+            expandButtonImg = create("ImageButton", {
+                Image = default_icons.expand, BackgroundTransparency = 1,
+                Position = UDim2.new(1, -24, 0.5, -8.5 * scale_factor),
+                Size = UDim2.new(0, 17 * scale_factor, 0, 17 * scale_factor), Parent = sectionObj.mainFrame
+            })
+        end
     end
     
     sectionObj.tab_holder = create("Frame", {
@@ -5247,8 +5252,10 @@ function Modern:AddSection(config)
         sectionObj.tab_holder.Size = UDim2.new(0, 148 * scale_factor, 0, tabsHeight)
         if isSectionless then
             tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, tabsHeight + 10)}, 0.25)
-        elseif sectionObj.isExpanded then
+        elseif sectionObj.isExpanded or noCollapse then
             tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor + tabsHeight + 10)}, 0.25)
+        else
+            tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor)}, 0.25)
         end
     end
     
@@ -7401,12 +7408,15 @@ function Modern:AddSection(config)
                     Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0.55, 0, 0.55, 0),
                     ZIndex = 10003, Parent = colorPickerCloseFrame
                 })
+                local closeColorPicker
                 local colorPickerCloseBtn = create("TextButton", {
                     Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
                     ZIndex = 10004, Parent = colorPickerCloseFrame
                 })
                 colorPickerCloseBtn.MouseButton1Click:Connect(function()
-                    closeColorPicker(false)
+                    if closeColorPicker then
+                        closeColorPicker(false)
+                    end
                 end)
                 colorPickerCloseBtn.MouseEnter:Connect(function()
                     tween_to(colorPickerCloseFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.12)
@@ -7586,7 +7596,7 @@ function Modern:AddSection(config)
                 })
                 
                 local colorPickerPositionConn = nil
-                local function closeColorPicker(isInstant)
+                closeColorPicker = function(isInstant)
                     colorPickerObj.isOpen = false
                     if colorPickerPositionConn then
                         colorPickerPositionConn()
@@ -7691,7 +7701,13 @@ function Modern:AddSection(config)
 end
 
 function Modern:AddTab(tabConfig)
-    return self:AddSection({Sectionless = true}):AddTab(tabConfig)
+    tabConfig = tabConfig or {}
+    local sectionConfig = {
+        Name = tabConfig.Name or "Section",
+        Icon = tabConfig.Icon,
+        NoCollapse = true
+    }
+    return self:AddSection(sectionConfig):AddTab(tabConfig)
 end
 
 function Modern:SetAccentColor(color)
