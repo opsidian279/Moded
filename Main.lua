@@ -19,11 +19,43 @@ local lighting          = safe_clone(game:GetService("Lighting"))
 
 --#region ══╗ Icons System ╔═════════════════════════════════════════════════════
 
-local icons_module = nil
+
+local BASE = "https://raw.githubusercontent.com/nhfudzfsrzggt/brigida/refs/heads/main/"
+
+local function load(path)
+    return loadstring(game:HttpGet(BASE .. path))()
+end
+
+-- Load semua icon library
+local defaultIcons = load("src/elements/icon/basic.lua")
+local lucideIcons  = load("src/elements/icon/lucide.lua")
+local solarIcons   = load("src/elements/icon/solar.lua")
+
+-- Gabungkan semua icon ke satu table
+local Icons = {}
+for name, id in pairs(defaultIcons) do Icons[name] = id end
+for name, id in pairs(lucideIcons)  do Icons["lucide:" .. name] = id end
+for name, id in pairs(solarIcons)   do Icons["solar:" .. name]  = id end
+
+-- Fungsi utama: ambil icon ID
+local function getIconId(iconName)
+    if not iconName or iconName == "" then return "" end
+    if iconName:match("^%d+$") then return "rbxassetid://" .. iconName end
+    if Icons[iconName] then return Icons[iconName] end
+    if iconName:match("^https?://") then return iconName end
+    return ""
+end
+
+-- Export
+local icons_module = {
+    Icons      = Icons,
+    getIconId  = getIconId
+}
+
 local icons_cache = {}
 
 local function load_icons_module()
-    return nil
+    return icons_module
 end
 
 local function get_icon(name, fallback)
@@ -40,9 +72,9 @@ local function get_icon(name, fallback)
     end
 
     local mod = load_icons_module()
-    if mod and type(mod.GetIcon) == "function" then
-        local ok, icon_id = pcall(mod.GetIcon, name)
-        if ok and icon_id and icon_id ~= "" then
+    if mod and type(mod.getIconId) == "function" then
+        local icon_id = mod.getIconId(name)
+        if icon_id and icon_id ~= "" then
             icons_cache[name] = icon_id
             return icon_id
         end
@@ -5483,12 +5515,15 @@ function Modern:AddSection(config)
                 toggleConfig = toggleConfig or {}
                 toggleConfig.Name = toggleConfig.Name or toggleConfig.Text or "Toggle"
                 toggleConfig.Default = toggleConfig.Default or false
+                toggleConfig.Locked = toggleConfig.Locked or false
+                toggleConfig.Icon = toggleConfig.Icon or nil
                 toggleConfig.Callback = toggleConfig.Callback or function() end
                 toggleConfig.Flag = toggleConfig.Flag or createAutoFlag(toggleConfig.Name)
                 addSearchTerm(toggleConfig.Name)
                 
                 local toggleObj = {}
                 toggleObj.value = toggleConfig.Default
+                toggleObj.isLocked = toggleConfig.Locked
                 setmetatable(toggleObj, {
                     __index = function(self, key)
                         if key == "Value" then
@@ -5520,18 +5555,29 @@ function Modern:AddSection(config)
                     })
                     create("UICorner", {CornerRadius = UDim.new(0, 4 * scale_factor), Parent = toggleObj.checkboxFrame})
                     
-                    toggleObj.checkmark = create("TextLabel", {
-                        Text = "✓",
-                        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
-                        TextColor3 = Color3.new(1, 1, 1),
-                        TextSize = 14 * scale_factor,
-                        BackgroundTransparency = 1,
-                        Size = UDim2.new(1, 0, 1, 0),
-                        TextXAlignment = Enum.TextXAlignment.Center,
-                        TextYAlignment = Enum.TextYAlignment.Center,
-                        Visible = toggleObj.value,
-                        Parent = toggleObj.checkboxFrame
-                    })
+                    if toggleConfig.Icon then
+                        toggleObj.checkmark = create("ImageLabel", {
+                            Image = get_icon(toggleConfig.Icon, ""),
+                            ImageColor3 = Color3.new(1, 1, 1),
+                            BackgroundTransparency = 1,
+                            Size = UDim2.new(1, 0, 1, 0),
+                            Visible = toggleObj.value,
+                            Parent = toggleObj.checkboxFrame
+                        })
+                    else
+                        toggleObj.checkmark = create("TextLabel", {
+                            Text = "✓",
+                            FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+                            TextColor3 = Color3.new(1, 1, 1),
+                            TextSize = 14 * scale_factor,
+                            BackgroundTransparency = 1,
+                            Size = UDim2.new(1, 0, 1, 0),
+                            TextXAlignment = Enum.TextXAlignment.Center,
+                            TextYAlignment = Enum.TextYAlignment.Center,
+                            Visible = toggleObj.value,
+                            Parent = toggleObj.checkboxFrame
+                        })
+                    end
                     
                     toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.checkboxFrame})
                 else
@@ -5605,7 +5651,24 @@ function Modern:AddSection(config)
                     end
                 end
                 
-                toggleClickButton.MouseButton1Click:Connect(function() toggleObj:Set(not toggleObj.value, false) end)
+                function toggleObj:SetLocked(locked)
+                    toggleObj.isLocked = locked == true
+                    if isCheckbox then
+                        if toggleObj.isLocked then
+                            tween_to(toggleObj.checkboxFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        else
+                            tween_to(toggleObj.checkboxFrame, {BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32)}, 0.2)
+                        end
+                    else
+                        if toggleObj.isLocked then
+                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        else
+                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32)}, 0.2)
+                        end
+                    end
+                end
+                
+                toggleClickButton.MouseButton1Click:Connect(function() if not toggleObj.isLocked then toggleObj:Set(not toggleObj.value, false) end end)
                 groupObj.Library:RegisterControl(toggleConfig.Flag, function()
                     return toggleObj:Get()
                 end, function(value)
@@ -5636,6 +5699,7 @@ function Modern:AddSection(config)
 
                 sliderConfig = sliderConfig or {}
                 sliderConfig.Name = sliderConfig.Name or sliderConfig.Text or "Slider"
+                sliderConfig.Locked = sliderConfig.Locked or false
                 sliderConfig.Min = tonumber(sliderConfig.Min) or 0
                 sliderConfig.Max = tonumber(sliderConfig.Max) or 100
                 if sliderConfig.Max < sliderConfig.Min then
@@ -5673,6 +5737,7 @@ function Modern:AddSection(config)
                 
                 local sliderObj = {}
                 sliderObj.value = normalize_slider_value(sliderConfig.Default, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
+                sliderObj.isLocked = sliderConfig.Locked
                 local yPosition = groupObj.element_y
                 local valueLabelWidth = 72 * scale_factor
                 local sliderHitHeight = 20 * scale_factor
@@ -5789,6 +5854,17 @@ function Modern:AddSection(config)
                     end
                 end
                 
+                function sliderObj:SetLocked(locked)
+                    sliderObj.isLocked = locked == true
+                    if sliderObj.isLocked then
+                        sliderObj.trackFrame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
+                        tween_to(sliderObj.fillFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                    else
+                        sliderObj.trackFrame.BackgroundColor3 = Color3.fromRGB(43, 43, 51)
+                        tween_to(sliderObj.fillFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
+                    end
+                end
+                
                 local isDraggingSlider = false
                 local activeSliderInput = nil
                 local function setSliderFromInput(input, instant)
@@ -5800,6 +5876,7 @@ function Modern:AddSection(config)
                     sliderObj:Set(value, instant, false)
                 end
                 sliderClickButton.InputBegan:Connect(function(input)
+                    if sliderObj.isLocked then return end
                     local isMouse = input.UserInputType == Enum.UserInputType.MouseButton1
                         or input.UserInputType == Enum.UserInputType.Touch
                     if not isMouse then
@@ -5897,6 +5974,17 @@ function Modern:AddSection(config)
                 buttonClickButton.MouseEnter:Connect(function() if not buttonObj.isLocked then tween_to(buttonObj.mainFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2) end end)
                 buttonClickButton.MouseLeave:Connect(function() if not buttonObj.isLocked then tween_to(buttonObj.mainFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2) end end)
                 
+                function buttonObj:SetLocked(locked)
+                    buttonObj.isLocked = locked == true
+                    local newColor = buttonObj.isLocked and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(32, 32, 32)
+                    local newStrokeColor = buttonObj.isLocked and Color3.fromRGB(32, 32, 32) or Color3.fromRGB(48, 48, 48)
+                    local newTextColor = buttonObj.isLocked and Color3.fromRGB(46, 46, 46) or Color3.fromRGB(120, 120, 120)
+                    tween_to(buttonObj.mainFrame, {BackgroundColor3 = newColor}, 0.2)
+                    tween_to(buttonStrokeThing, {Color = newStrokeColor}, 0.2)
+                    tween_to(buttonObj.labelText, {TextColor3 = newTextColor}, 0.2)
+                    buttonObj.labelText.Text = buttonConfig.Name .. (buttonObj.isLocked and " (locked)" or "")
+                end
+                
                 groupObj.element_y = groupObj.element_y + 35 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, buttonObj)
@@ -5906,6 +5994,7 @@ function Modern:AddSection(config)
             function groupObj:AddKeybind(keybindConfig)
                 keybindConfig = keybindConfig or {}
                 keybindConfig.Name = keybindConfig.Name or "Keybind"
+                keybindConfig.Locked = keybindConfig.Locked or false
                 keybindConfig.Default = keybindConfig.Default or Enum.KeyCode.Unknown
                 keybindConfig.Callback = keybindConfig.Callback or function() end
                 keybindConfig.ChangedCallback = keybindConfig.ChangedCallback or function() end
@@ -5922,6 +6011,7 @@ function Modern:AddSection(config)
                 keybindObj.mode = string.lower(keybindConfig.Mode) == "hold" and "Hold" or "Toggle"
                 keybindObj.isListening = false
                 keybindObj.holdActive = false
+                keybindObj.isLocked = keybindConfig.Locked
                 local yPosition = groupObj.element_y
                 
                 keybindObj.labelText = create("TextLabel", {
@@ -6015,6 +6105,15 @@ function Modern:AddSection(config)
                     return keybindObj.mode
                 end
                 
+                function keybindObj:SetLocked(locked)
+                    keybindObj.isLocked = locked == true
+                    if keybindObj.isLocked then
+                        tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(24, 24, 24)}, 0.2)
+                    else
+                        tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                    end
+                end
+                
                 function keybindObj:Close()
                     keybindObj.isListening = false
                     if keybindObj.holdActive then
@@ -6024,6 +6123,7 @@ function Modern:AddSection(config)
                 end
                 
                 keybindClickButton.MouseButton1Click:Connect(function()
+                    if keybindObj.isLocked then return end
                     keybindObj.isListening = true
                     keybindObj.keyLabelText.Text = "..."
                     updateKeybindSizeYay("...")
@@ -6253,6 +6353,7 @@ function Modern:AddSection(config)
                     return groupObj:AddMultiDropdown(dropdownConfig)
                 end
                 dropdownConfig.Name = dropdownConfig.Name or dropdownConfig.Title or dropdownConfig.Text or "Dropdown"
+                dropdownConfig.Locked = dropdownConfig.Locked or false
                 dropdownConfig.Options = dropdownConfig.Options or dropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 dropdownConfig.OptionsProvider = dropdownConfig.OptionsProvider or dropdownConfig.GetOptions
                 local dropdownHasProvider = type(dropdownConfig.OptionsProvider) == "function"
@@ -6285,6 +6386,7 @@ function Modern:AddSection(config)
                 
                 local dropdownObj = {}
                 dropdownObj.value = dropdownConfig.Default
+                dropdownObj.isLocked = dropdownConfig.Locked
                 setmetatable(dropdownObj, {
                     __index = function(self, key)
                         if key == "Value" then
@@ -6526,6 +6628,7 @@ function Modern:AddSection(config)
                 end
                 
                 dropdownClickButton.MouseButton1Click:Connect(function()
+                    if dropdownObj.isLocked then return end
                     dropdownObj.isOpen = not dropdownObj.isOpen
                     if dropdownObj.isOpen then
                         updateDropdownPositionYay()
@@ -6671,6 +6774,7 @@ function Modern:AddSection(config)
                 
                 multiDropdownConfig = multiDropdownConfig or {}
                 multiDropdownConfig.Name = multiDropdownConfig.Name or multiDropdownConfig.Title or "Multi Dropdown"
+                multiDropdownConfig.Locked = multiDropdownConfig.Locked or false
                 multiDropdownConfig.Options = multiDropdownConfig.Options or multiDropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 multiDropdownConfig.OptionsProvider = multiDropdownConfig.OptionsProvider or multiDropdownConfig.GetOptions
                 local multiDropdownHasProvider = type(multiDropdownConfig.OptionsProvider) == "function"
@@ -6720,6 +6824,7 @@ function Modern:AddSection(config)
                     end
                 })
                 multiDropdownObj.isOpen = false
+                multiDropdownObj.isLocked = multiDropdownConfig.Locked
                 multiDropdownObj._optionsSignature = get_dropdown_signature(multiDropdownOptionsSource)
                 if multiDropdownObj._optionsSignature == "0" then
                     multiDropdownObj._optionsSignature = get_dropdown_signature(multiDropdownConfig.Options)
@@ -6964,6 +7069,7 @@ function Modern:AddSection(config)
                 end
                 
                 dropdownClickButton.MouseButton1Click:Connect(function()
+                    if multiDropdownObj.isLocked then return end
                     multiDropdownObj.isOpen = not multiDropdownObj.isOpen
                     if multiDropdownObj.isOpen then
                         updateDropdownPositionYay()
@@ -7069,6 +7175,17 @@ function Modern:AddSection(config)
                 
                 function multiDropdownObj:Get() return getSelectedArray() end
 
+                function multiDropdownObj:SetLocked(locked)
+                    multiDropdownObj.isLocked = locked == true
+                    if multiDropdownObj.isLocked then
+                        tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(24, 24, 24)}, 0.2)
+                        tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(32, 32, 32)}, 0.2)
+                    else
+                        tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                        tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.2)
+                    end
+                end
+
                 function multiDropdownObj:Close()
                     closeMultiDropdown(true)
                 end
@@ -7163,6 +7280,7 @@ function Modern:AddSection(config)
 
                 textInputConfig = textInputConfig or {}
                 textInputConfig.Name = textInputConfig.Name or textInputConfig.Text or "Input"
+                textInputConfig.Locked = textInputConfig.Locked or false
                 textInputConfig.Placeholder = textInputConfig.Placeholder or "Enter text..."
                 textInputConfig.Default = tostring(textInputConfig.Default or "")
                 textInputConfig.Callback = textInputConfig.Callback or function() end
@@ -7174,6 +7292,7 @@ function Modern:AddSection(config)
                 
                 local textInputObj = {}
                 textInputObj.value = textInputConfig.Default
+                textInputObj.isLocked = textInputConfig.Locked
                 textInputObj.Flag = textInputConfig.Flag
                 textInputObj.Name = textInputConfig.Name
                 local yPosition = groupObj.element_y
@@ -7215,6 +7334,7 @@ function Modern:AddSection(config)
                 end
 
                 textInputObj.textBox.Focused:Connect(function()
+                    if textInputObj.isLocked then textInputObj.textBox:ReleaseFocus() return end
                     tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2)
                 end)
                 
@@ -7254,6 +7374,18 @@ function Modern:AddSection(config)
 
                 function textInputObj:ResetValue()
                     textInputObj:Set(textInputConfig.Default)
+                end
+                
+                function textInputObj:SetLocked(locked)
+                    textInputObj.isLocked = locked == true
+                    if textInputObj.textBox then
+                        textInputObj.textBox.Selectable = not textInputObj.isLocked
+                    end
+                    if textInputObj.isLocked then
+                        tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(24, 24, 24)}, 0.2)
+                    else
+                        tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                    end
                 end
 
                 Options[textInputConfig.Flag] = textInputObj
@@ -7339,6 +7471,7 @@ function Modern:AddSection(config)
             function groupObj:AddColorPicker(colorPickerConfig)
                 colorPickerConfig = colorPickerConfig or {}
                 colorPickerConfig.Name = colorPickerConfig.Title or colorPickerConfig.Text or colorPickerConfig.Name or "Color"
+                colorPickerConfig.Locked = colorPickerConfig.Locked or false
                 colorPickerConfig.Default = colorPickerConfig.Default or Color3.fromRGB(255, 100, 150)
                 colorPickerConfig.Callback = colorPickerConfig.Callback or function() end
                 colorPickerConfig.Flag = colorPickerConfig.Flag or createAutoFlag(colorPickerConfig.Name)
@@ -7347,6 +7480,7 @@ function Modern:AddSection(config)
                 local colorPickerObj = {}
                 colorPickerObj.value = colorPickerConfig.Default
                 colorPickerObj.isOpen = false
+                colorPickerObj.isLocked = colorPickerConfig.Locked
                 local yPosition = groupObj.element_y
                 
                 -- Convert Color3 to HSV
@@ -7624,6 +7758,7 @@ function Modern:AddSection(config)
                 end
                 
                 pickerClickBtn.MouseButton1Click:Connect(function()
+                    if colorPickerObj.isLocked then return end
                     colorPickerObj.isOpen = not colorPickerObj.isOpen
                     if colorPickerObj.isOpen then
                         updatePickerPosition()
@@ -7655,6 +7790,15 @@ function Modern:AddSection(config)
                 end
                 
                 function colorPickerObj:Get() return colorPickerObj.value end
+
+                function colorPickerObj:SetLocked(locked)
+                    colorPickerObj.isLocked = locked == true
+                    if colorPickerObj.isLocked then
+                        tween_to(colorPickerObj.colorPreview, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                    else
+                        tween_to(colorPickerObj.colorPreview, {BackgroundColor3 = colorPickerObj.value}, 0.2)
+                    end
+                end
 
                 function colorPickerObj:Close()
                     closeColorPicker(true)
@@ -7707,7 +7851,11 @@ function Modern:AddTab(tabConfig)
         Icon = tabConfig.Icon,
         NoCollapse = true
     }
-    return self:AddSection(sectionConfig):AddTab(tabConfig)
+    local section = self:AddSection(sectionConfig)
+    local tab = section:AddTab(tabConfig)
+    tab.button_frame.Visible = false
+    tab:Activate()
+    return tab
 end
 
 function Modern:SetAccentColor(color)
