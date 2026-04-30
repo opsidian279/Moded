@@ -1,4 +1,4 @@
--- Code Lama
+-- Code Lama | Fixed
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -4594,7 +4594,17 @@ function Modern:BuildMainFrame()
 
     local Searching = false
 
-    SearchIcon.MouseButton1Click:Connect(function()
+    -- Create transparent button overlay for click handling
+    local SearchClickButton = create("TextButton", {
+        Text = "",
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 1, 0),
+        ZIndex = 10,
+        Parent = SearchIcon
+    })
+
+    SearchClickButton.MouseButton1Click:Connect(function()
         Searching = not Searching
 
         if Searching then
@@ -4612,11 +4622,11 @@ function Modern:BuildMainFrame()
     end)
 
     -- Hover SearchIcon
-    SearchIcon.MouseEnter:Connect(function()
+    SearchClickButton.MouseEnter:Connect(function()
         PlayAnimate(SearchIcon, SlowyTween, { ImageTransparency = 0.25 })
     end)
 
-    SearchIcon.MouseLeave:Connect(function()
+    SearchClickButton.MouseLeave:Connect(function()
         if Searching then
             PlayAnimate(SearchIcon, SlowyTween, { ImageTransparency = 0.25 })
         else
