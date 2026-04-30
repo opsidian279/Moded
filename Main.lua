@@ -112,6 +112,22 @@ local function resolve_image(imageInput)
     return modern_logo
 end
 
+-- Load color module dari repo asli
+local ColorModule = load("src/elements/color.lua")
+
+-- Fungsi ambil color
+local function getColor(colorInput)
+    if typeof(colorInput) == "Color3" then return colorInput end
+    if type(colorInput) == "string" then
+        if ColorModule[colorInput] then return ColorModule[colorInput] end
+        return ColorModule["Default"] or Color3.fromRGB(0, 208, 255)
+    end
+    return ColorModule["Default"] or Color3.fromRGB(0, 208, 255)
+end
+
+-- Global Windows table for simple Watermark customization
+Windows = Windows or {}
+
 --#endregion
 
 
@@ -818,6 +834,113 @@ local function cleanup_previous_instance()
     rawset(sharedEnv, RUNTIME_INSTANCE_KEY, nil)
     destroy_existing_guis()
 end
+
+--#region ══╗ Input Class ╔════════════════════════════════════════════════════════
+
+local Input = {}
+Input.__index = Input
+
+function Input.new(config)
+    local self = setmetatable({}, Input)
+    
+    config = config or {}
+    
+    self.text = tostring(config.Default or config.Value or "")
+    self.placeholder = tostring(config.Placeholder or "Enter text...")
+    self.maxLength = tonumber(config.MaxLength)
+    self.isLocked = config.Locked == true
+    self.lockMessage = config.LockMessage or config.Message
+    self.isVisible = config.Visible ~= false
+    self.transparency = math.clamp(tonumber(config.Transparency) or 0, 0, 1)
+    self.color = typeof(config.Color) == "Color3" and config.Color or Color3.fromRGB(0, 200, 255)
+    
+    self._changeCallbacks = {}
+    self._enterCallbacks = {}
+    self._destroyed = false
+    
+    return self
+end
+
+function Input:SetText(text)
+    local nextText = tostring(text or "")
+    if self.maxLength then
+        nextText = nextText:sub(1, self.maxLength)
+    end
+    self.text = nextText
+    for _, fn in ipairs(self._changeCallbacks) do
+        pcall(fn, nextText)
+    end
+    return self
+end
+
+function Input:GetText()
+    return self.text
+end
+
+function Input:SetPlaceholder(text)
+    self.placeholder = tostring(text or "")
+    return self
+end
+
+function Input:OnChange(fn)
+    if type(fn) == "function" then
+        table.insert(self._changeCallbacks, fn)
+    end
+    return self
+end
+
+function Input:OnEnter(fn)
+    if type(fn) == "function" then
+        table.insert(self._enterCallbacks, fn)
+    end
+    return self
+end
+
+function Input:SetMaxLength(num)
+    self.maxLength = tonumber(num)
+    if self.maxLength and #self.text > self.maxLength then
+        self.text = self.text:sub(1, self.maxLength)
+    end
+    return self
+end
+
+function Input:SetColor(color)
+    if typeof(color) == "Color3" then
+        self.color = color
+    elseif type(color) == "string" then
+        self.color = getColor(color)
+    end
+    return self
+end
+
+function Input:SetLocked(bool, message)
+    self.isLocked = bool == true
+    if message then
+        self.lockMessage = message
+    end
+    return self
+end
+
+function Input:SetVisible(bool)
+    self.isVisible = bool == true
+    return self
+end
+
+function Input:SetTransparency(value)
+    self.transparency = math.clamp(tonumber(value) or 0, 0, 1)
+    return self
+end
+
+function Input:Destroy()
+    if self._destroyed then return end
+    self._destroyed = true
+    self._changeCallbacks = {}
+    self._enterCallbacks = {}
+end
+
+_G.Input = Input
+
+--#endregion════════════════════════════════════════════════════════════════════
 
 function Modern:Window(config)
     cleanup_previous_instance()
@@ -3912,6 +4035,10 @@ function Modern:BuildWatermark()
 end
 
 function Modern:Watermark(config)
+    -- Global Windows.Watermark shorthand support
+    if Windows and Windows.Watermark and type(config) == "table" and config.Text ~= nil then
+        config = {Text = config.Text}
+    end
     config = config or {}
 
     self._watermarkConfig = {
@@ -4451,6 +4578,52 @@ function Modern:BuildMainFrame()
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = self.search_frame
     })
+    
+    -- Search animation
+    local TweenService = game:GetService("TweenService")
+    local VSlowTween = TweenInfo.new(0.5, Enum.EasingStyle.Quint)
+    local SlowyTween = TweenInfo.new(0.175)
+
+    local SearchIcon = self.search_frame:FindFirstChildOfClass("ImageLabel")
+    local SearchFrame = self.search_frame
+    local SearchBox = self.search_box
+    
+    local function PlayAnimate(obj, info, props)
+        TweenService:Create(obj, info, props):Play()
+    end
+
+    local Searching = false
+
+    SearchIcon.MouseButton1Click:Connect(function()
+        Searching = not Searching
+
+        if Searching then
+            -- Buka
+            PlayAnimate(SearchFrame, VSlowTween, { Size = UDim2.new(0, 220 * scale_factor, 0, 30 * scale_factor) })
+            PlayAnimate(SearchIcon,  SlowyTween, { ImageTransparency = 0.25 })
+            PlayAnimate(SearchBox,   VSlowTween, { TextTransparency = 0.350 })
+        else
+            -- Tutup
+            PlayAnimate(SearchFrame, VSlowTween, { Size = UDim2.new(0, 30 * scale_factor, 0, 30 * scale_factor) })
+            PlayAnimate(SearchIcon,  SlowyTween, { ImageTransparency = 0.45 })
+            PlayAnimate(SearchBox,   SlowyTween, { TextTransparency = 1 })
+            SearchBox.Text = ""
+        end
+    end)
+
+    -- Hover SearchIcon
+    SearchIcon.MouseEnter:Connect(function()
+        PlayAnimate(SearchIcon, SlowyTween, { ImageTransparency = 0.25 })
+    end)
+
+    SearchIcon.MouseLeave:Connect(function()
+        if Searching then
+            PlayAnimate(SearchIcon, SlowyTween, { ImageTransparency = 0.25 })
+        else
+            PlayAnimate(SearchIcon, SlowyTween, { ImageTransparency = 0.45 })
+        end
+    end)
+    
     self:_TrackConnection(self.search_box:GetPropertyChangedSignal("Text"):Connect(function()
         self:SetSearchFilter(self.search_box.Text)
     end))
@@ -5504,57 +5677,70 @@ function Modern:AddSection(config)
                 relayout_groups()
             end
 
-            function groupObj:AddToggle(toggleConfig, config)
-                -- Support old API: AddToggle(Idx, config) - match Library.lua pattern
+function groupObj:AddToggle(toggleConfig, config)
+                -- Support old API: AddToggle(Idx, config)
                 local Idx = nil
                 if type(toggleConfig) == "string" then
                     Idx = toggleConfig
-                    toggleConfig = {Name = toggleConfig, Flag = toggleConfig, Text = config and config.Text or toggleConfig, Default = config and config.Default or false}
+                    toggleConfig = {
+                        Name = toggleConfig,
+                        Flag = toggleConfig,
+                        Text = config and config.Text or toggleConfig,
+                        Default = config and config.Default or false,
+                        Callback = config and config.Callback
+                    }
                 end
-                
+
                 toggleConfig = toggleConfig or {}
                 toggleConfig.Name = toggleConfig.Name or toggleConfig.Text or "Toggle"
-                toggleConfig.Default = toggleConfig.Default or false
+                toggleConfig.Default = toggleConfig.Default == true
                 toggleConfig.Locked = toggleConfig.Locked or false
+                toggleConfig.Enabled = toggleConfig.Enabled ~= false
+                toggleConfig.Visible = toggleConfig.Visible ~= false
                 toggleConfig.Icon = toggleConfig.Icon or nil
                 toggleConfig.Callback = toggleConfig.Callback or function() end
                 toggleConfig.Flag = toggleConfig.Flag or createAutoFlag(toggleConfig.Name)
                 addSearchTerm(toggleConfig.Name)
-                
+
+                local isCheckbox = toggleConfig.Type == "Checkbox"
+                local yPosition = groupObj.element_y
                 local toggleObj = {}
                 toggleObj.value = toggleConfig.Default
+                toggleObj.Value = toggleObj.value
                 toggleObj.isLocked = toggleConfig.Locked
-                setmetatable(toggleObj, {
-                    __index = function(self, key)
-                        if key == "Value" then
-                            return toggleObj.value
-                        end
-                        return rawget(toggleObj, key)
-                    end
-                })
-                local yPosition = groupObj.element_y
-                
+                toggleObj.isEnabled = toggleConfig.Enabled
+                toggleObj.isVisible = toggleConfig.Visible
+                toggleObj.customColor = nil
+                toggleObj.callbacks = {toggleConfig.Callback}
+                toggleObj._connections = {}
+                toggleObj._destroyed = false
+
                 toggleObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = toggleConfig.Text or toggleConfig.Name, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
+                    TextColor3 = Color3.fromRGB(124, 124, 124),
+                    Text = toggleConfig.Text or toggleConfig.Name,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition),
+                    TextSize = 14.6 * scale_factor,
                     Size = UDim2.new(0, 195 * scale_factor, 0, 20 * scale_factor),
-                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    Visible = toggleObj.isVisible,
                     Parent = groupObj.mainFrame
                 })
-                
-                local isCheckbox = toggleConfig.Type == "Checkbox"
+
                 local toggleClickButton
-                
                 if isCheckbox then
                     toggleObj.checkboxFrame = create("Frame", {
                         BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
                         Position = UDim2.new(1, -36 * scale_factor, 0, yPosition + 1 * scale_factor),
                         Size = UDim2.new(0, 20 * scale_factor, 0, 20 * scale_factor),
+                        Visible = toggleObj.isVisible,
                         Parent = groupObj.mainFrame
                     })
+                    toggleObj.frame = toggleObj.checkboxFrame
                     create("UICorner", {CornerRadius = UDim.new(0, 4 * scale_factor), Parent = toggleObj.checkboxFrame})
-                    
+
                     if toggleConfig.Icon then
                         toggleObj.checkmark = create("ImageLabel", {
                             Image = get_icon(toggleConfig.Icon, ""),
@@ -5566,7 +5752,7 @@ function Modern:AddSection(config)
                         })
                     else
                         toggleObj.checkmark = create("TextLabel", {
-                            Text = "✓",
+                            Text = "?",
                             FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
                             TextColor3 = Color3.new(1, 1, 1),
                             TextSize = 14 * scale_factor,
@@ -5578,128 +5764,258 @@ function Modern:AddSection(config)
                             Parent = toggleObj.checkboxFrame
                         })
                     end
-                    
-                    toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.checkboxFrame})
+
+                    toggleClickButton = create("TextButton", {
+                        Text = "",
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 1, 0),
+                        Parent = toggleObj.checkboxFrame
+                    })
                 else
                     toggleObj.switchFrame = create("Frame", {
                         BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
                         Position = UDim2.new(1, -44 * scale_factor, 0, yPosition),
-                        Size = UDim2.new(0, 36 * scale_factor, 0, 22 * scale_factor), Parent = groupObj.mainFrame
+                        Size = UDim2.new(0, 36 * scale_factor, 0, 22 * scale_factor),
+                        Visible = toggleObj.isVisible,
+                        Parent = groupObj.mainFrame
                     })
+                    toggleObj.frame = toggleObj.switchFrame
                     create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleObj.switchFrame})
-                    
+
                     toggleObj.circleFrame = create("Frame", {
                         BackgroundColor3 = toggleObj.value and Color3.new(1, 1, 1) or Color3.fromRGB(75, 75, 75),
                         Position = toggleObj.value and UDim2.new(0.462, 0, 0.143, 0) or UDim2.new(0.0104, 0, 0.143, 0),
-                        Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor), Parent = toggleObj.switchFrame
+                        Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor),
+                        Parent = toggleObj.switchFrame
                     })
                     create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = toggleObj.circleFrame})
-                    
-                    toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.switchFrame})
+
+                    toggleClickButton = create("TextButton", {
+                        Text = "",
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 1, 0),
+                        Parent = toggleObj.switchFrame
+                    })
                 end
-                
-                toggleObj.Changed = toggleConfig.Callback
-                
-                function toggleObj:Set(value, silent)
-                    toggleObj.value = value == true
-                    toggleObj.Value = toggleObj.value
-                    if isCheckbox then
-                        if toggleObj.value then
-                            tween_to(toggleObj.checkboxFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
-                        else
-                            tween_to(toggleObj.checkboxFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                toggleObj.clickButton = toggleClickButton
+
+                local function getAccentColor()
+                    return toggleObj.customColor or groupObj.Library.config.AccentColor
+                end
+
+                local function updateToggleVisuals(animate)
+                    if toggleObj._destroyed then
+                        return
+                    end
+                    local activeColor = getAccentColor()
+                    local offColor = Color3.fromRGB(32, 32, 32)
+                    local lockedColor = Color3.fromRGB(28, 28, 28)
+                    local targetColor = toggleObj.isLocked and lockedColor or (toggleObj.value and activeColor or offColor)
+                    local textColor = (toggleObj.isLocked or not toggleObj.isEnabled) and Color3.fromRGB(70, 70, 70) or Color3.fromRGB(124, 124, 124)
+                    local apply = animate ~= false and tween_to or function(instance, props)
+                        for prop, value in pairs(props) do
+                            pcall(function() instance[prop] = value end)
                         end
+                    end
+
+                    toggleObj.labelText.Visible = toggleObj.isVisible
+                    toggleObj.labelText.TextColor3 = textColor
+                    toggleClickButton.Active = toggleObj.isEnabled and not toggleObj.isLocked
+
+                    if isCheckbox then
+                        toggleObj.checkboxFrame.Visible = toggleObj.isVisible
+                        apply(toggleObj.checkboxFrame, {BackgroundColor3 = targetColor}, 0.2)
                         if toggleObj.checkmark then
                             toggleObj.checkmark.Visible = toggleObj.value
                         end
                     else
-                        if toggleObj.value then
-                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
-                            tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.462, 0, 0.143, 0), BackgroundColor3 = Color3.new(1, 1, 1)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-                        else
-                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
-                            tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.0104, 0, 0.143, 0), BackgroundColor3 = Color3.fromRGB(75, 75, 75)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+                        toggleObj.switchFrame.Visible = toggleObj.isVisible
+                        apply(toggleObj.switchFrame, {BackgroundColor3 = targetColor}, 0.2)
+                        if toggleObj.circleFrame then
+                            local knobPosition = toggleObj.value and UDim2.new(0.462, 0, 0.143, 0) or UDim2.new(0.0104, 0, 0.143, 0)
+                            local knobColor = toggleObj.value and Color3.new(1, 1, 1) or Color3.fromRGB(75, 75, 75)
+                            apply(toggleObj.circleFrame, {Position = knobPosition, BackgroundColor3 = knobColor}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
                         end
                     end
-                    if not silent and toggleObj.Changed then
-                        toggleObj.Changed(toggleObj.value)
-                    end
                 end
+
+                function toggleObj:Set(state, silent)
+                    if toggleObj._destroyed then
+                        return toggleObj
+                    end
+                    toggleObj.value = state == true
+                    toggleObj.Value = toggleObj.value
+                    updateToggleVisuals(true)
+                    if not silent then
+                        for _, cb in ipairs(toggleObj.callbacks) do
+                            pcall(cb, toggleObj.value)
+                        end
+                    end
+                    return toggleObj
+                end
+
                 function toggleObj:Get()
                     return toggleObj.value
                 end
-                
-                function toggleObj:OnChanged(Func, callback)
-                    toggleObj.Changed = Func or callback
+
+                function toggleObj:Toggle()
+                    return toggleObj:Set(not toggleObj.value)
                 end
-                
-                -- Backward compatibility: SetValue method
-                function toggleObj:SetValue(value, silent)
-                    toggleObj:Set(value, silent)
+
+                function toggleObj:SetVisible(state)
+                    toggleObj.isVisible = state == true
+                    updateToggleVisuals(false)
+                    return toggleObj
                 end
-                
-                function toggleObj:SetVisible(visible)
-                    local isVisible = visible == true
-                    if toggleObj.labelText then
-                        toggleObj.labelText.Visible = isVisible
-                    end
-                    if toggleObj.switchFrame then
-                        toggleObj.switchFrame.Visible = isVisible
-                    end
-                    if toggleObj.checkboxFrame then
-                        toggleObj.checkboxFrame.Visible = isVisible
-                    end
+
+                function toggleObj:SetEnabled(state)
+                    toggleObj.isEnabled = state == true
+                    updateToggleVisuals(true)
+                    return toggleObj
                 end
-                
-                function toggleObj:SetLocked(locked)
-                    toggleObj.isLocked = locked == true
-                    if isCheckbox then
-                        if toggleObj.isLocked then
-                            tween_to(toggleObj.checkboxFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
-                        else
-                            tween_to(toggleObj.checkboxFrame, {BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32)}, 0.2)
+
+                function toggleObj:SetLocked(state)
+                    toggleObj.isLocked = state == true
+                    updateToggleVisuals(true)
+                    return toggleObj
+                end
+
+                function toggleObj:SetColor(color)
+                    toggleObj.customColor = typeof(color) == "Color3" and color or getColor(color)
+                    updateToggleVisuals(true)
+                    return toggleObj
+                end
+
+                function toggleObj:OnChanged(fn)
+                    if type(fn) == "function" then
+                        table.insert(toggleObj.callbacks, fn)
+                    end
+                    return toggleObj
+                end
+
+                function toggleObj:BindTo(keycode)
+                    if typeof(keycode) ~= "EnumItem" or keycode.EnumType ~= Enum.KeyCode then
+                        return toggleObj
+                    end
+                    disconnect_signal(toggleObj.keybindConnection)
+                    toggleObj.keybindConnection = input_service.InputBegan:Connect(function(input, gameProcessed)
+                        if gameProcessed then
+                            return
                         end
-                    else
-                        if toggleObj.isLocked then
-                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
-                        else
-                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32)}, 0.2)
+                        if input.KeyCode == keycode and not toggleObj.isLocked and toggleObj.isEnabled then
+                            toggleObj:Toggle()
+                        end
+                    end)
+                    table.insert(toggleObj._connections, toggleObj.keybindConnection)
+                    return toggleObj
+                end
+
+                function toggleObj:Pulse()
+                    if toggleObj._destroyed then
+                        return toggleObj
+                    end
+                    local targetFrame = isCheckbox and toggleObj.checkboxFrame or toggleObj.switchFrame
+                    if targetFrame then
+                        local originalColor = targetFrame.BackgroundColor3
+                        tween_to(targetFrame, {BackgroundColor3 = getAccentColor():Lerp(Color3.new(1, 1, 1), 0.25)}, 0.12)
+                        task.delay(0.12, function()
+                            if not toggleObj._destroyed and targetFrame and targetFrame.Parent then
+                                tween_to(targetFrame, {BackgroundColor3 = originalColor}, 0.18)
+                            end
+                        end)
+                    end
+                    return toggleObj
+                end
+
+                function toggleObj:Destroy()
+                    if toggleObj._destroyed then
+                        return
+                    end
+                    toggleObj._destroyed = true
+                    for i = #toggleObj._connections, 1, -1 do
+                        disconnect_signal(toggleObj._connections[i])
+                        toggleObj._connections[i] = nil
+                    end
+                    for i = #groupObj.elements, 1, -1 do
+                        if groupObj.elements[i] == toggleObj then
+                            table.remove(groupObj.elements, i)
+                            break
                         end
                     end
+                    local flagKey = Idx or toggleConfig.Flag or toggleConfig.Name
+                    Toggles[flagKey] = nil
+                    if toggleObj.labelText and toggleObj.labelText.Parent then
+                        toggleObj.labelText:Destroy()
+                    end
+                    if toggleObj.frame and toggleObj.frame.Parent then
+                        toggleObj.frame:Destroy()
+                    end
                 end
-                
-                toggleClickButton.MouseButton1Click:Connect(function() if not toggleObj.isLocked then toggleObj:Set(not toggleObj.value, false) end end)
+
+                -- Backward compatibility aliases
+                toggleObj.SetValue = toggleObj.Set
+                toggleObj.Changed = function(value)
+                    for _, cb in ipairs(toggleObj.callbacks) do
+                        pcall(cb, value)
+                    end
+                end
+                toggleObj.Lock = function()
+                    return toggleObj:SetLocked(true)
+                end
+                toggleObj.Unlock = function()
+                    return toggleObj:SetLocked(false)
+                end
+                toggleObj.AddCallback = toggleObj.OnChanged
+                toggleObj.UpdateLabel = function(selfOrText, maybeText)
+                    local newText = selfOrText == toggleObj and maybeText or selfOrText
+                    toggleConfig.Name = newText or toggleConfig.Name
+                    toggleObj.labelText.Text = toggleConfig.Name
+                    return toggleObj
+                end
+
+                table.insert(toggleObj._connections, toggleClickButton.MouseButton1Click:Connect(function()
+                    if not toggleObj.isLocked and toggleObj.isEnabled then
+                        toggleObj:Toggle()
+                    end
+                end))
+
                 groupObj.Library:RegisterControl(toggleConfig.Flag, function()
                     return toggleObj:Get()
                 end, function(value)
-                    toggleObj:Set(value == true, false)
-                    if toggleObj.Changed then
-                        toggleObj.Changed(value == true)
-                    end
+                    toggleObj:Set(value == true, true)
                 end)
-                
-                -- Store in global Toggles table
+
                 local flagKey = Idx or toggleConfig.Flag or toggleConfig.Name
                 Toggles[flagKey] = toggleObj
-                toggleObj.Value = toggleObj.value
-                
+                updateToggleVisuals(false)
+
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, toggleObj)
                 return toggleObj
             end
-
-            function groupObj:AddSlider(sliderConfig, config)
+              function groupObj:AddSlider(sliderConfig, config)
                 -- Support old API: AddSlider(Idx, config) - match Library.lua pattern
                 local Idx = nil
                 if type(sliderConfig) == "string" then
                     Idx = sliderConfig
-                    sliderConfig = {Name = sliderConfig, Flag = sliderConfig, Text = config and config.Text or sliderConfig, Min = config and config.Min, Max = config and config.Max, Default = config and config.Default, Increment = config and config.Rounding, Callback = config and config.Callback}
+                    sliderConfig = {
+                        Name = sliderConfig,
+                        Flag = sliderConfig,
+                        Text = config and config.Text or sliderConfig,
+                        Min = config and config.Min,
+                        Max = config and config.Max,
+                        Default = config and config.Default,
+                        Increment = config and (config.Increment or config.Rounding),
+                        Callback = config and config.Callback
+                    }
                 end
 
                 sliderConfig = sliderConfig or {}
                 sliderConfig.Name = sliderConfig.Name or sliderConfig.Text or "Slider"
                 sliderConfig.Locked = sliderConfig.Locked or false
+                sliderConfig.Visible = sliderConfig.Visible ~= false
+                sliderConfig.Transparency = math.clamp(tonumber(sliderConfig.Transparency) or 0, 0, 1)
                 sliderConfig.Min = tonumber(sliderConfig.Min) or 0
                 sliderConfig.Max = tonumber(sliderConfig.Max) or 100
                 if sliderConfig.Max < sliderConfig.Min then
@@ -5718,9 +6034,20 @@ function Modern:AddSection(config)
                 sliderConfig.Callback = sliderConfig.Callback or function() end
                 sliderConfig.Flag = sliderConfig.Flag or createAutoFlag(sliderConfig.Name)
                 addSearchTerm(sliderConfig.Name)
-                
-                local sliderPrecision = resolve_precision(sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderConfig.Default)
+
+                local sliderPrecision = tonumber(sliderConfig.Precision)
+                    or resolve_precision(sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderConfig.Default)
+                sliderPrecision = math.clamp(sliderPrecision, 0, 6)
                 local sliderRange = sliderConfig.Max - sliderConfig.Min
+                local sliderObj
+                local function refreshSliderRange()
+                    if sliderConfig.Max < sliderConfig.Min then
+                        sliderConfig.Min, sliderConfig.Max = sliderConfig.Max, sliderConfig.Min
+                    end
+                    sliderRange = sliderConfig.Max - sliderConfig.Min
+                    sliderObj.value = normalize_slider_value(sliderObj.value, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
+                    sliderObj.Value = sliderObj.value
+                end
                 local function getSliderPercentage(value)
                     if sliderRange <= 0 then
                         return 0
@@ -5734,10 +6061,18 @@ function Modern:AddSection(config)
                     end
                     return text
                 end
-                
-                local sliderObj = {}
+
+                sliderObj = {}
                 sliderObj.value = normalize_slider_value(sliderConfig.Default, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
+                sliderObj.Value = sliderObj.value
                 sliderObj.isLocked = sliderConfig.Locked
+                sliderObj.isVisible = sliderConfig.Visible
+                sliderObj.transparency = sliderConfig.Transparency
+                sliderObj.color = typeof(sliderConfig.Color) == "Color3" and sliderConfig.Color or (sliderConfig.Color and getColor(sliderConfig.Color) or groupObj.Library.config.AccentColor)
+                sliderObj.lockMessage = sliderConfig.LockMessage or sliderConfig.LockedMessage or sliderConfig.Message
+                sliderObj._connections = {}
+                sliderObj._destroyed = false
+                local optionKey = Idx or sliderConfig.Name
                 local yPosition = groupObj.element_y
                 local valueLabelWidth = 72 * scale_factor
                 local sliderHitHeight = 20 * scale_factor
@@ -5745,25 +6080,33 @@ function Modern:AddSection(config)
                 local sliderKnobWidth = 16 * scale_factor
                 local sliderKnobHeight = 16 * scale_factor
                 local slider_padding = 10 * scale_factor
-                
+
                 sliderObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.fromRGB(118, 118, 130), Text = sliderConfig.Name, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, slider_padding, 0, yPosition), TextSize = 14.2 * scale_factor,
+                    TextColor3 = Color3.fromRGB(118, 118, 130),
+                    Text = sliderConfig.Name,
+                    BackgroundTransparency = 1,
+                    TextTransparency = sliderObj.transparency,
+                    Position = UDim2.new(0, slider_padding, 0, yPosition),
+                    TextSize = 14.2 * scale_factor,
                     Size = UDim2.new(1, -valueLabelWidth - slider_padding * 3, 0, 19 * scale_factor),
-                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    Visible = sliderObj.isVisible,
                     Parent = groupObj.mainFrame
                 })
-                
+
                 sliderObj.backgroundFrame = create("Frame", {
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0, slider_padding, 0, yPosition + 20 * scale_factor),
                     Size = UDim2.new(1, -slider_padding * 2, 0, sliderHitHeight),
+                    Visible = sliderObj.isVisible,
                     Parent = groupObj.mainFrame
                 })
 
                 sliderObj.trackFrame = create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(43, 43, 51),
+                    BackgroundTransparency = sliderObj.transparency,
                     BorderSizePixel = 0,
                     Position = UDim2.new(0, 0, 0.5, -sliderTrackHeight * 0.5),
                     Size = UDim2.new(1, 0, 0, sliderTrackHeight),
@@ -5773,7 +6116,8 @@ function Modern:AddSection(config)
 
                 local percentage = getSliderPercentage(sliderObj.value)
                 sliderObj.fillFrame = create("Frame", {
-                    BackgroundColor3 = groupObj.Library.config.AccentColor,
+                    BackgroundColor3 = sliderObj.color,
+                    BackgroundTransparency = sliderObj.transparency,
                     BorderSizePixel = 0,
                     Size = UDim2.new(percentage, 0, 1, 0),
                     Parent = sliderObj.trackFrame
@@ -5782,6 +6126,7 @@ function Modern:AddSection(config)
 
                 sliderObj.knobFrame = create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(244, 244, 248),
+                    BackgroundTransparency = sliderObj.transparency,
                     BorderSizePixel = 0,
                     AnchorPoint = Vector2.new(0.5, 0.5),
                     Position = UDim2.new(percentage, 0, 0.5, 0),
@@ -5790,81 +6135,198 @@ function Modern:AddSection(config)
                     Parent = sliderObj.backgroundFrame
                 })
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = sliderObj.knobFrame})
-                create("UIStroke", {
+                sliderObj.knobStroke = create("UIStroke", {
                     Color = Color3.fromRGB(196, 196, 204),
                     Thickness = 1,
                     Parent = sliderObj.knobFrame
                 })
-                
+
                 sliderObj.valueLabelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.fromRGB(184, 184, 194), Text = formatDisplayValue(sliderObj.value),
-                    BackgroundTransparency = 1, Position = UDim2.new(1, -valueLabelWidth - slider_padding, 0, yPosition),
-                    TextSize = 14.2 * scale_factor, Size = UDim2.new(0, valueLabelWidth, 0, 19 * scale_factor),
-                    TextXAlignment = Enum.TextXAlignment.Right, Parent = groupObj.mainFrame
+                    TextColor3 = Color3.fromRGB(184, 184, 194),
+                    Text = formatDisplayValue(sliderObj.value),
+                    BackgroundTransparency = 1,
+                    TextTransparency = sliderObj.transparency,
+                    Position = UDim2.new(1, -valueLabelWidth - slider_padding, 0, yPosition),
+                    TextSize = 14.2 * scale_factor,
+                    Size = UDim2.new(0, valueLabelWidth, 0, 19 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Right,
+                    Visible = sliderObj.isVisible,
+                    Parent = groupObj.mainFrame
                 })
-                
-                local sliderClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = sliderObj.backgroundFrame})
 
-                local function updateSliderVisuals(animate)
-                    local currentPercentage = getSliderPercentage(sliderObj.value)
-                    local fillTarget = {Size = UDim2.new(currentPercentage, 0, 1, 0)}
-                    local knobTarget = {
-                        Position = UDim2.new(currentPercentage, 0, 0.5, 0)
-                    }
-                    if animate then
-                        tween_to(sliderObj.fillFrame, fillTarget, 0.12)
-                        tween_to(sliderObj.knobFrame, knobTarget, 0.12, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                    else
-                        sliderObj.fillFrame.Size = fillTarget.Size
-                        sliderObj.knobFrame.Position = knobTarget.Position
+                local sliderClickButton = create("TextButton", {
+                    Text = "",
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Parent = sliderObj.backgroundFrame
+                })
+                sliderObj.clickButton = sliderClickButton
+
+                local function updateSliderVisuals(animate, duration)
+                    if sliderObj._destroyed then
+                        return
                     end
+                    local currentPercentage = getSliderPercentage(sliderObj.value)
+                    local activeColor = sliderObj.isLocked and Color3.fromRGB(32, 32, 32) or sliderObj.color
+                    local trackColor = sliderObj.isLocked and Color3.fromRGB(30, 30, 34) or Color3.fromRGB(43, 43, 51)
+                    local labelText = sliderConfig.Name
+                    if sliderObj.isLocked and sliderObj.lockMessage and tostring(sliderObj.lockMessage) ~= "" then
+                        labelText = labelText .. " (" .. tostring(sliderObj.lockMessage) .. ")"
+                    end
+                    sliderObj.labelText.Text = labelText
                     sliderObj.valueLabelText.Text = formatDisplayValue(sliderObj.value)
+                    sliderObj.labelText.Visible = sliderObj.isVisible
+                    sliderObj.valueLabelText.Visible = sliderObj.isVisible
+                    sliderObj.backgroundFrame.Visible = sliderObj.isVisible
+                    sliderClickButton.Active = not sliderObj.isLocked
+
+                    local fillTarget = {Size = UDim2.new(currentPercentage, 0, 1, 0), BackgroundColor3 = activeColor, BackgroundTransparency = sliderObj.transparency}
+                    local knobTarget = {Position = UDim2.new(currentPercentage, 0, 0.5, 0), BackgroundTransparency = sliderObj.transparency}
+                    local trackTarget = {BackgroundColor3 = trackColor, BackgroundTransparency = sliderObj.transparency}
+                    local labelTarget = {TextTransparency = sliderObj.transparency}
+
+                    if animate then
+                        tween_to(sliderObj.fillFrame, fillTarget, duration or 0.12)
+                        tween_to(sliderObj.knobFrame, knobTarget, duration or 0.12, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        tween_to(sliderObj.trackFrame, trackTarget, duration or 0.12)
+                        tween_to(sliderObj.labelText, labelTarget, duration or 0.12)
+                        tween_to(sliderObj.valueLabelText, labelTarget, duration or 0.12)
+                    else
+                        for prop, value in pairs(fillTarget) do sliderObj.fillFrame[prop] = value end
+                        for prop, value in pairs(knobTarget) do sliderObj.knobFrame[prop] = value end
+                        for prop, value in pairs(trackTarget) do sliderObj.trackFrame[prop] = value end
+                        sliderObj.labelText.TextTransparency = sliderObj.transparency
+                        sliderObj.valueLabelText.TextTransparency = sliderObj.transparency
+                    end
                 end
 
                 sliderObj.Changed = sliderConfig.Callback
-                
+
                 function sliderObj:Set(value, instant, silent)
+                    if sliderObj._destroyed then
+                        return sliderObj
+                    end
                     value = normalize_slider_value(value, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
                     sliderObj.value = value
                     sliderObj.Value = sliderObj.value
                     updateSliderVisuals(instant ~= true)
                     if not silent and sliderObj.Changed then
-                        sliderObj.Changed(value)
+                        pcall(sliderObj.Changed, value)
                     end
+                    return sliderObj
                 end
+
                 function sliderObj:Get()
                     return sliderObj.value
                 end
-                
+
+                function sliderObj:SetLimits(min, max)
+                    local nextMin = tonumber(min)
+                    local nextMax = tonumber(max)
+                    if nextMin == nil or nextMax == nil then
+                        return sliderObj
+                    end
+                    sliderConfig.Min = nextMin
+                    sliderConfig.Max = nextMax
+                    refreshSliderRange()
+                    updateSliderVisuals(true)
+                    return sliderObj
+                end
+
+                function sliderObj:SetIncrement(step)
+                    local nextStep = math.abs(tonumber(step) or sliderConfig.Increment)
+                    sliderConfig.Increment = nextStep >= 1e-6 and nextStep or 1
+                    sliderObj:Set(sliderObj.value, true, true)
+                    return sliderObj
+                end
+
+                function sliderObj:SetPrecision(p)
+                    sliderPrecision = math.clamp(tonumber(p) or sliderPrecision, 0, 6)
+                    sliderObj:Set(sliderObj.value, true, true)
+                    return sliderObj
+                end
+
+                function sliderObj:AnimateTo(value, time)
+                    if sliderObj._destroyed then
+                        return sliderObj
+                    end
+                    local targetValue = normalize_slider_value(value, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
+                    sliderObj.value = targetValue
+                    sliderObj.Value = sliderObj.value
+                    updateSliderVisuals(true, tonumber(time) or 0.25)
+                    if sliderObj.Changed then
+                        pcall(sliderObj.Changed, targetValue)
+                    end
+                    return sliderObj
+                end
+
+                function sliderObj:SetLabel(text)
+                    sliderConfig.Name = tostring(text or "")
+                    sliderObj.labelText.Text = sliderConfig.Name
+                    return sliderObj
+                end
+
+                function sliderObj:SetColor(color)
+                    sliderObj.color = typeof(color) == "Color3" and color or getColor(color)
+                    updateSliderVisuals(true)
+                    return sliderObj
+                end
+
+                function sliderObj:SetLocked(bool, message)
+                    sliderObj.isLocked = bool == true
+                    sliderObj.lockMessage = message or sliderObj.lockMessage
+                    updateSliderVisuals(true)
+                    return sliderObj
+                end
+
+                function sliderObj:SetVisible(bool)
+                    sliderObj.isVisible = bool == true
+                    updateSliderVisuals(false)
+                    return sliderObj
+                end
+
+                function sliderObj:SetTransparency(value)
+                    sliderObj.transparency = math.clamp(tonumber(value) or 0, 0, 1)
+                    updateSliderVisuals(true)
+                    return sliderObj
+                end
+
                 function sliderObj:OnChanged(Func, callback)
-                    sliderObj.Changed = Func or callback
+                    sliderObj.Changed = Func or callback or function() end
+                    return sliderObj
                 end
-                
-                function sliderObj:SetVisible(visible)
-                    local isVisible = visible == true
-                    if sliderObj.labelText then
-                        sliderObj.labelText.Visible = isVisible
+
+                function sliderObj:Destroy()
+                    if sliderObj._destroyed then
+                        return
                     end
-                    if sliderObj.valueLabelText then
-                        sliderObj.valueLabelText.Visible = isVisible
+                    sliderObj._destroyed = true
+                    for i = #sliderObj._connections, 1, -1 do
+                        disconnect_signal(sliderObj._connections[i])
+                        sliderObj._connections[i] = nil
                     end
-                    if sliderObj.backgroundFrame then
-                        sliderObj.backgroundFrame.Visible = isVisible
+                    for i = #groupObj.elements, 1, -1 do
+                        if groupObj.elements[i] == sliderObj then
+                            table.remove(groupObj.elements, i)
+                            break
+                        end
+                    end
+                    Options[optionKey] = nil
+                    if groupObj.Library and groupObj.Library._trackedControls then
+                        groupObj.Library._trackedControls[sliderConfig.Flag] = nil
+                    end
+                    if sliderObj.labelText and sliderObj.labelText.Parent then
+                        sliderObj.labelText:Destroy()
+                    end
+                    if sliderObj.valueLabelText and sliderObj.valueLabelText.Parent then
+                        sliderObj.valueLabelText:Destroy()
+                    end
+                    if sliderObj.backgroundFrame and sliderObj.backgroundFrame.Parent then
+                        sliderObj.backgroundFrame:Destroy()
                     end
                 end
-                
-                function sliderObj:SetLocked(locked)
-                    sliderObj.isLocked = locked == true
-                    if sliderObj.isLocked then
-                        sliderObj.trackFrame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
-                        tween_to(sliderObj.fillFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
-                    else
-                        sliderObj.trackFrame.BackgroundColor3 = Color3.fromRGB(43, 43, 51)
-                        tween_to(sliderObj.fillFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
-                    end
-                end
-                
+
                 local isDraggingSlider = false
                 local activeSliderInput = nil
                 local function setSliderFromInput(input, instant)
@@ -5875,7 +6337,7 @@ function Modern:AddSection(config)
                     local value = sliderConfig.Min + sliderRange * percentageNow
                     sliderObj:Set(value, instant, false)
                 end
-                sliderClickButton.InputBegan:Connect(function(input)
+                table.insert(sliderObj._connections, sliderClickButton.InputBegan:Connect(function(input)
                     if sliderObj.isLocked then return end
                     local isMouse = input.UserInputType == Enum.UserInputType.MouseButton1
                         or input.UserInputType == Enum.UserInputType.Touch
@@ -5885,39 +6347,33 @@ function Modern:AddSection(config)
                     isDraggingSlider = true
                     activeSliderInput = isTouch and input or nil
                     setSliderFromInput(input, true)
-                end)
-                groupObj.Library:_TrackConnection(input_service.InputEnded:Connect(function(input)
+                end))
+                table.insert(sliderObj._connections, groupObj.Library:_TrackConnection(input_service.InputEnded:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or (input.UserInputType == Enum.UserInputType.Touch and (activeSliderInput == nil or input == activeSliderInput)) then
                         isDraggingSlider = false
                         activeSliderInput = nil
                     end
-                end))
-                groupObj.Library:_TrackConnection(input_service.InputChanged:Connect(function(input)
+                end)))
+                table.insert(sliderObj._connections, groupObj.Library:_TrackConnection(input_service.InputChanged:Connect(function(input)
                     if isDraggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or (input.UserInputType == Enum.UserInputType.Touch and (activeSliderInput == nil or input == activeSliderInput))) then
                         setSliderFromInput(input, true)
                     end
-                end))
+                end)))
 
                 updateSliderVisuals(false)
                 groupObj.Library:RegisterControl(sliderConfig.Flag, function()
                     return sliderObj:Get()
                 end, function(value)
-                    sliderObj:Set(tonumber(value) or sliderConfig.Min, true, false)
-                    if sliderObj.Changed then
-                        sliderObj.Changed(sliderObj.value)
-                    end
+                    sliderObj:Set(tonumber(value) or sliderConfig.Min, true, true)
                 end)
-                
-                -- Store in global Options table
-                Options[Idx or sliderConfig.Name] = sliderObj
-                sliderObj.Value = sliderObj.value
-                
+
+                Options[optionKey] = sliderObj
+
                 groupObj.element_y = groupObj.element_y + 44 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, sliderObj)
                 return sliderObj
             end
-
             function groupObj:AddButton(buttonConfig, callback)
                 -- Support old API: AddButton(text, callback)
                 if type(buttonConfig) == "string" then
@@ -5928,31 +6384,88 @@ function Modern:AddSection(config)
                 buttonConfig.Name = buttonConfig.Name or buttonConfig.Text or "Button"
                 buttonConfig.Icon = buttonConfig.Icon or nil
                 buttonConfig.Locked = buttonConfig.Locked or false
+                buttonConfig.Enabled = buttonConfig.Enabled ~= false
+                buttonConfig.Visible = buttonConfig.Visible ~= false
+                buttonConfig.Color = buttonConfig.Color or Color3.fromRGB(32, 32, 32)
+                buttonConfig.Transparency = buttonConfig.Transparency or 0
+                buttonConfig.Tooltip = buttonConfig.Tooltip or buttonConfig.Description
                 buttonConfig.Callback = buttonConfig.Callback or buttonConfig.Func or function() end
                 addSearchTerm(buttonConfig.Name)
                 
                 local buttonObj = {}
                 buttonObj.isLocked = buttonConfig.Locked
+                buttonObj.isEnabled = buttonConfig.Enabled
+                buttonObj.isVisible = buttonConfig.Visible
+                buttonObj.text = buttonConfig.Name
+                buttonObj.color = typeof(buttonConfig.Color) == "Color3" and buttonConfig.Color or getColor(buttonConfig.Color)
+                buttonObj.transparency = buttonConfig.Transparency
+                buttonObj.tooltip = buttonConfig.Tooltip
+                buttonObj._destroyed = false
+                buttonObj._callbacks = {}
+                buttonObj._connections = {}
                 local yPosition = groupObj.element_y
                 
                 buttonObj.mainFrame = create("Frame", {
-                    BackgroundColor3 = buttonObj.isLocked and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(32, 32, 32),
+                    BackgroundColor3 = buttonObj.isLocked and Color3.fromRGB(24, 24, 24) or buttonObj.color,
+                    BackgroundTransparency = buttonObj.transparency,
                     Position = UDim2.new(0, 10, 0, yPosition),
-                    Size = UDim2.new(1, -20 * scale_factor, 0, 28 * scale_factor), Parent = groupObj.mainFrame
+                    Size = UDim2.new(1, -20 * scale_factor, 0, 28 * scale_factor),
+                    Visible = buttonObj.isVisible,
+                    Parent = groupObj.mainFrame
                 })
+                buttonObj.frame = buttonObj.mainFrame
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = buttonObj.mainFrame})
                 
                 local buttonStrokeThing = create("UIStroke", {Color = buttonObj.isLocked and Color3.fromRGB(32, 32, 32) or Color3.fromRGB(48, 48, 48), Parent = buttonObj.mainFrame})
+                buttonObj.stroke = buttonStrokeThing
                 create("UIGradient", {
                     Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150,150,150)), ColorSequenceKeypoint.new(1, Color3.new(1,1,1))}),
                     Rotation = 260, Parent = buttonStrokeThing
                 })
                 
                 local textXPos = 8
+                local function updateTextLayout()
+                    local offset = buttonObj.iconImage and 30 or 8
+                    buttonObj.labelText.Position = UDim2.new(0, offset * scale_factor, 0, 0)
+                    buttonObj.labelText.Size = UDim2.new(1, -offset * scale_factor - 10, 1, 0)
+                end
+
+                local function updateButtonVisuals()
+                    if buttonObj._destroyed then
+                        return
+                    end
+                    local disabled = buttonObj.isLocked or not buttonObj.isEnabled
+                    local baseColor = disabled and Color3.fromRGB(24, 24, 24) or buttonObj.color
+                    local strokeColor = disabled and Color3.fromRGB(32, 32, 32) or Color3.fromRGB(48, 48, 48)
+                    local textColor = disabled and Color3.fromRGB(46, 46, 46) or Color3.fromRGB(120, 120, 120)
+                    local iconColor = disabled and Color3.fromRGB(50, 50, 50) or Color3.fromRGB(125, 125, 125)
+                    tween_to(buttonObj.mainFrame, {BackgroundColor3 = baseColor, BackgroundTransparency = buttonObj.transparency}, 0.2)
+                    tween_to(buttonStrokeThing, {Color = strokeColor}, 0.2)
+                    tween_to(buttonObj.labelText, {TextColor3 = textColor}, 0.2)
+                    if buttonObj.iconImage then
+                        tween_to(buttonObj.iconImage, {ImageColor3 = iconColor}, 0.2)
+                    end
+                    buttonObj.labelText.Text = buttonObj.text .. (buttonObj.isLocked and " (locked)" or "")
+                    buttonObj.mainFrame.Visible = buttonObj.isVisible
+                    buttonObj.clickButton.Active = buttonObj.isEnabled and not buttonObj.isLocked
+                    buttonObj.clickButton.AutoButtonColor = false
+                    if buttonObj.tooltip and tostring(buttonObj.tooltip) ~= "" then
+                        buttonObj.clickButton:SetAttribute("Tooltip", tostring(buttonObj.tooltip))
+                        if buttonObj.tooltipLabel then
+                            buttonObj.tooltipLabel.Text = tostring(buttonObj.tooltip)
+                        end
+                    else
+                        buttonObj.clickButton:SetAttribute("Tooltip", nil)
+                        if buttonObj.tooltipLabel then
+                            buttonObj.tooltipLabel.Visible = false
+                        end
+                    end
+                end
+
                 if buttonConfig.Icon then
-                    create("ImageLabel", {
+                    buttonObj.iconImage = create("ImageLabel", {
                         ImageColor3 = buttonObj.isLocked and Color3.fromRGB(50, 50, 50) or Color3.fromRGB(125, 125, 125),
-                        Image = buttonConfig.Icon, BackgroundTransparency = 1,
+                        Image = get_icon(buttonConfig.Icon, resolve_image(buttonConfig.Icon)), BackgroundTransparency = 1,
                         Position = UDim2.new(0, 8, 0.5, -8 * scale_factor),
                         Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor), Parent = buttonObj.mainFrame
                     })
@@ -5970,25 +6483,524 @@ function Modern:AddSection(config)
                 })
                 
                 local buttonClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = buttonObj.mainFrame})
-                buttonClickButton.MouseButton1Click:Connect(function() if not buttonObj.isLocked then buttonConfig.Callback() end end)
-                buttonClickButton.MouseEnter:Connect(function() if not buttonObj.isLocked then tween_to(buttonObj.mainFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2) end end)
-                buttonClickButton.MouseLeave:Connect(function() if not buttonObj.isLocked then tween_to(buttonObj.mainFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2) end end)
+                buttonObj.clickButton = buttonClickButton
+                buttonObj.tooltipLabel = create("TextLabel", {
+                    Name = "ButtonTooltip",
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    Text = tostring(buttonObj.tooltip or ""),
+                    TextColor3 = Color3.fromRGB(220, 220, 220),
+                    BackgroundColor3 = Color3.fromRGB(18, 18, 20),
+                    BackgroundTransparency = 0.04,
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 0, 1, 6 * scale_factor),
+                    Size = UDim2.new(1, 0, 0, 24 * scale_factor),
+                    TextSize = 12 * scale_factor,
+                    TextWrapped = true,
+                    Visible = false,
+                    ZIndex = 20,
+                    Parent = buttonObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 7), Parent = buttonObj.tooltipLabel})
+                create("UIStroke", {Color = Color3.fromRGB(45, 45, 50), Transparency = 0.25, Parent = buttonObj.tooltipLabel})
+
+                local function runButtonCallbacks()
+                    if buttonObj._destroyed or buttonObj.isLocked or not buttonObj.isEnabled then
+                        return
+                    end
+                    pcall(buttonConfig.Callback, buttonObj)
+                    for _, fn in ipairs(buttonObj._callbacks) do
+                        pcall(fn, buttonObj)
+                    end
+                end
+
+                table.insert(buttonObj._connections, buttonClickButton.MouseButton1Click:Connect(runButtonCallbacks))
+                table.insert(buttonObj._connections, buttonClickButton.MouseEnter:Connect(function()
+                    if not buttonObj.isLocked and buttonObj.isEnabled then
+                        tween_to(buttonObj.mainFrame, {BackgroundColor3 = buttonObj.color:Lerp(Color3.new(1, 1, 1), 0.1)}, 0.2)
+                    end
+                    if buttonObj.tooltip and tostring(buttonObj.tooltip) ~= "" then
+                        buttonObj.tooltipLabel.Visible = true
+                    end
+                end))
+                table.insert(buttonObj._connections, buttonClickButton.MouseLeave:Connect(function()
+                    if not buttonObj.isLocked and buttonObj.isEnabled then
+                        tween_to(buttonObj.mainFrame, {BackgroundColor3 = buttonObj.color}, 0.2)
+                    end
+                    buttonObj.tooltipLabel.Visible = false
+                end))
+
+                function buttonObj:SetText(text)
+                    buttonObj.text = tostring(text or "")
+                    buttonConfig.Name = buttonObj.text
+                    buttonConfig.Text = buttonObj.text
+                    buttonObj.labelText.Text = buttonObj.text .. (buttonObj.isLocked and " (locked)" or "")
+                    return buttonObj
+                end
+
+                function buttonObj:GetText()
+                    return buttonObj.text
+                end
+
+                function buttonObj:SetCallback(fn)
+                    buttonConfig.Callback = type(fn) == "function" and fn or function() end
+                    return buttonObj
+                end
+
+                function buttonObj:SetVisible(state)
+                    buttonObj.isVisible = state == true
+                    buttonObj.mainFrame.Visible = buttonObj.isVisible
+                    return buttonObj
+                end
+
+                function buttonObj:SetEnabled(state)
+                    buttonObj.isEnabled = state == true
+                    updateButtonVisuals()
+                    return buttonObj
+                end
                 
                 function buttonObj:SetLocked(locked)
                     buttonObj.isLocked = locked == true
-                    local newColor = buttonObj.isLocked and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(32, 32, 32)
-                    local newStrokeColor = buttonObj.isLocked and Color3.fromRGB(32, 32, 32) or Color3.fromRGB(48, 48, 48)
-                    local newTextColor = buttonObj.isLocked and Color3.fromRGB(46, 46, 46) or Color3.fromRGB(120, 120, 120)
-                    tween_to(buttonObj.mainFrame, {BackgroundColor3 = newColor}, 0.2)
-                    tween_to(buttonStrokeThing, {Color = newStrokeColor}, 0.2)
-                    tween_to(buttonObj.labelText, {TextColor3 = newTextColor}, 0.2)
-                    buttonObj.labelText.Text = buttonConfig.Name .. (buttonObj.isLocked and " (locked)" or "")
+                    updateButtonVisuals()
+                    return buttonObj
+                end
+
+                function buttonObj:SetColor(color)
+                    if typeof(color) == "Color3" then
+                        buttonObj.color = color
+                    else
+                        buttonObj.color = getColor(color)
+                    end
+                    updateButtonVisuals()
+                    return buttonObj
+                end
+
+                function buttonObj:SetTransparency(value)
+                    buttonObj.transparency = math.clamp(tonumber(value) or 0, 0, 1)
+                    updateButtonVisuals()
+                    return buttonObj
+                end
+
+                function buttonObj:SetIcon(icon)
+                    buttonConfig.Icon = icon
+                    if icon and tostring(icon) ~= "" then
+                        if not buttonObj.iconImage then
+                            buttonObj.iconImage = create("ImageLabel", {
+                                ImageColor3 = buttonObj.isLocked and Color3.fromRGB(50, 50, 50) or Color3.fromRGB(125, 125, 125),
+                                BackgroundTransparency = 1,
+                                Position = UDim2.new(0, 8, 0.5, -8 * scale_factor),
+                                Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor),
+                                Parent = buttonObj.mainFrame
+                            })
+                        end
+                        buttonObj.iconImage.Image = get_icon(icon, resolve_image(icon))
+                    elseif buttonObj.iconImage then
+                        buttonObj.iconImage:Destroy()
+                        buttonObj.iconImage = nil
+                    end
+                    updateTextLayout()
+                    updateButtonVisuals()
+                    return buttonObj
+                end
+
+                function buttonObj:SetTooltip(text)
+                    buttonObj.tooltip = text
+                    updateButtonVisuals()
+                    return buttonObj
+                end
+
+                function buttonObj:Confirm(text, confirmCallback)
+                    local message = tostring(text or "Are you sure?")
+                    local libraryRef = groupObj.Library
+                    if libraryRef and type(libraryRef.Dialog) == "function" then
+                        libraryRef:Dialog({
+                            Title = "Confirm",
+                            Content = message,
+                            Buttons = {
+                                {Text = "Cancel", ReturnValue = false},
+                                {Text = "Confirm", Primary = true, ReturnValue = true, Callback = function()
+                                    if type(confirmCallback) == "function" then
+                                        pcall(confirmCallback, buttonObj)
+                                    end
+                                end}
+                            }
+                        })
+                    elseif type(confirmCallback) == "function" then
+                        pcall(confirmCallback, buttonObj)
+                    end
+                    return buttonObj
+                end
+
+                function buttonObj:Pulse()
+                    local originalColor = buttonObj.mainFrame.BackgroundColor3
+                    tween_to(buttonObj.mainFrame, {BackgroundColor3 = buttonObj.color:Lerp(Color3.new(1, 1, 1), 0.25)}, 0.12)
+                    task.delay(0.12, function()
+                        if not buttonObj._destroyed and buttonObj.mainFrame and buttonObj.mainFrame.Parent then
+                            tween_to(buttonObj.mainFrame, {BackgroundColor3 = originalColor}, 0.18)
+                        end
+                    end)
+                    return buttonObj
+                end
+
+                function buttonObj:TweenSize(size)
+                    if typeof(size) == "UDim2" then
+                        tween_to(buttonObj.mainFrame, {Size = size}, 0.22)
+                    end
+                    return buttonObj
+                end
+
+                function buttonObj:OnClick(fn)
+                    if type(fn) == "function" then
+                        table.insert(buttonObj._callbacks, fn)
+                    end
+                    return buttonObj
+                end
+
+                function buttonObj:Destroy()
+                    if buttonObj._destroyed then
+                        return
+                    end
+                    buttonObj._destroyed = true
+                    for i = #buttonObj._connections, 1, -1 do
+                        disconnect_signal(buttonObj._connections[i])
+                        buttonObj._connections[i] = nil
+                    end
+                    for i = #groupObj.elements, 1, -1 do
+                        if groupObj.elements[i] == buttonObj then
+                            table.remove(groupObj.elements, i)
+                            break
+                        end
+                    end
+                    if buttonObj.mainFrame and buttonObj.mainFrame.Parent then
+                        buttonObj.mainFrame:Destroy()
+                    end
                 end
                 
+                updateButtonVisuals()
                 groupObj.element_y = groupObj.element_y + 35 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, buttonObj)
                 return buttonObj
+            end
+
+            function groupObj:AddLabel(labelConfig)
+                if type(labelConfig) == "string" then
+                    labelConfig = {Text = labelConfig}
+                end
+                labelConfig = labelConfig or {}
+                labelConfig.Text = labelConfig.Text or labelConfig.Name or "Label"
+                labelConfig.Color = labelConfig.Color or labelConfig.TextColor or Color3.fromRGB(124, 124, 124)
+                addSearchTerm(labelConfig.Text)
+
+                local labelObj = {}
+                labelObj.text = tostring(labelConfig.Text)
+                labelObj.color = typeof(labelConfig.Color) == "Color3" and labelConfig.Color or getColor(labelConfig.Color)
+                labelObj.isVisible = labelConfig.Visible ~= false
+                labelObj._destroyed = false
+                local yPosition = groupObj.element_y
+
+                labelObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = labelObj.color,
+                    Text = labelObj.text,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition),
+                    TextSize = 13.8 * scale_factor,
+                    Size = UDim2.new(1, -20 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    Visible = labelObj.isVisible,
+                    Parent = groupObj.mainFrame
+                })
+
+                function labelObj:SetText(text)
+                    labelObj.text = tostring(text or "")
+                    labelObj.labelText.Text = labelObj.text
+                    return labelObj
+                end
+
+                function labelObj:GetText()
+                    return labelObj.text
+                end
+
+                function labelObj:SetColor(color)
+                    labelObj.color = typeof(color) == "Color3" and color or getColor(color)
+                    tween_to(labelObj.labelText, {TextColor3 = labelObj.color}, 0.16)
+                    return labelObj
+                end
+
+                function labelObj:SetFont(font)
+                    if font then
+                        apply_font(labelObj.labelText, font)
+                        pcall(function()
+                            labelObj.labelText.Font = font
+                        end)
+                    end
+                    return labelObj
+                end
+
+                function labelObj:Pulse()
+                    local originalColor = labelObj.labelText.TextColor3
+                    tween_to(labelObj.labelText, {TextColor3 = originalColor:Lerp(Color3.new(1, 1, 1), 0.35)}, 0.12)
+                    task.delay(0.12, function()
+                        if not labelObj._destroyed and labelObj.labelText and labelObj.labelText.Parent then
+                            tween_to(labelObj.labelText, {TextColor3 = originalColor}, 0.18)
+                        end
+                    end)
+                    return labelObj
+                end
+
+                function labelObj:TweenTransparency(value, time)
+                    tween_to(labelObj.labelText, {TextTransparency = math.clamp(tonumber(value) or 0, 0, 1)}, tonumber(time) or 0.18)
+                    return labelObj
+                end
+
+                function labelObj:SetVisible(bool)
+                    labelObj.isVisible = bool == true
+                    labelObj.labelText.Visible = labelObj.isVisible
+                    return labelObj
+                end
+
+                function labelObj:Destroy()
+                    if labelObj._destroyed then return end
+                    labelObj._destroyed = true
+                    for i = #groupObj.elements, 1, -1 do
+                        if groupObj.elements[i] == labelObj then
+                            table.remove(groupObj.elements, i)
+                            break
+                        end
+                    end
+                    if labelObj.labelText and labelObj.labelText.Parent then
+                        labelObj.labelText:Destroy()
+                    end
+                end
+
+                groupObj.element_y = groupObj.element_y + 24 * scale_factor
+                update_group_size()
+                table.insert(groupObj.elements, labelObj)
+                return labelObj
+            end
+
+            function groupObj:AddDivider()
+                local dividerObj = {}
+                local yPosition = groupObj.element_y + 8 * scale_factor
+                dividerObj.frame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(42, 42, 42),
+                    BackgroundTransparency = 0.2,
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 10, 0, yPosition),
+                    Size = UDim2.new(1, -20 * scale_factor, 0, 1),
+                    Parent = groupObj.mainFrame
+                })
+                function dividerObj:SetVisible(bool)
+                    dividerObj.frame.Visible = bool == true
+                    return dividerObj
+                end
+                function dividerObj:Destroy()
+                    if dividerObj.frame and dividerObj.frame.Parent then
+                        dividerObj.frame:Destroy()
+                    end
+                end
+                groupObj.element_y = groupObj.element_y + 17 * scale_factor
+                update_group_size()
+                table.insert(groupObj.elements, dividerObj)
+                return dividerObj
+            end
+
+            function groupObj:AddTextInput(inputConfig, callback)
+                if type(inputConfig) == "string" then
+                    inputConfig = {Name = inputConfig, Callback = callback}
+                end
+                inputConfig = inputConfig or {}
+                inputConfig.Name = inputConfig.Name or inputConfig.Text or "Input"
+                inputConfig.Default = tostring(inputConfig.Default or inputConfig.Value or "")
+                inputConfig.PlaceholderText = inputConfig.PlaceholderText or inputConfig.Placeholder or inputConfig.PlaceholderText or "Enter text..."
+                inputConfig.Callback = inputConfig.Callback or inputConfig.ChangedCallback or function() end
+                inputConfig.EnterCallback = inputConfig.EnterCallback or inputConfig.SubmitCallback or function() end
+                inputConfig.Flag = inputConfig.Flag or createAutoFlag(inputConfig.Name)
+                addSearchTerm(inputConfig.Name)
+
+                local inputObj = {}
+                inputObj.text = inputConfig.Default
+                inputObj.maxLength = tonumber(inputConfig.MaxLength)
+                inputObj.isLocked = inputConfig.Locked == true
+                inputObj.lockMessage = inputConfig.LockMessage or inputConfig.Message
+                inputObj.isVisible = inputConfig.Visible ~= false
+                inputObj.transparency = math.clamp(tonumber(inputConfig.Transparency) or 0, 0, 1)
+                inputObj.color = typeof(inputConfig.Color) == "Color3" and inputConfig.Color or (inputConfig.Color and getColor(inputConfig.Color) or groupObj.Library.config.AccentColor)
+                inputObj._connections = {}
+                inputObj._changeCallbacks = {inputConfig.Callback}
+                inputObj._enterCallbacks = {inputConfig.EnterCallback}
+                inputObj._destroyed = false
+                local yPosition = groupObj.element_y
+
+                inputObj.labelText = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124),
+                    Text = inputConfig.Name,
+                    BackgroundTransparency = 1,
+                    TextTransparency = inputObj.transparency,
+                    Position = UDim2.new(0, 10, 0, yPosition),
+                    TextSize = 14 * scale_factor,
+                    Size = UDim2.new(0, 130 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    Visible = inputObj.isVisible,
+                    Parent = groupObj.mainFrame
+                })
+
+                inputObj.inputFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+                    BackgroundTransparency = inputObj.transparency,
+                    Position = UDim2.new(1, -150 * scale_factor, 0, yPosition),
+                    Size = UDim2.new(0, 140 * scale_factor, 0, 23 * scale_factor),
+                    Visible = inputObj.isVisible,
+                    Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = inputObj.inputFrame})
+                inputObj.stroke = create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Transparency = inputObj.transparency, Parent = inputObj.inputFrame})
+
+                inputObj.textBox = create("TextBox", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    Text = inputObj.text,
+                    PlaceholderText = inputConfig.PlaceholderText,
+                    PlaceholderColor3 = Color3.fromRGB(80, 80, 80),
+                    TextColor3 = Color3.fromRGB(180, 180, 180),
+                    TextTransparency = inputObj.transparency,
+                    BackgroundTransparency = 1,
+                    ClearTextOnFocus = false,
+                    Position = UDim2.new(0, 9 * scale_factor, 0, 0),
+                    Size = UDim2.new(1, -18 * scale_factor, 1, 0),
+                    TextSize = 12.8 * scale_factor,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Parent = inputObj.inputFrame
+                })
+
+                local function applyInputVisuals(animate)
+                    local label = inputConfig.Name
+                    if inputObj.isLocked and inputObj.lockMessage and tostring(inputObj.lockMessage) ~= "" then
+                        label = label .. " (" .. tostring(inputObj.lockMessage) .. ")"
+                    end
+                    inputObj.labelText.Text = label
+                    inputObj.labelText.Visible = inputObj.isVisible
+                    inputObj.inputFrame.Visible = inputObj.isVisible
+                    inputObj.textBox.TextEditable = not inputObj.isLocked
+                    local targetColor = inputObj.isLocked and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(32, 32, 32)
+                    if animate then
+                        tween_to(inputObj.inputFrame, {BackgroundColor3 = targetColor, BackgroundTransparency = inputObj.transparency}, 0.16)
+                        tween_to(inputObj.stroke, {Color = inputObj.color, Transparency = inputObj.transparency}, 0.16)
+                        tween_to(inputObj.labelText, {TextTransparency = inputObj.transparency}, 0.16)
+                        tween_to(inputObj.textBox, {TextTransparency = inputObj.transparency}, 0.16)
+                    else
+                        inputObj.inputFrame.BackgroundColor3 = targetColor
+                        inputObj.inputFrame.BackgroundTransparency = inputObj.transparency
+                        inputObj.stroke.Transparency = inputObj.transparency
+                        inputObj.labelText.TextTransparency = inputObj.transparency
+                        inputObj.textBox.TextTransparency = inputObj.transparency
+                    end
+                end
+
+                local function setInputText(text, silent)
+                    local nextText = tostring(text or "")
+                    if inputObj.maxLength then
+                        nextText = nextText:sub(1, inputObj.maxLength)
+                    end
+                    inputObj.text = nextText
+                    if inputObj.textBox.Text ~= nextText then
+                        inputObj.textBox.Text = nextText
+                    end
+                    if not silent then
+                        for _, fn in ipairs(inputObj._changeCallbacks) do
+                            pcall(fn, nextText)
+                        end
+                    end
+                end
+
+                table.insert(inputObj._connections, inputObj.textBox:GetPropertyChangedSignal("Text"):Connect(function()
+                    if inputObj._destroyed then return end
+                    setInputText(inputObj.textBox.Text, false)
+                end))
+                table.insert(inputObj._connections, inputObj.textBox.FocusLost:Connect(function(enterPressed)
+                    if inputObj._destroyed then return end
+                    if enterPressed then
+                        for _, fn in ipairs(inputObj._enterCallbacks) do
+                            pcall(fn, inputObj.text)
+                        end
+                    end
+                end))
+
+                function inputObj:SetText(text)
+                    setInputText(text, true)
+                    return inputObj
+                end
+                function inputObj:GetText()
+                    return inputObj.text
+                end
+                function inputObj:SetPlaceholder(text)
+                    inputObj.textBox.PlaceholderText = tostring(text or "")
+                    return inputObj
+                end
+                function inputObj:OnChange(fn)
+                    if type(fn) == "function" then table.insert(inputObj._changeCallbacks, fn) end
+                    return inputObj
+                end
+                function inputObj:OnEnter(fn)
+                    if type(fn) == "function" then table.insert(inputObj._enterCallbacks, fn) end
+                    return inputObj
+                end
+                function inputObj:SetMaxLength(num)
+                    inputObj.maxLength = tonumber(num)
+                    setInputText(inputObj.text, true)
+                    return inputObj
+                end
+                function inputObj:SetColor(color)
+                    inputObj.color = typeof(color) == "Color3" and color or getColor(color)
+                    applyInputVisuals(true)
+                    return inputObj
+                end
+                function inputObj:SetLocked(bool, message)
+                    inputObj.isLocked = bool == true
+                    inputObj.lockMessage = message or inputObj.lockMessage
+                    applyInputVisuals(true)
+                    return inputObj
+                end
+                function inputObj:SetVisible(bool)
+                    inputObj.isVisible = bool == true
+                    applyInputVisuals(false)
+                    return inputObj
+                end
+                function inputObj:SetTransparency(value)
+                    inputObj.transparency = math.clamp(tonumber(value) or 0, 0, 1)
+                    applyInputVisuals(true)
+                    return inputObj
+                end
+                function inputObj:Destroy()
+                    if inputObj._destroyed then return end
+                    inputObj._destroyed = true
+                    for i = #inputObj._connections, 1, -1 do
+                        disconnect_signal(inputObj._connections[i])
+                        inputObj._connections[i] = nil
+                    end
+                    for i = #groupObj.elements, 1, -1 do
+                        if groupObj.elements[i] == inputObj then table.remove(groupObj.elements, i) break end
+                    end
+                    if groupObj.Library and groupObj.Library._trackedControls then
+                        groupObj.Library._trackedControls[inputConfig.Flag] = nil
+                    end
+                    if inputObj.labelText and inputObj.labelText.Parent then inputObj.labelText:Destroy() end
+                    if inputObj.inputFrame and inputObj.inputFrame.Parent then inputObj.inputFrame:Destroy() end
+                end
+
+                applyInputVisuals(false)
+                groupObj.Library:RegisterControl(inputConfig.Flag, function()
+                    return inputObj:GetText()
+                end, function(value)
+                    inputObj:SetText(tostring(value or ""))
+                end)
+                Options[inputConfig.Flag] = inputObj
+                groupObj.element_y = groupObj.element_y + 31 * scale_factor
+                update_group_size()
+                table.insert(groupObj.elements, inputObj)
+                return inputObj
             end
 
             function groupObj:AddKeybind(keybindConfig)
@@ -6012,14 +7024,20 @@ function Modern:AddSection(config)
                 keybindObj.isListening = false
                 keybindObj.holdActive = false
                 keybindObj.isLocked = keybindConfig.Locked
+                keybindObj.isVisible = keybindConfig.Visible ~= false
+                keybindObj.transparency = math.clamp(tonumber(keybindConfig.Transparency) or 0, 0, 1)
+                keybindObj.lockMessage = keybindConfig.LockMessage or keybindConfig.Message
+                keybindObj._destroyed = false
                 local yPosition = groupObj.element_y
                 
                 keybindObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(124, 124, 124), Text = keybindConfig.Name, BackgroundTransparency = 1,
+                    TextTransparency = keybindObj.transparency,
                     Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
                     Size = UDim2.new(0, 145 * scale_factor, 0, 20 * scale_factor),
                     TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    Visible = keybindObj.isVisible,
                     Parent = groupObj.mainFrame
                 })
                 
@@ -6035,12 +7053,12 @@ function Modern:AddSection(config)
                 local keyWidth = math.max(48 * scale_factor, measure_text_width(keyText, 12 * scale_factor) + 30 * scale_factor)
                 
                 keybindObj.button_frame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(32, 32, 32), Position = UDim2.new(1, -keyWidth - 10, 0, yPosition),
-                    Size = UDim2.new(0, keyWidth, 0, 22 * scale_factor), Active = true, Parent = groupObj.mainFrame
+                    BackgroundColor3 = Color3.fromRGB(32, 32, 32), BackgroundTransparency = keybindObj.transparency, Position = UDim2.new(1, -keyWidth - 10, 0, yPosition),
+                    Size = UDim2.new(0, keyWidth, 0, 22 * scale_factor), Active = true, Visible = keybindObj.isVisible, Parent = groupObj.mainFrame
                 })
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = keybindObj.button_frame})
                 
-                local keybindStrokeThing = create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Parent = keybindObj.button_frame})
+                local keybindStrokeThing = create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Transparency = keybindObj.transparency, Parent = keybindObj.button_frame})
                 create("UIGradient", {
                     Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150,150,150)), ColorSequenceKeypoint.new(1, Color3.new(1,1,1))}),
                     Rotation = 260, Parent = keybindStrokeThing
@@ -6049,6 +7067,7 @@ function Modern:AddSection(config)
                 keybindObj.keyLabelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(113, 113, 113), Text = keyText, BackgroundTransparency = 1,
+                    TextTransparency = keybindObj.transparency,
                     Position = UDim2.new(0, 2, 0, 0), TextSize = 12.8 * scale_factor,
                     Size = UDim2.new(1, -24 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
                     Parent = keybindObj.button_frame
@@ -6056,7 +7075,7 @@ function Modern:AddSection(config)
                 create("UIPadding", {PaddingLeft = UDim.new(0, 2), Parent = keybindObj.keyLabelText})
                 
                 keybindObj.keyboardIconImg = create("ImageLabel", {
-                    ImageColor3 = Color3.fromRGB(76, 76, 76), Image = "rbxassetid://10723416765", BackgroundTransparency = 1,
+                    ImageColor3 = Color3.fromRGB(76, 76, 76), ImageTransparency = keybindObj.transparency, Image = "rbxassetid://10723416765", BackgroundTransparency = 1,
                     Position = UDim2.new(1, -18 * scale_factor, 0.5, -7.5 * scale_factor),
                     Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = keybindObj.button_frame
                 })
@@ -6068,7 +7087,33 @@ function Modern:AddSection(config)
                     tween_to(keybindObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 22 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
                 end
 
+                local function updateKeybindVisuals(animate)
+                    local label = keybindConfig.Name
+                    if keybindObj.isLocked and keybindObj.lockMessage and tostring(keybindObj.lockMessage) ~= "" then
+                        label = label .. " (" .. tostring(keybindObj.lockMessage) .. ")"
+                    end
+                    keybindObj.labelText.Text = label
+                    keybindObj.labelText.Visible = keybindObj.isVisible
+                    keybindObj.button_frame.Visible = keybindObj.isVisible
+                    local bg = keybindObj.isLocked and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(32, 32, 32)
+                    if animate then
+                        tween_to(keybindObj.button_frame, {BackgroundColor3 = bg, BackgroundTransparency = keybindObj.transparency}, 0.16)
+                        tween_to(keybindStrokeThing, {Transparency = keybindObj.transparency}, 0.16)
+                        tween_to(keybindObj.labelText, {TextTransparency = keybindObj.transparency}, 0.16)
+                        tween_to(keybindObj.keyLabelText, {TextTransparency = keybindObj.transparency}, 0.16)
+                        tween_to(keybindObj.keyboardIconImg, {ImageTransparency = keybindObj.transparency}, 0.16)
+                    else
+                        keybindObj.button_frame.BackgroundColor3 = bg
+                        keybindObj.button_frame.BackgroundTransparency = keybindObj.transparency
+                        keybindStrokeThing.Transparency = keybindObj.transparency
+                        keybindObj.labelText.TextTransparency = keybindObj.transparency
+                        keybindObj.keyLabelText.TextTransparency = keybindObj.transparency
+                        keybindObj.keyboardIconImg.ImageTransparency = keybindObj.transparency
+                    end
+                end
+
                 function keybindObj:Set(key, silent)
+                    if keybindObj._destroyed then return keybindObj end
                     if keybindObj.holdActive then
                         keybindObj.holdActive = false
                         keybindConfig.Callback(false)
@@ -6080,6 +7125,7 @@ function Modern:AddSection(config)
                     if not silent then
                         keybindConfig.ChangedCallback(key)
                     end
+                    return keybindObj
                 end
 
                 function keybindObj:Get()
@@ -6089,7 +7135,7 @@ function Modern:AddSection(config)
                 function keybindObj:SetMode(modeValue, silent)
                     local newMode = normalizeMode(modeValue)
                     if newMode == keybindObj.mode then
-                        return
+                        return keybindObj
                     end
                     if keybindObj.holdActive then
                         keybindObj.holdActive = false
@@ -6099,19 +7145,66 @@ function Modern:AddSection(config)
                     if not silent then
                         keybindConfig.ModeChangedCallback(newMode)
                     end
+                    return keybindObj
                 end
                 
                 function keybindObj:GetMode()
                     return keybindObj.mode
                 end
                 
-                function keybindObj:SetLocked(locked)
+                function keybindObj:SetLocked(locked, message)
                     keybindObj.isLocked = locked == true
-                    if keybindObj.isLocked then
-                        tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(24, 24, 24)}, 0.2)
-                    else
-                        tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                    keybindObj.lockMessage = message or keybindObj.lockMessage
+                    updateKeybindVisuals(true)
+                    return keybindObj
+                end
+
+                function keybindObj:SetKey(key)
+                    return keybindObj:Set(key, false)
+                end
+
+                function keybindObj:GetKey()
+                    return keybindObj:Get()
+                end
+
+                function keybindObj:Clear()
+                    return keybindObj:Set(Enum.KeyCode.Unknown, false)
+                end
+
+                function keybindObj:SetLabel(text)
+                    keybindConfig.Name = tostring(text or "")
+                    updateKeybindVisuals(false)
+                    return keybindObj
+                end
+
+                function keybindObj:SetVisible(bool)
+                    keybindObj.isVisible = bool == true
+                    updateKeybindVisuals(false)
+                    return keybindObj
+                end
+
+                function keybindObj:SetTransparency(value)
+                    keybindObj.transparency = math.clamp(tonumber(value) or 0, 0, 1)
+                    updateKeybindVisuals(true)
+                    return keybindObj
+                end
+
+                function keybindObj:Destroy()
+                    if keybindObj._destroyed then return end
+                    keybindObj._destroyed = true
+                    keybindObj:Close()
+                    for i = #groupObj.elements, 1, -1 do
+                        if groupObj.elements[i] == keybindObj then
+                            table.remove(groupObj.elements, i)
+                            break
+                        end
                     end
+                    if groupObj.Library and groupObj.Library._trackedControls then
+                        groupObj.Library._trackedControls[keybindConfig.Flag] = nil
+                        groupObj.Library._trackedControls[keybindConfig.ModeFlag] = nil
+                    end
+                    if keybindObj.labelText and keybindObj.labelText.Parent then keybindObj.labelText:Destroy() end
+                    if keybindObj.button_frame and keybindObj.button_frame.Parent then keybindObj.button_frame:Destroy() end
                 end
                 
                 function keybindObj:Close()
@@ -6290,6 +7383,11 @@ function Modern:AddSection(config)
                 function keybindToggleObj:GetToggle()
                     return keybindToggleObj.toggleValue
                 end
+
+                -- Added Toggle:Set(state) method for KeybindToggle
+                function keybindToggleObj:Set(state)
+                    keybindToggleObj:SetToggle(state == true)
+                end
                 
                 toggleClickButton.MouseButton1Click:Connect(function() keybindToggleObj:SetToggle(not keybindToggleObj.toggleValue, false) end)
                 keybindClickButton.MouseButton1Click:Connect(function()
@@ -6339,7 +7437,16 @@ function Modern:AddSection(config)
                 local Idx = nil
                 if type(dropdownConfig) == "string" then
                     Idx = dropdownConfig
-                    dropdownConfig = {Name = dropdownConfig, Flag = dropdownConfig, Text = config and config.Text or dropdownConfig, Values = config and config.Values or {}}
+                    dropdownConfig = {
+                        Name = dropdownConfig,
+                        Flag = dropdownConfig,
+                        Text = config and config.Text or dropdownConfig,
+                        Values = config and (config.Values or config.Options) or {},
+                        Default = config and config.Default,
+                        Callback = config and config.Callback,
+                        Multi = config and config.Multi,
+                        MultiSelect = config and config.MultiSelect
+                    }
                     -- Check for Multi parameter in old API format
                     if config and config.Multi == true then
                         warn("[UI Debug] Redirecting to AddMultiDropdown:", Idx, "Values:", config.Values)
@@ -6349,7 +7456,7 @@ function Modern:AddSection(config)
                 
                 dropdownConfig = dropdownConfig or {}
                 -- Support Multi parameter in new API format
-                if dropdownConfig.Multi == true then
+                if dropdownConfig.Multi == true and dropdownConfig.__MultiRedirected ~= true then
                     return groupObj:AddMultiDropdown(dropdownConfig)
                 end
                 dropdownConfig.Name = dropdownConfig.Name or dropdownConfig.Title or dropdownConfig.Text or "Dropdown"
@@ -6373,10 +7480,12 @@ function Modern:AddSection(config)
                     end
                 end
                 dropdownConfig.Options = normalize_dropdown(dropdownOptionsSource)
-                if dropdownConfig.AllowNull ~= true then
+                if dropdownConfig.Multi == true and dropdownConfig.Default == nil then
+                    dropdownConfig.Default = {}
+                elseif dropdownConfig.AllowNull ~= true then
                     dropdownConfig.Default = dropdownConfig.Default or dropdownConfig.Options[1] or "None"
                 end
-                if dropdownConfig.Default ~= nil and not table.find(dropdownConfig.Options, dropdownConfig.Default) then
+                if dropdownConfig.Default ~= nil and dropdownConfig.Multi ~= true and not table.find(dropdownConfig.Options, dropdownConfig.Default) then
                     dropdownConfig.Default = dropdownConfig.Options[1] or "None"
                 end
                 addSearchTerm(dropdownConfig.Name)
@@ -6387,9 +7496,27 @@ function Modern:AddSection(config)
                 local dropdownObj = {}
                 dropdownObj.value = dropdownConfig.Default
                 dropdownObj.isLocked = dropdownConfig.Locked
+                dropdownObj.isMulti = dropdownConfig.Multi == true or dropdownConfig.MultiSelect == true
+                dropdownObj.selectedValues = {}
+                dropdownObj.lockedOptions = {}
+                dropdownObj.lockMessage = dropdownConfig.LockMessage or dropdownConfig.LockedMessage or dropdownConfig.Message
+                dropdownObj.color = typeof(dropdownConfig.Color) == "Color3" and dropdownConfig.Color or (dropdownConfig.Color and getColor(dropdownConfig.Color) or groupObj.Library.config.AccentColor)
+                dropdownObj.transparency = math.clamp(tonumber(dropdownConfig.Transparency) or 0, 0, 1)
+                dropdownObj.isVisible = dropdownConfig.Visible ~= false
+                dropdownObj._connections = {}
+                dropdownObj._destroyed = false
                 setmetatable(dropdownObj, {
                     __index = function(self, key)
                         if key == "Value" then
+                            if dropdownObj.isMulti then
+                                local selected = {}
+                                for option, isSelected in pairs(dropdownObj.selectedValues) do
+                                    if isSelected then
+                                        table.insert(selected, option)
+                                    end
+                                end
+                                return selected
+                            end
                             return dropdownObj.value
                         end
                         return rawget(dropdownObj, key)
@@ -6405,39 +7532,41 @@ function Modern:AddSection(config)
                 dropdownObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(124, 124, 124), Text = dropdownConfig.Name, BackgroundTransparency = 1,
+                    TextTransparency = dropdownObj.transparency,
                     Position = UDim2.new(0, 10, 0, yPosition), TextSize = 13.8 * scale_factor,
                     Size = UDim2.new(0, 130 * scale_factor, 0, 20 * scale_factor),
-                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = groupObj.mainFrame
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Visible = dropdownObj.isVisible, Parent = groupObj.mainFrame
                 })
                 
                 local displayText = tostring(dropdownObj.value or "None")
                 local buttonWidth = math.max(80 * scale_factor, measure_text_width(displayText, 12 * scale_factor) + 36 * scale_factor)
                 
                 dropdownObj.button_frame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(32, 32, 32), Position = UDim2.new(1, -buttonWidth - 10, 0, yPosition),
-                    Size = UDim2.new(0, buttonWidth, 0, 23 * scale_factor), Parent = groupObj.mainFrame
+                    BackgroundColor3 = Color3.fromRGB(32, 32, 32), BackgroundTransparency = dropdownObj.transparency, Position = UDim2.new(1, -buttonWidth - 10, 0, yPosition),
+                    Size = UDim2.new(0, buttonWidth, 0, 23 * scale_factor), Visible = dropdownObj.isVisible, Parent = groupObj.mainFrame
                 })
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = dropdownObj.button_frame})
                 
-                local dropdownStrokeThing = create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = dropdownObj.button_frame})
+                local dropdownStrokeThing = create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Transparency = dropdownObj.transparency, Parent = dropdownObj.button_frame})
                 
                 dropdownObj.selectedLabelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(84, 84, 84), Text = displayText, BackgroundTransparency = 1,
+                    TextTransparency = dropdownObj.transparency,
                     Position = UDim2.new(0, 8, 0, 0), TextSize = 12.8 * scale_factor,
                     Size = UDim2.new(1, -28 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
                     TextTruncate = Enum.TextTruncate.AtEnd, Parent = dropdownObj.button_frame
                 })
                 
                 dropdownObj.arrowImg = create("ImageLabel", {
-                    ImageColor3 = Color3.fromRGB(80, 80, 80), Image = default_icons.expand, BackgroundTransparency = 1,
+                    ImageColor3 = Color3.fromRGB(80, 80, 80), ImageTransparency = dropdownObj.transparency, Image = default_icons.expand, BackgroundTransparency = 1,
                     Position = UDim2.new(1, -20 * scale_factor, 0.5, -7.5 * scale_factor),
                     Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = dropdownObj.button_frame
                 })
                 
                 local dropdown_popup_w = math.max(220 * scale_factor, buttonWidth + 34 * scale_factor)
                 dropdownObj.optionHolderFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, dropdown_popup_w, 0, 0),
+                    BackgroundColor3 = Color3.fromRGB(16, 16, 16), BackgroundTransparency = dropdownObj.transparency, Size = UDim2.new(0, dropdown_popup_w, 0, 0),
                     ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
                 })
                 create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = dropdownObj.optionHolderFrame})
@@ -6490,6 +7619,8 @@ function Modern:AddSection(config)
                     ZIndex = 10000, Parent = dropdownObj.optionScrollFrame
                 })
                 
+                local search_query = ""
+                local search_textbox
                 local maxDropdownHeight = 240 * scale_factor
                 local dropdownPositionUpdateConn = nil
 
@@ -6534,8 +7665,89 @@ function Modern:AddSection(config)
                     tween_to(dropdownCloseIcon, {ImageColor3 = Color3.fromRGB(130, 130, 130)}, 0.12)
                 end)
 
-                local search_query = ""
-                local search_textbox
+                local function getSelectedArray()
+                    local selected = {}
+                    for _, option in ipairs(dropdownConfig.Options) do
+                        if dropdownObj.selectedValues[option] == true then
+                            table.insert(selected, option)
+                        end
+                    end
+                    return selected
+                end
+
+                local function setSelectedFromValue(value)
+                    dropdownObj.selectedValues = {}
+                    if type(value) == "table" then
+                        for _, option in ipairs(value) do
+                            dropdownObj.selectedValues[option] = true
+                        end
+                    elseif value ~= nil then
+                        dropdownObj.selectedValues[value] = true
+                    end
+                end
+
+                local function getDisplayValue()
+                    if dropdownObj.isMulti then
+                        local selected = getSelectedArray()
+                        if #selected == 0 then
+                            return "None"
+                        end
+                        return table.concat(selected, ", ")
+                    end
+                    return tostring(dropdownObj.value or "None")
+                end
+
+                local function updateDropdownDisplay(animate)
+                    local displayValue = getDisplayValue()
+                    dropdownObj.Value = dropdownObj.isMulti and getSelectedArray() or dropdownObj.value
+                    dropdownObj.selectedLabelText.Text = displayValue
+                    local newWidth = math.max(70 * scale_factor, measure_text_width(displayValue, 12 * scale_factor) + 30 * scale_factor)
+                    local target = {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}
+                    if animate then
+                        tween_to(dropdownObj.button_frame, target, 0.15)
+                    else
+                        dropdownObj.button_frame.Size = target.Size
+                        dropdownObj.button_frame.Position = target.Position
+                    end
+                end
+
+                local function fireDropdownChanged()
+                    if dropdownObj.Changed then
+                        if dropdownObj.isMulti then
+                            dropdownObj.Changed(getSelectedArray())
+                        else
+                            dropdownObj.Changed(dropdownObj.value)
+                        end
+                    end
+                end
+
+                local function updateDropdownVisuals(animate)
+                    local buttonColor = dropdownObj.isLocked and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(32, 32, 32)
+                    local textColor = dropdownObj.isLocked and Color3.fromRGB(70, 70, 70) or Color3.fromRGB(124, 124, 124)
+                    dropdownObj.labelText.Text = dropdownConfig.Name .. ((dropdownObj.isLocked and dropdownObj.lockMessage and tostring(dropdownObj.lockMessage) ~= "") and (" (" .. tostring(dropdownObj.lockMessage) .. ")") or "")
+                    dropdownObj.labelText.Visible = dropdownObj.isVisible
+                    dropdownObj.button_frame.Visible = dropdownObj.isVisible
+                    if not dropdownObj.isVisible then
+                        closeDropdown(true)
+                    end
+                    if animate then
+                        tween_to(dropdownObj.button_frame, {BackgroundColor3 = buttonColor, BackgroundTransparency = dropdownObj.transparency}, 0.16)
+                        tween_to(dropdownStrokeThing, {Transparency = dropdownObj.transparency}, 0.16)
+                        tween_to(dropdownObj.labelText, {TextColor3 = textColor, TextTransparency = dropdownObj.transparency}, 0.16)
+                        tween_to(dropdownObj.selectedLabelText, {TextTransparency = dropdownObj.transparency}, 0.16)
+                        tween_to(dropdownObj.arrowImg, {ImageTransparency = dropdownObj.transparency}, 0.16)
+                        tween_to(dropdownObj.optionHolderFrame, {BackgroundTransparency = dropdownObj.transparency}, 0.16)
+                    else
+                        dropdownObj.button_frame.BackgroundColor3 = buttonColor
+                        dropdownObj.button_frame.BackgroundTransparency = dropdownObj.transparency
+                        dropdownStrokeThing.Transparency = dropdownObj.transparency
+                        dropdownObj.labelText.TextColor3 = textColor
+                        dropdownObj.labelText.TextTransparency = dropdownObj.transparency
+                        dropdownObj.selectedLabelText.TextTransparency = dropdownObj.transparency
+                        dropdownObj.arrowImg.ImageTransparency = dropdownObj.transparency
+                        dropdownObj.optionHolderFrame.BackgroundTransparency = dropdownObj.transparency
+                    end
+                end
 
                 local search_frame = create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(22, 22, 22), BorderSizePixel = 0,
@@ -6567,11 +7779,18 @@ function Modern:AddSection(config)
                     end
                     local optY = 0
                     for _, option in ipairs(filtered) do
-                        local isSelected = dropdownObj.value == option
+                        local isSelected = dropdownObj.isMulti and dropdownObj.selectedValues[option] == true or dropdownObj.value == option
+                        local isLockedOption = dropdownObj.lockedOptions[option] ~= nil
+                        local lockMessage = dropdownObj.lockedOptions[option]
+                        local optionPrefix = dropdownObj.isMulti and (isSelected and "[x] " or "[ ] ") or ""
+                        local optionSuffix = ""
+                        if isLockedOption and lockMessage ~= true and tostring(lockMessage) ~= "" then
+                            optionSuffix = " (" .. tostring(lockMessage) .. ")"
+                        end
                         local optionLabelText = create("TextLabel", {
                             FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                            TextColor3 = isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124),
-                            Text = tostring(option), BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0, optY),
+                            TextColor3 = isLockedOption and Color3.fromRGB(78, 78, 82) or (isSelected and dropdownObj.color or Color3.fromRGB(124, 124, 124)),
+                            Text = optionPrefix .. tostring(option) .. optionSuffix, BackgroundTransparency = 1, TextTransparency = dropdownObj.transparency, Position = UDim2.new(0, 12, 0, optY),
                             TextSize = 14 * scale_factor, Size = UDim2.new(1, -24, 0, 18 * scale_factor),
                             TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
                             ZIndex = 10001, Parent = dropdownObj.optionContainerFrame
@@ -6581,19 +7800,22 @@ function Modern:AddSection(config)
                             Size = UDim2.new(1, 0, 0, 20 * scale_factor), ZIndex = 10002, Parent = dropdownObj.optionContainerFrame
                         })
                         optionClickButton.MouseButton1Click:Connect(function()
-                            dropdownObj.value = option
-                            dropdownObj.Value = dropdownObj.value
-                            closeDropdown(false)
-                            local optionText = tostring(option)
-                            dropdownObj.selectedLabelText.Text = optionText
-                            local newWidth = math.max(70 * scale_factor, measure_text_width(optionText, 12 * scale_factor) + 30 * scale_factor)
-                            tween_to(dropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
-                            if dropdownObj.Changed then
-                                dropdownObj.Changed(option)
+                            if dropdownObj.lockedOptions[option] ~= nil then
+                                return
                             end
+                            if dropdownObj.isMulti then
+                                dropdownObj.selectedValues[option] = not dropdownObj.selectedValues[option]
+                            else
+                                dropdownObj.value = option
+                                dropdownObj.Value = dropdownObj.value
+                                closeDropdown(false)
+                            end
+                            updateDropdownDisplay(true)
+                            createOptionsYay(search_query)
+                            fireDropdownChanged()
                         end)
-                        optionClickButton.MouseEnter:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(180, 180, 180)}, 0.2) end end)
-                        optionClickButton.MouseLeave:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(124, 124, 124)}, 0.2) end end)
+                        optionClickButton.MouseEnter:Connect(function() if not isLockedOption and not isSelected then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(180, 180, 180)}, 0.2) end end)
+                        optionClickButton.MouseLeave:Connect(function() if not isLockedOption and not isSelected then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(124, 124, 124)}, 0.2) end end)
                         optY = optY + 22 * scale_factor
                     end
                     dropdownObj.optionContainerFrame.Size = UDim2.new(1, -6, 0, optY)
@@ -6609,6 +7831,11 @@ function Modern:AddSection(config)
                     createOptionsYay(search_query)
                 end)
 
+                if dropdownObj.isMulti then
+                    setSelectedFromValue(dropdownConfig.Default)
+                end
+                updateDropdownDisplay(false)
+                updateDropdownVisuals(false)
                 createOptionsYay()
                 
                 local dropdownClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = dropdownObj.button_frame})
@@ -6665,30 +7892,32 @@ function Modern:AddSection(config)
                 dropdownObj.Changed = dropdownConfig.Callback
                 
                 function dropdownObj:Set(value, silent)
-                    if value == nil then return end
-                    dropdownObj.value = value
-                    dropdownObj.Value = dropdownObj.value
-                    local displayValue = tostring(value)
-                    dropdownObj.selectedLabelText.Text = displayValue
-                    local newWidth = math.max(70 * scale_factor, measure_text_width(displayValue, 12 * scale_factor) + 30 * scale_factor)
-                    dropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
-                    dropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
-                    createOptionsYay()
-                    if not silent and dropdownObj.Changed then
-                        dropdownObj.Changed(value)
+                    if value == nil then return dropdownObj end
+                    if dropdownObj.isMulti then
+                        setSelectedFromValue(value)
+                    else
+                        dropdownObj.value = value
+                        dropdownObj.Value = dropdownObj.value
                     end
+                    updateDropdownDisplay(false)
+                    createOptionsYay()
+                    if not silent then
+                        fireDropdownChanged()
+                    end
+                    return dropdownObj
                 end
                 function dropdownObj:Get()
-                    return dropdownObj.value
+                    return dropdownObj.isMulti and getSelectedArray() or dropdownObj.value
                 end
                 
                 function dropdownObj:OnChanged(callback)
                     dropdownObj.Changed = callback
+                    return dropdownObj
                 end
                 
                 function dropdownObj:UpdateOptions(newOptions)
                     if type(newOptions) ~= "table" then
-                        return
+                        return dropdownObj
                     end
                     dropdownOptionsSource = newOptions
                     dropdownObj._optionsSignature = get_dropdown_signature(newOptions)
@@ -6696,22 +7925,188 @@ function Modern:AddSection(config)
                     for _, option in ipairs(dropdownConfig.Options) do
                         addSearchTerm(tostring(option))
                     end
-                    if not table.find(dropdownConfig.Options, dropdownObj.value) then
+                    if dropdownObj.isMulti then
+                        local filteredSelected = {}
+                        for _, option in ipairs(dropdownConfig.Options) do
+                            if dropdownObj.selectedValues[option] then
+                                filteredSelected[option] = true
+                            end
+                        end
+                        dropdownObj.selectedValues = filteredSelected
+                    elseif not table.find(dropdownConfig.Options, dropdownObj.value) then
                         dropdownObj.value = dropdownConfig.Options[1] or "None"
                     end
-                    local displayValue = tostring(dropdownObj.value or "None")
-                    dropdownObj.selectedLabelText.Text = displayValue
-                    local newWidth = math.max(70 * scale_factor, measure_text_width(displayValue, 12 * scale_factor) + 30 * scale_factor)
-                    dropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
-                    dropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
+                    updateDropdownDisplay(false)
                     createOptionsYay(search_query)
                     if groupObj.Library._searchQuery ~= "" then
                         groupObj.Library:SetSearchFilter(groupObj.Library._searchQuery)
                     end
+                    return dropdownObj
                 end
                 
                 function dropdownObj:SetValues(newOptions)
-                    dropdownObj:UpdateOptions(newOptions)
+                    return dropdownObj:UpdateOptions(newOptions)
+                end
+
+                function dropdownObj:Add(option)
+                    if option ~= nil then
+                        table.insert(dropdownConfig.Options, option)
+                        dropdownOptionsSource = dropdownConfig.Options
+                        dropdownObj._optionsSignature = get_dropdown_signature(dropdownConfig.Options)
+                        addSearchTerm(tostring(option))
+                        createOptionsYay(search_query)
+                    end
+                    return dropdownObj
+                end
+
+                function dropdownObj:Remove(option)
+                    for i = #dropdownConfig.Options, 1, -1 do
+                        if dropdownConfig.Options[i] == option then
+                            table.remove(dropdownConfig.Options, i)
+                        end
+                    end
+                    dropdownObj.lockedOptions[option] = nil
+                    dropdownObj.selectedValues[option] = nil
+                    if dropdownObj.value == option then
+                        dropdownObj.value = dropdownConfig.Options[1] or "None"
+                    end
+                    dropdownOptionsSource = dropdownConfig.Options
+                    dropdownObj._optionsSignature = get_dropdown_signature(dropdownConfig.Options)
+                    updateDropdownDisplay(false)
+                    createOptionsYay(search_query)
+                    return dropdownObj
+                end
+
+                function dropdownObj:Clear()
+                    dropdownConfig.Options = {}
+                    dropdownOptionsSource = dropdownConfig.Options
+                    dropdownObj.value = nil
+                    dropdownObj.selectedValues = {}
+                    dropdownObj.lockedOptions = {}
+                    dropdownObj._optionsSignature = "0"
+                    updateDropdownDisplay(false)
+                    createOptionsYay(search_query)
+                    return dropdownObj
+                end
+
+                function dropdownObj:SetOptions(options)
+                    return dropdownObj:UpdateOptions(options)
+                end
+
+                function dropdownObj:Refresh()
+                    if type(dropdownConfig.OptionsProvider) == "function" then
+                        local ok, providedOptions = pcall(dropdownConfig.OptionsProvider)
+                        if ok and type(providedOptions) == "table" then
+                            dropdownObj:UpdateOptions(providedOptions)
+                        end
+                    else
+                        dropdownObj._optionsSignature = get_dropdown_signature(dropdownConfig.Options)
+                        updateDropdownDisplay(false)
+                        createOptionsYay(search_query)
+                    end
+                    return dropdownObj
+                end
+
+                function dropdownObj:LockOption(option, message)
+                    dropdownObj.lockedOptions[option] = message or true
+                    createOptionsYay(search_query)
+                    return dropdownObj
+                end
+
+                function dropdownObj:UnlockOption(option)
+                    dropdownObj.lockedOptions[option] = nil
+                    createOptionsYay(search_query)
+                    return dropdownObj
+                end
+
+                function dropdownObj:IsOptionLocked(option)
+                    return dropdownObj.lockedOptions[option] ~= nil
+                end
+
+                function dropdownObj:SetMulti(bool)
+                    local nextMulti = bool == true
+                    if dropdownObj.isMulti == nextMulti then
+                        return dropdownObj
+                    end
+                    if nextMulti then
+                        setSelectedFromValue(dropdownObj.value)
+                    else
+                        local selected = getSelectedArray()
+                        dropdownObj.value = selected[1] or dropdownConfig.Options[1] or "None"
+                        dropdownObj.selectedValues = {}
+                    end
+                    dropdownObj.isMulti = nextMulti
+                    updateDropdownDisplay(false)
+                    createOptionsYay(search_query)
+                    return dropdownObj
+                end
+
+                function dropdownObj:GetSelected()
+                    return getSelectedArray()
+                end
+
+                function dropdownObj:SetLabel(text)
+                    dropdownConfig.Name = tostring(text or "")
+                    updateDropdownVisuals(false)
+                    return dropdownObj
+                end
+
+                function dropdownObj:SetColor(color)
+                    dropdownObj.color = typeof(color) == "Color3" and color or getColor(color)
+                    createOptionsYay(search_query)
+                    return dropdownObj
+                end
+
+                function dropdownObj:SetLocked(bool, message)
+                    dropdownObj.isLocked = bool == true
+                    dropdownObj.lockMessage = message or dropdownObj.lockMessage
+                    updateDropdownVisuals(true)
+                    return dropdownObj
+                end
+
+                function dropdownObj:SetVisible(bool)
+                    dropdownObj.isVisible = bool == true
+                    updateDropdownVisuals(false)
+                    return dropdownObj
+                end
+
+                function dropdownObj:SetTransparency(value)
+                    dropdownObj.transparency = math.clamp(tonumber(value) or 0, 0, 1)
+                    updateDropdownVisuals(true)
+                    createOptionsYay(search_query)
+                    return dropdownObj
+                end
+
+                function dropdownObj:Destroy()
+                    if dropdownObj._destroyed then
+                        return
+                    end
+                    dropdownObj._destroyed = true
+                    closeDropdown(true)
+                    for i = #dropdownObj._connections, 1, -1 do
+                        disconnect_signal(dropdownObj._connections[i])
+                        dropdownObj._connections[i] = nil
+                    end
+                    for i = #groupObj.elements, 1, -1 do
+                        if groupObj.elements[i] == dropdownObj then
+                            table.remove(groupObj.elements, i)
+                            break
+                        end
+                    end
+                    local flagKey = Idx or dropdownConfig.Flag or dropdownConfig.Name
+                    Options[flagKey] = nil
+                    if groupObj.Library and groupObj.Library._trackedControls then
+                        groupObj.Library._trackedControls[dropdownConfig.Flag] = nil
+                    end
+                    if dropdownObj.labelText and dropdownObj.labelText.Parent then
+                        dropdownObj.labelText:Destroy()
+                    end
+                    if dropdownObj.button_frame and dropdownObj.button_frame.Parent then
+                        dropdownObj.button_frame:Destroy()
+                    end
+                    if dropdownObj.optionHolderFrame and dropdownObj.optionHolderFrame.Parent then
+                        dropdownObj.optionHolderFrame:Destroy()
+                    end
                 end
 
                 if dropdownConfig.AutoRefresh then
@@ -6735,6 +8130,7 @@ function Modern:AddSection(config)
 
                 function dropdownObj:Close()
                     closeDropdown(true)
+                    return dropdownObj
                 end
                 groupObj.Library:RegisterControl(dropdownConfig.Flag, function()
                     return dropdownObj:Get()
@@ -6747,7 +8143,7 @@ function Modern:AddSection(config)
                 -- Store in global Options table
                 local flagKey = Idx or dropdownConfig.Flag or dropdownConfig.Name
                 Options[flagKey] = dropdownObj
-                dropdownObj.Value = dropdownObj.value
+                dropdownObj.Value = dropdownObj:Get()
                 
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
@@ -6756,718 +8152,26 @@ function Modern:AddSection(config)
             end
 
             function groupObj:AddMultiDropdown(multiDropdownConfig, config)
-                -- Support old API: AddMultiDropdown(Idx, config) - match Library.lua pattern
-                local Idx = nil
+                -- MultiDropdown shares the same upgraded Dropdown API.
                 if type(multiDropdownConfig) == "string" then
-                    Idx = multiDropdownConfig
-                    -- Preserve all config options and map Values to Options
-                    local oldConfig = config or {}
-                    multiDropdownConfig = {
-                        Name = oldConfig.Text or multiDropdownConfig,
-                        Options = oldConfig.Values or {},
-                        Default = oldConfig.Default,
-                        Callback = oldConfig.Callback,
-                        Searchable = oldConfig.Searchable,
-                        Flag = multiDropdownConfig
-                    }
+                    config = config or {}
+                    return groupObj:AddDropdown({
+                        Name = config.Text or config.Name or multiDropdownConfig,
+                        Flag = multiDropdownConfig,
+                        Options = config.Values or config.Options or {},
+                        Default = config.Default,
+                        Callback = config.Callback,
+                        Multi = true,
+                        MultiSelect = true,
+                        __MultiRedirected = true
+                    })
                 end
-                
                 multiDropdownConfig = multiDropdownConfig or {}
-                multiDropdownConfig.Name = multiDropdownConfig.Name or multiDropdownConfig.Title or "Multi Dropdown"
-                multiDropdownConfig.Locked = multiDropdownConfig.Locked or false
-                multiDropdownConfig.Options = multiDropdownConfig.Options or multiDropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
-                multiDropdownConfig.OptionsProvider = multiDropdownConfig.OptionsProvider or multiDropdownConfig.GetOptions
-                local multiDropdownHasProvider = type(multiDropdownConfig.OptionsProvider) == "function"
-                if multiDropdownConfig.AutoRefresh == nil then
-                    multiDropdownConfig.AutoRefresh = multiDropdownHasProvider
-                else
-                    multiDropdownConfig.AutoRefresh = multiDropdownConfig.AutoRefresh == true
-                end
-                multiDropdownConfig.RefreshInterval = math.max(tonumber(multiDropdownConfig.RefreshInterval) or 0.85, 0.35)
-                multiDropdownConfig.Default = multiDropdownConfig.Default or {}
-                multiDropdownConfig.Callback = multiDropdownConfig.Callback or function() end
-                multiDropdownConfig.Flag = multiDropdownConfig.Flag or createAutoFlag(multiDropdownConfig.Name)
-                local multiDropdownOptionsSource = multiDropdownConfig.Options
-                if type(multiDropdownConfig.OptionsProvider) == "function" then
-                    local ok, providedOptions = pcall(multiDropdownConfig.OptionsProvider)
-                    if ok and type(providedOptions) == "table" then
-                        multiDropdownOptionsSource = providedOptions
-                    end
-                end
-                multiDropdownConfig.Options = normalize_dropdown(multiDropdownOptionsSource)
-                warn("[UI Debug] MultiDropdown " .. tostring(multiDropdownConfig.Name) .. " options:", multiDropdownConfig.Options)
-                addSearchTerm(multiDropdownConfig.Name)
-                for _, option in ipairs(multiDropdownConfig.Options) do
-                    addSearchTerm(tostring(option))
-                end
-                
-                local multiDropdownObj = {}
-                multiDropdownObj.selectedValues = {}
-                for _, v in ipairs(multiDropdownConfig.Default) do
-                    if table.find(multiDropdownConfig.Options, v) then
-                        multiDropdownObj.selectedValues[v] = true
-                    end
-                end
-                setmetatable(multiDropdownObj, {
-                    __index = function(self, key)
-                        if key == "Value" then
-                            local arr = {}
-                            for option, isSelected in pairs(multiDropdownObj.selectedValues) do
-                                if isSelected then table.insert(arr, option) end
-                            end
-                            table.sort(arr, function(a, b)
-                                return tostring(a) < tostring(b)
-                            end)
-                            return arr
-                        end
-                        return rawget(multiDropdownObj, key)
-                    end
-                })
-                multiDropdownObj.isOpen = false
-                multiDropdownObj.isLocked = multiDropdownConfig.Locked
-                multiDropdownObj._optionsSignature = get_dropdown_signature(multiDropdownOptionsSource)
-                if multiDropdownObj._optionsSignature == "0" then
-                    multiDropdownObj._optionsSignature = get_dropdown_signature(multiDropdownConfig.Options)
-                end
-                multiDropdownObj.Changed = multiDropdownConfig.Callback
-
-                function multiDropdownObj:OnChanged(callback)
-                    multiDropdownObj.Changed = callback
-                end
-
-                local yPosition = groupObj.element_y
-                
-                multiDropdownObj.labelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = multiDropdownConfig.Name, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14 * scale_factor,
-                    Size = UDim2.new(0, 100 * scale_factor, 0, 20 * scale_factor),
-                    TextXAlignment = Enum.TextXAlignment.Left, Parent = groupObj.mainFrame
-                })
-                
-                local function getDisplayText()
-                    local selected = {}
-                    for option, isSelected in pairs(multiDropdownObj.selectedValues) do
-                        if isSelected then table.insert(selected, option) end
-                    end
-                    table.sort(selected, function(a, b)
-                        return tostring(a) < tostring(b)
-                    end)
-                    if #selected == 0 then return "None"
-                    elseif #selected == 1 then return selected[1]
-                    elseif #selected <= 2 then return table.concat(selected, ", ")
-                    else return #selected .. " selected" end
-                end
-                
-                local function getSelectedArray()
-                    local arr = {}
-                    for option, isSelected in pairs(multiDropdownObj.selectedValues) do
-                        if isSelected then table.insert(arr, option) end
-                    end
-                    table.sort(arr, function(a, b)
-                        return tostring(a) < tostring(b)
-                    end)
-                    return arr
-                end
-                
-                local displayText = getDisplayText()
-                local buttonWidth = math.max(85 * scale_factor, measure_text_width(displayText, 12 * scale_factor) + 35 * scale_factor)
-                
-                multiDropdownObj.button_frame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(32, 32, 32), Position = UDim2.new(1, -buttonWidth - 10, 0, yPosition),
-                    Size = UDim2.new(0, buttonWidth, 0, 21 * scale_factor), Parent = groupObj.mainFrame
-                })
-                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = multiDropdownObj.button_frame})
-                
-                local dropdownStrokeThing = create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = multiDropdownObj.button_frame})
-                
-                multiDropdownObj.selectedLabelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.fromRGB(84, 84, 84), Text = displayText, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 8, 0, 0), TextSize = 12 * scale_factor,
-                    Size = UDim2.new(1, -28 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
-                    TextTruncate = Enum.TextTruncate.AtEnd, Parent = multiDropdownObj.button_frame
-                })
-                
-                multiDropdownObj.arrowImg = create("ImageLabel", {
-                    ImageColor3 = Color3.fromRGB(80, 80, 80), Image = default_icons.expand, BackgroundTransparency = 1,
-                    Position = UDim2.new(1, -20 * scale_factor, 0.5, -7 * scale_factor),
-                    Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor), Parent = multiDropdownObj.button_frame
-                })
-                
-                multiDropdownObj.optionHolderFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, 160 * scale_factor, 0, 0),
-                    ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
-                })
-                create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = multiDropdownObj.optionHolderFrame})
-                create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Parent = multiDropdownObj.optionHolderFrame})
-                
-                create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.new(1, 1, 1), Text = multiDropdownConfig.Name, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 12, 0, 8 * scale_factor), TextSize = 14 * scale_factor,
-                    Size = UDim2.new(1, -44 * scale_factor, 0, 20 * scale_factor), TextXAlignment = Enum.TextXAlignment.Left,
-                    TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 10000, Parent = multiDropdownObj.optionHolderFrame
-                })
-
-                local multiDropdownCloseButton = create("TextButton", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
-                    Text = "X", TextColor3 = Color3.fromRGB(170, 170, 170), TextSize = 14 * scale_factor,
-                    BackgroundColor3 = Color3.fromRGB(24, 24, 24), AutoButtonColor = false,
-                    Position = UDim2.new(1, -25 * scale_factor, 0, 5 * scale_factor),
-                    Size = UDim2.new(0, 18 * scale_factor, 0, 18 * scale_factor),
-                    ZIndex = 10002, Parent = multiDropdownObj.optionHolderFrame
-                })
-                create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = multiDropdownCloseButton})
-                
-                multiDropdownObj.optionScrollFrame = create("ScrollingFrame", {
-                    BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 30 * scale_factor),
-                    Size = UDim2.new(1, 0, 1, -35 * scale_factor), ScrollBarThickness = 0,
-                    ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80), CanvasSize = UDim2.new(0, 0, 0, 0),
-                    ZIndex = 10000, Parent = multiDropdownObj.optionHolderFrame
-                })
-                attach_scrollbar(groupObj.Library, multiDropdownObj.optionScrollFrame, multiDropdownObj.optionHolderFrame, {
-                    TrackWidth = 7 * scale_factor,
-                    ThumbWidth = 3 * scale_factor,
-                    EdgeInset = 2 * scale_factor,
-                    VerticalInset = 4 * scale_factor,
-                    ZIndex = 10002
-                })
-                multiDropdownObj.optionScrollFrame:SetAttribute("FlowDisableSmoothScroll", true)
-                --groupObj.Library:SetSmoothScroll(multiDropdownObj.optionScrollFrame, 22)
-                
-                multiDropdownObj.optionContainerFrame = create("Frame", {
-                    BackgroundTransparency = 1, Size = UDim2.new(1, -6, 0, 0),
-                    ZIndex = 10000, Parent = multiDropdownObj.optionScrollFrame
-                })
-                
-                local maxMultiDropdownHeight = 220 * scale_factor
-                local multiDropdownPositionConn = nil
-
-                local function closeMultiDropdown(isInstant)
-                    multiDropdownObj.isOpen = false
-                    if multiDropdownPositionConn then
-                        multiDropdownPositionConn()
-                        multiDropdownPositionConn = nil
-                    end
-                    if isInstant then
-                        multiDropdownObj.optionHolderFrame.Size = UDim2.new(0, 160 * scale_factor, 0, 0)
-                        multiDropdownObj.optionHolderFrame.Visible = false
-                        multiDropdownObj.arrowImg.Rotation = 0
-                        multiDropdownObj.button_frame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
-                        dropdownStrokeThing.Color = Color3.fromRGB(44, 44, 44)
-                        return
-                    end
-                    tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, 0)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-                    tween_to(multiDropdownObj.arrowImg, {Rotation = 0}, 0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-                    tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.18)
-                    tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.18)
-                    task.delay(0.22, function()
-                        if multiDropdownObj.optionHolderFrame.Parent and not multiDropdownObj.isOpen then
-                            multiDropdownObj.optionHolderFrame.Visible = false
-                        end
-                    end)
-                end
-
-                multiDropdownCloseButton.MouseButton1Click:Connect(function()
-                    closeMultiDropdown(false)
-                end)
-                multiDropdownCloseButton.MouseEnter:Connect(function()
-                    tween_to(multiDropdownCloseButton, {BackgroundColor3 = Color3.fromRGB(44, 44, 44), TextColor3 = Color3.fromRGB(220, 220, 220)}, 0.12)
-                end)
-                multiDropdownCloseButton.MouseLeave:Connect(function()
-                    tween_to(multiDropdownCloseButton, {BackgroundColor3 = Color3.fromRGB(24, 24, 24), TextColor3 = Color3.fromRGB(138, 138, 138)}, 0.12)
-                end)
-
-                local function createMultiOptionsYay()
-                    for _, child in pairs(multiDropdownObj.optionContainerFrame:GetChildren()) do
-                        if child:IsA("Frame") or child:IsA("TextButton") then child:Destroy() end
-                    end
-                    local optY = 0
-                    for _, option in ipairs(multiDropdownConfig.Options) do
-                        local isSelected = multiDropdownObj.selectedValues[option] == true
-                        
-                        local optionFrame = create("Frame", {
-                            BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, optY),
-                            Size = UDim2.new(1, 0, 0, 22 * scale_factor), ZIndex = 10001,
-                            Parent = multiDropdownObj.optionContainerFrame
-                        })
-                        
-                        local checkboxFrame = create("Frame", {
-                            BackgroundColor3 = isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
-                            Position = UDim2.new(0, 12, 0.5, -8 * scale_factor),
-                            Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor),
-                            ZIndex = 10002, Parent = optionFrame
-                        })
-                        create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = checkboxFrame})
-                        
-                        local checkmarkImg = create("ImageLabel", {
-                            Image = "rbxassetid://10709790644", ImageColor3 = Color3.new(1, 1, 1),
-                            ImageTransparency = isSelected and 0 or 1, BackgroundTransparency = 1,
-                            Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
-                            Size = UDim2.new(0, 12 * scale_factor, 0, 12 * scale_factor),
-                            ZIndex = 10003, Parent = checkboxFrame
-                        })
-                        
-                        local optionLabelText = create("TextLabel", {
-                            FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                            TextColor3 = isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124),
-                            Text = tostring(option), BackgroundTransparency = 1, Position = UDim2.new(0, 34, 0, 0),
-                            TextSize = 14 * scale_factor, Size = UDim2.new(1, -46, 1, 0),
-                            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 10002, Parent = optionFrame
-                        })
-                        
-                        local optionClickButton = create("TextButton", {
-                            Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
-                            ZIndex = 10004, Parent = optionFrame
-                        })
-                        
-                        optionClickButton.MouseButton1Click:Connect(function()
-                            multiDropdownObj.selectedValues[option] = not multiDropdownObj.selectedValues[option]
-                            local nowSelected = multiDropdownObj.selectedValues[option]
-                            
-                            tween_to(checkboxFrame, {BackgroundColor3 = nowSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32)}, 0.15)
-                            tween_to(checkmarkImg, {ImageTransparency = nowSelected and 0 or 1}, 0.15)
-                            tween_to(optionLabelText, {TextColor3 = nowSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124)}, 0.15)
-                            
-                            local newDisplayText = getDisplayText()
-                            multiDropdownObj.selectedLabelText.Text = newDisplayText
-                            local newWidth = math.max(85 * scale_factor, measure_text_width(newDisplayText, 12 * scale_factor) + 35 * scale_factor)
-                            tween_to(multiDropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
-                            
-                            if multiDropdownObj.Changed then
-                                multiDropdownObj.Changed(getSelectedArray())
-                            end
-                        end)
-                        
-                        optionClickButton.MouseEnter:Connect(function()
-                            if not multiDropdownObj.selectedValues[option] then
-                                tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(180, 180, 180)}, 0.15)
-                                tween_to(checkboxFrame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.15)
-                            end
-                        end)
-                        optionClickButton.MouseLeave:Connect(function()
-                            if not multiDropdownObj.selectedValues[option] then
-                                tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(124, 124, 124)}, 0.15)
-                                tween_to(checkboxFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.15)
-                            end
-                        end)
-                        
-                        optY = optY + 24 * scale_factor
-                    end
-                    multiDropdownObj.optionContainerFrame.Size = UDim2.new(1, -6, 0, optY)
-                    multiDropdownObj.optionScrollFrame.CanvasSize = UDim2.new(0, 0, 0, optY)
-                end
-                createMultiOptionsYay()
-                
-                local dropdownClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = multiDropdownObj.button_frame})
-                
-                local function updateDropdownPositionYay()
-                    local buttonAbsPos = multiDropdownObj.button_frame.AbsolutePosition
-                    local buttonAbsSize = multiDropdownObj.button_frame.AbsoluteSize
-                    multiDropdownObj.optionHolderFrame.Position = UDim2.new(0, buttonAbsPos.X, 0, buttonAbsPos.Y + buttonAbsSize.Y + 5)
-                end
-                
-                dropdownClickButton.MouseButton1Click:Connect(function()
-                    if multiDropdownObj.isLocked then return end
-                    multiDropdownObj.isOpen = not multiDropdownObj.isOpen
-                    if multiDropdownObj.isOpen then
-                        updateDropdownPositionYay()
-                        multiDropdownObj.optionHolderFrame.Visible = true
-                        local contentHeight = (38 + (#multiDropdownConfig.Options * 24)) * scale_factor
-                        local height = math.min(contentHeight, maxMultiDropdownHeight)
-                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                        tween_to(multiDropdownObj.arrowImg, {Rotation = 180}, 0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                        if multiDropdownPositionConn then multiDropdownPositionConn() end
-                        multiDropdownPositionConn = start_position_tracker(groupObj.Library, multiDropdownObj.button_frame, function()
-                            if multiDropdownObj.isOpen then
-                                updateDropdownPositionYay()
-                            end
-                        end)
-                    else
-                        closeMultiDropdown(false)
-                    end
-                end)
-                
-                dropdownClickButton.MouseEnter:Connect(function()
-                    tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2)
-                    tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(83, 83, 83)}, 0.2)
-                end)
-                dropdownClickButton.MouseLeave:Connect(function()
-                    if not multiDropdownObj.isOpen then
-                        tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
-                        tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.2)
-                    end
-                end)
-                
-                function multiDropdownObj:Set(values, silent)
-                    if type(values) ~= "table" then
-                        values = {}
-                    end
-                    multiDropdownObj.selectedValues = {}
-                    for _, v in ipairs(values) do
-                        if table.find(multiDropdownConfig.Options, v) then
-                            multiDropdownObj.selectedValues[v] = true
-                        end
-                    end
-                    local newDisplayText = getDisplayText()
-                    multiDropdownObj.selectedLabelText.Text = newDisplayText
-                    local newWidth = math.max(85 * scale_factor, measure_text_width(newDisplayText, 12 * scale_factor) + 35 * scale_factor)
-                    multiDropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
-                    multiDropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
-                    createMultiOptionsYay()
-                    if not silent and multiDropdownObj.Changed then
-                        multiDropdownObj.Changed(getSelectedArray())
-                    end
-                end
-                
-                function multiDropdownObj:UpdateOptions(newOptions)
-                    if type(newOptions) ~= "table" then
-                        return
-                    end
-                    multiDropdownOptionsSource = newOptions
-                    multiDropdownObj._optionsSignature = get_dropdown_signature(newOptions)
-                    multiDropdownConfig.Options = normalize_dropdown(newOptions)
-                    for _, option in ipairs(multiDropdownConfig.Options) do
-                        addSearchTerm(tostring(option))
-                    end
-                    local filteredSelectedValues = {}
-                    for option, isSelected in pairs(multiDropdownObj.selectedValues) do
-                        if isSelected and table.find(multiDropdownConfig.Options, option) then
-                            filteredSelectedValues[option] = true
-                        end
-                    end
-                    multiDropdownObj.selectedValues = filteredSelectedValues
-                    local newDisplayText = getDisplayText()
-                    multiDropdownObj.selectedLabelText.Text = newDisplayText
-                    local newWidth = math.max(85 * scale_factor, measure_text_width(newDisplayText, 12 * scale_factor) + 35 * scale_factor)
-                    multiDropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
-                    multiDropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
-                    createMultiOptionsYay()
-                    if groupObj.Library._searchQuery ~= "" then
-                        groupObj.Library:SetSearchFilter(groupObj.Library._searchQuery)
-                    end
-                end
-
-                -- Backward compatibility: SetValues method
-                function multiDropdownObj:SetValues(newOptions)
-                    multiDropdownObj:UpdateOptions(newOptions)
-                end
-
-                if multiDropdownConfig.AutoRefresh then
-                    groupObj.Library:_RegisterRefreshJob(multiDropdownConfig.RefreshInterval, function()
-                        return not groupObj.Library._destroyed and multiDropdownObj.button_frame and multiDropdownObj.button_frame.Parent
-                    end, function()
-                        local latestOptions = multiDropdownOptionsSource
-                        if type(multiDropdownConfig.OptionsProvider) == "function" then
-                            local ok, providedOptions = pcall(multiDropdownConfig.OptionsProvider)
-                            if ok and type(providedOptions) == "table" then
-                                latestOptions = providedOptions
-                            end
-                        end
-                        local latestSignature = get_dropdown_signature(latestOptions)
-                        if latestSignature ~= multiDropdownObj._optionsSignature then
-                            multiDropdownObj:UpdateOptions(latestOptions)
-                        end
-                        return true
-                    end)
-                end
-                
-                function multiDropdownObj:Get() return getSelectedArray() end
-
-                function multiDropdownObj:SetLocked(locked)
-                    multiDropdownObj.isLocked = locked == true
-                    if multiDropdownObj.isLocked then
-                        tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(24, 24, 24)}, 0.2)
-                        tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(32, 32, 32)}, 0.2)
-                    else
-                        tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
-                        tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.2)
-                    end
-                end
-
-                function multiDropdownObj:Close()
-                    closeMultiDropdown(true)
-                end
-                local flagKey = multiDropdownConfig.Flag or multiDropdownConfig.Name
-                Options[flagKey] = multiDropdownObj
-
-                groupObj.Library:RegisterControl(multiDropdownConfig.Flag, function()
-                    return multiDropdownObj:Get()
-                end, function(value)
-                    if type(value) == "table" then
-                        multiDropdownObj:Set(value, true)
-                    end
-                end)
-
-                groupObj.element_y = groupObj.element_y + 31 * scale_factor
-                update_group_size()
-                table.insert(groupObj.elements, multiDropdownObj)
-                return multiDropdownObj
+                multiDropdownConfig.Multi = true
+                multiDropdownConfig.MultiSelect = true
+                multiDropdownConfig.__MultiRedirected = true
+                return groupObj:AddDropdown(multiDropdownConfig)
             end
-
-            function groupObj:AddDivider()
-                local yPosition = groupObj.element_y
-                local dividerFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(36, 36, 36),
-                    Position = UDim2.new(0, 10, 0, yPosition + 4 * scale_factor),
-                    Size = UDim2.new(0.92, 0, 0, 1), Parent = groupObj.mainFrame
-                })
-                create("UIGradient", {
-                    Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(108, 108, 108)), ColorSequenceKeypoint.new(0.514, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(1, Color3.fromRGB(108, 108, 108))}),
-                    Parent = dividerFrame
-                })
-                groupObj.element_y = groupObj.element_y + 12 * scale_factor
-                update_group_size()
-                return dividerFrame
-            end
-            
-            function groupObj:AddLabel(labelConfig)
-                labelConfig = labelConfig or {}
-                labelConfig.Text = labelConfig.Text or "Label"
-                labelConfig.Wrap = labelConfig.Wrap == true
-                labelConfig.RichText = labelConfig.RichText ~= false
-                addSearchTerm(labelConfig.Text)
-                local yPosition = groupObj.element_y
-                local labelMaxWidth = 238 * scale_factor
-                local labelTextSize = 14 * scale_factor
-                local measuredBounds = text_service:GetTextSize(
-                    tostring(labelConfig.Text),
-                    labelTextSize,
-                    Enum.Font.GothamSemibold,
-                    Vector2.new(labelMaxWidth, labelConfig.Wrap and math.huge or (labelTextSize + 4))
-                )
-                local labelHeight = labelConfig.Wrap and math.max(20 * scale_factor, measuredBounds.Y) or (20 * scale_factor)
-                local labelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = labelConfig.Text, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = labelTextSize,
-                    Size = UDim2.new(0, labelMaxWidth, 0, labelHeight), TextXAlignment = Enum.TextXAlignment.Left,
-                    TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = labelConfig.Wrap,
-                    TextTruncate = labelConfig.Wrap and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
-                    RichText = labelConfig.RichText,
-                    ClipsDescendants = true,
-                    Parent = groupObj.mainFrame
-                })
-                
-                local labelObj = {}
-                labelObj.Instance = labelText
-                function labelObj:SetText(text)
-                    labelText.Text = tostring(text)
-                end
-                function labelObj:SetName(text)
-                    labelText.Text = tostring(text)
-                end
-                function labelObj:SetVisible(visible)
-                    labelObj.Instance.Visible = visible
-                end
-                
-                groupObj.element_y = groupObj.element_y + labelHeight + 6 * scale_factor
-                update_group_size()
-                return labelObj
-            end
-            
-            function groupObj:AddInput(textInputConfig, config)
-                -- Support old API: AddInput(name, config) - same as AddTextInput
-                return groupObj:AddTextInput(textInputConfig, config)
-            end
-            
-            function groupObj:AddTextInput(textInputConfig, config)
-                -- Support old API: AddTextInput(name, config)
-                if type(textInputConfig) == "string" then
-                    textInputConfig = {Name = textInputConfig, Flag = textInputConfig, Text = config and config.Text or textInputConfig, Placeholder = config and config.Placeholder or "Enter text...", Default = config and config.Default, Callback = config and config.Callback}
-                end
-
-                textInputConfig = textInputConfig or {}
-                textInputConfig.Name = textInputConfig.Name or textInputConfig.Text or "Input"
-                textInputConfig.Locked = textInputConfig.Locked or false
-                textInputConfig.Placeholder = textInputConfig.Placeholder or "Enter text..."
-                textInputConfig.Default = tostring(textInputConfig.Default or "")
-                textInputConfig.Callback = textInputConfig.Callback or function() end
-                textInputConfig.Flag = textInputConfig.Flag or createAutoFlag(textInputConfig.Name)
-                textInputConfig.Numeric = textInputConfig.Numeric == true
-                textInputConfig.Finished = textInputConfig.Finished == true
-                addSearchTerm(textInputConfig.Name)
-                addSearchTerm(textInputConfig.Placeholder)
-                
-                local textInputObj = {}
-                textInputObj.value = textInputConfig.Default
-                textInputObj.isLocked = textInputConfig.Locked
-                textInputObj.Flag = textInputConfig.Flag
-                textInputObj.Name = textInputConfig.Name
-                local yPosition = groupObj.element_y
-                
-                textInputObj.labelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = textInputConfig.Name, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
-                    Size = UDim2.new(0, 80 * scale_factor, 0, 20 * scale_factor),
-                    TextXAlignment = Enum.TextXAlignment.Left, Parent = groupObj.mainFrame
-                })
-                
-                textInputObj.inputFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(32, 32, 32),
-                    Position = UDim2.new(0, 10, 0, yPosition + 23 * scale_factor),
-                    Size = UDim2.new(0, 240 * scale_factor, 0, 28 * scale_factor),
-                    Parent = groupObj.mainFrame
-                })
-                create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = textInputObj.inputFrame})
-                create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = textInputObj.inputFrame})
-                
-                textInputObj.textBox = create("TextBox", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    PlaceholderText = textInputConfig.Placeholder,
-                    PlaceholderColor3 = Color3.fromRGB(80, 80, 80),
-                    Text = textInputConfig.Default,
-                    TextColor3 = Color3.fromRGB(200, 200, 200),
-                    TextSize = 13.8 * scale_factor,
-                    BackgroundTransparency = 1,
-                    ClearTextOnFocus = false,
-                    Position = UDim2.new(0, 8, 0, 0),
-                    Size = UDim2.new(1, -16, 1, 0),
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = textInputObj.inputFrame
-                })
-                
-                if textInputConfig.Numeric then
-                    textInputObj.textBox.ClearTextOnFocus = true
-                end
-
-                textInputObj.textBox.Focused:Connect(function()
-                    if textInputObj.isLocked then textInputObj.textBox:ReleaseFocus() return end
-                    tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2)
-                end)
-                
-                textInputObj.textBox.FocusLost:Connect(function(enterPressed)
-                    tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
-                    textInputObj.value = textInputObj.textBox.Text
-                    if textInputConfig.Finished then
-                        if enterPressed then
-                            textInputConfig.Callback(textInputObj.value, enterPressed)
-                        end
-                    else
-                        textInputConfig.Callback(textInputObj.value, enterPressed)
-                    end
-                end)
-                
-                function textInputObj:Set(text)
-                    local asString = tostring(text or "")
-                    textInputObj.value = asString
-                    textInputObj.textBox.Text = asString
-                end
-                
-                function textInputObj:Get()
-                    textInputObj.value = textInputObj.textBox.Text
-                    return textInputObj.value
-                end
-
-                function textInputObj:GetValue()
-                    return textInputObj:Get()
-                end
-
-                function textInputObj:SetValue(text, silent)
-                    textInputObj:Set(tostring(text or ""))
-                    if not silent then
-                        textInputConfig.Callback(textInputObj.value, false)
-                    end
-                end
-
-                function textInputObj:ResetValue()
-                    textInputObj:Set(textInputConfig.Default)
-                end
-                
-                function textInputObj:SetLocked(locked)
-                    textInputObj.isLocked = locked == true
-                    if textInputObj.textBox then
-                        textInputObj.textBox.Selectable = not textInputObj.isLocked
-                    end
-                    if textInputObj.isLocked then
-                        tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(24, 24, 24)}, 0.2)
-                    else
-                        tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
-                    end
-                end
-
-                Options[textInputConfig.Flag] = textInputObj
-                
-                groupObj.Library:RegisterControl(textInputConfig.Flag, function()
-                    return textInputObj:Get()
-                end, function(value)
-                    textInputObj:Set(tostring(value or ""))
-                end)
-                
-                groupObj.element_y = groupObj.element_y + 58 * scale_factor
-                update_group_size()
-                table.insert(groupObj.elements, textInputObj)
-                return textInputObj
-            end
-
-            function groupObj:AddTextbox(textboxConfig)
-                textboxConfig = textboxConfig or {}
-
-                local primaryCallback = textboxConfig.Callback
-                if type(primaryCallback) ~= "function" then
-                    primaryCallback = textboxConfig.Function
-                end
-                if type(primaryCallback) ~= "function" then
-                    primaryCallback = function() end
-                end
-
-                local changedCallback = textboxConfig.ChangedCallback or textboxConfig.OnChanged
-                local signalCallback = textboxConfig.OnPressed or textboxConfig.Signal
-                local enterOnly = textboxConfig.EnterOnly == true
-                local defaultText = tostring(textboxConfig.Default or textboxConfig.Value or "")
-
-                local function fireTextboxCallbacks(value, enterPressed)
-                    if enterOnly and not enterPressed then
-                        return
-                    end
-                    primaryCallback(value, enterPressed)
-                    if type(changedCallback) == "function" then
-                        changedCallback(value, enterPressed)
-                    end
-                    if type(signalCallback) == "function" then
-                        signalCallback(value, enterPressed)
-                    end
-                end
-
-                local function fireTextboxCallbacksForced(value, enterPressed)
-                    primaryCallback(value, enterPressed)
-                    if type(changedCallback) == "function" then
-                        changedCallback(value, enterPressed)
-                    end
-                    if type(signalCallback) == "function" then
-                        signalCallback(value, enterPressed)
-                    end
-                end
-
-                local textInputObj = groupObj:AddTextInput({
-                    Name = textboxConfig.Name or textboxConfig.Title or textboxConfig.Text or "Textbox",
-                    Placeholder = textboxConfig.Placeholder or textboxConfig.PlaceholderText or textboxConfig.Hint or "Enter text...",
-                    Default = defaultText,
-                    Callback = fireTextboxCallbacks,
-                    Flag = textboxConfig.Flag or textboxConfig.ConfigId
-                })
-
-                textInputObj.Title = textboxConfig.Title or textboxConfig.Text or textboxConfig.Name or "Textbox"
-                textInputObj.ConfigId = tostring(textboxConfig.ConfigId or textInputObj.Flag or textInputObj.Title)
-                textInputObj.Box = textInputObj.textBox
-
-                local baseSetValue = textInputObj.SetValue
-                function textInputObj:SetValue(text, silent)
-                    baseSetValue(self, text, true)
-                    if not silent then
-                        fireTextboxCallbacksForced(self:Get(), false)
-                    end
-                end
-
-                return textInputObj
-            end
-
-            function groupObj:AddTextBox(textboxConfig)
-                return groupObj:AddTextbox(textboxConfig)
-            end
-            
             function groupObj:AddColorPicker(colorPickerConfig)
                 colorPickerConfig = colorPickerConfig or {}
                 colorPickerConfig.Name = colorPickerConfig.Title or colorPickerConfig.Text or colorPickerConfig.Name or "Color"
@@ -7849,11 +8553,47 @@ function Modern:AddTab(tabConfig)
     local sectionConfig = {
         Name = tabConfig.Name or "Section",
         Icon = tabConfig.Icon,
-        NoCollapse = true
+        NoCollapse = true,
+        Sectionless = false
     }
     local section = self:AddSection(sectionConfig)
     local tab = section:AddTab(tabConfig)
-    tab.button_frame.Visible = false
+
+    if tab.button_frame then
+        tab.button_frame.Visible = false
+        tab.button_frame.Size = UDim2.new(0, 0, 0, 0)
+    end
+
+    if section.mainFrame then
+        local sectionClickBtn = create("TextButton", {
+            Text = "", BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0), Parent = section.mainFrame
+        })
+
+        sectionClickBtn.MouseButton1Click:Connect(function()
+            if not tab.isActive then
+                tab:Activate()
+            end
+        end)
+
+        local originalActivate = tab.Activate
+        local originalDeactivate = tab.Deactivate
+
+        function tab:Activate()
+            originalActivate(self)
+            if section.mainFrame then
+                tween_to(section.mainFrame, {BackgroundColor3 = self.Library.config.AccentColor}, 0.22)
+            end
+        end
+
+        function tab:Deactivate(skipAnimation)
+            originalDeactivate(self, skipAnimation)
+            if section.mainFrame then
+                tween_to(section.mainFrame, {BackgroundColor3 = Color3.fromRGB(16, 16, 16)}, 0.18)
+            end
+        end
+    end
+
     tab:Activate()
     return tab
 end
@@ -7906,6 +8646,13 @@ function Modern:SetAccentColor(color)
         end
     end
     self:_UpdateESPPreview(0)
+end
+
+function Modern:ColorWindow(color)
+    if typeof(color) ~= "Color3" then
+        return
+    end
+    self:SetAccentColor(color)
 end
 
 function Modern:Destroy()
