@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.0 | By nexahub
+-- Code Lama | Version 1.0.1 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -8,7 +8,6 @@ local tween_service     = safe_clone(game:GetService("TweenService"))
 local input_service     = safe_clone(game:GetService("UserInputService"))
 local run_service       = safe_clone(game:GetService("RunService"))
 local players           = safe_clone(game:GetService("Players"))
-local thumbnail_service = safe_clone(game:GetService("ThumbnailService"))
 local text_service      = safe_clone(game:GetService("TextService"))
 local core_gui          = safe_clone(game:GetService("CoreGui"))
 local gui_service       = safe_clone(game:GetService("GuiService"))
