@@ -5427,10 +5427,13 @@ function Modern:AddSection(config)
         local tabsHeight = sectionObj.tab_layout.AbsoluteContentSize.Y
         sectionObj.tab_holder.Size = UDim2.new(0, 148 * scale_factor, 0, tabsHeight)
         if isSectionless then
+            sectionObj.tab_holder.Visible = true
             tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, tabsHeight + 10)}, 0.25)
         elseif sectionObj.isExpanded or noCollapse then
+            sectionObj.tab_holder.Visible = true
             tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor + tabsHeight + 10)}, 0.25)
         else
+            sectionObj.tab_holder.Visible = false
             tween_to(sectionObj.container, {Size = UDim2.new(0, 160 * scale_factor, 0, 34 * scale_factor)}, 0.25)
         end
     end
@@ -5440,6 +5443,7 @@ function Modern:AddSection(config)
     if not isSectionless and expandButtonImg then
         self:_TrackConnection(expandButtonImg.MouseButton1Click:Connect(function()
             sectionObj.isExpanded = not sectionObj.isExpanded
+            sectionObj.tab_holder.Visible = sectionObj.isExpanded
             tween_to(expandButtonImg, {Rotation = sectionObj.isExpanded and 0 or -90}, 0.25)
             if sectionObj.isExpanded then
                 local tabsHeight = sectionObj.tab_layout.AbsoluteContentSize.Y
@@ -5686,6 +5690,7 @@ groupObj.groupTitle = create("TextLabel", {
                 toggleConfig.Locked = toggleConfig.Locked or false
                 toggleConfig.Icon = toggleConfig.Icon or nil
                 toggleConfig.Callback = toggleConfig.Callback or function() end
+                local toggleHasExplicitFlag = type(toggleConfig.Flag) == "string" and toggleConfig.Flag ~= ""
                 toggleConfig.Flag = toggleConfig.Flag or createAutoFlag(toggleConfig.Name)
                 addSearchTerm(toggleConfig.Name)
                 
@@ -5847,14 +5852,16 @@ groupObj.groupTitle = create("TextLabel", {
                 end
                 
                 toggleClickButton.MouseButton1Click:Connect(function() if not toggleObj.isLocked then toggleObj:Set(not toggleObj.value, false) end end)
-                groupObj.Library:RegisterControl(toggleConfig.Flag, function()
-                    return toggleObj:Get()
-                end, function(value)
-                    toggleObj:Set(value == true, false)
-                    if toggleObj.Changed then
-                        toggleObj.Changed(value == true)
-                    end
-                end)
+                if toggleHasExplicitFlag then
+                    groupObj.Library:RegisterControl(toggleConfig.Flag, function()
+                        return toggleObj:Get()
+                    end, function(value)
+                        toggleObj:Set(value == true, false)
+                        if toggleObj.Changed then
+                            toggleObj.Changed(value == true)
+                        end
+                    end)
+                end
                 
                 -- Store in global Toggles table
                 local flagKey = Idx or toggleConfig.Flag or toggleConfig.Name
@@ -5907,6 +5914,7 @@ groupObj.groupTitle = create("TextLabel", {
                 sliderConfig.Suffix = tostring(sliderConfig.Suffix or "")
                 sliderConfig.ShowMax = sliderConfig.ShowMax == true
                 sliderConfig.Callback = sliderConfig.Callback or function() end
+                local sliderHasExplicitFlag = type(sliderConfig.Flag) == "string" and sliderConfig.Flag ~= ""
                 sliderConfig.Flag = sliderConfig.Flag or createAutoFlag(sliderConfig.Name)
                 addSearchTerm(sliderConfig.Name)
                 
@@ -6095,14 +6103,16 @@ groupObj.groupTitle = create("TextLabel", {
                 end))
 
                 updateSliderVisuals(false)
-                groupObj.Library:RegisterControl(sliderConfig.Flag, function()
-                    return sliderObj:Get()
-                end, function(value)
-                    sliderObj:Set(tonumber(value) or sliderConfig.Min, true, false)
-                    if sliderObj.Changed then
-                        sliderObj.Changed(sliderObj.value)
-                    end
-                end)
+                if sliderHasExplicitFlag then
+                    groupObj.Library:RegisterControl(sliderConfig.Flag, function()
+                        return sliderObj:Get()
+                    end, function(value)
+                        sliderObj:Set(tonumber(value) or sliderConfig.Min, true, false)
+                        if sliderObj.Changed then
+                            sliderObj.Changed(sliderObj.value)
+                        end
+                    end)
+                end
                 
                 function sliderObj:SetLockedText(text)
                     if sliderObj.lockOverlay then
@@ -6144,10 +6154,24 @@ groupObj.groupTitle = create("TextLabel", {
                 buttonConfig.Icon = buttonConfig.Icon or nil
                 buttonConfig.Locked = buttonConfig.Locked or false
                 buttonConfig.Callback = buttonConfig.Callback or buttonConfig.Func or function() end
+                buttonConfig.SubName = buttonConfig.SubName or buttonConfig.SubText or nil
+                buttonConfig.SubIcon = buttonConfig.SubIcon or nil
+                buttonConfig.SubLocked = buttonConfig.SubLocked or false
+                buttonConfig.SubCallback = buttonConfig.SubCallback or function() end
                 addSearchTerm(buttonConfig.Name)
+                if buttonConfig.SubName then
+                    addSearchTerm(buttonConfig.SubName)
+                end
+                
+                local hasSubButton = type(buttonConfig.SubName) == "string" and buttonConfig.SubName ~= ""
+                local subWidth = 0
+                if hasSubButton then
+                    subWidth = math.max(70 * scale_factor, measure_text_width(buttonConfig.SubName, 12 * scale_factor, Enum.Font.GothamSemibold) + 32 * scale_factor)
+                end
                 
                 local buttonObj = {}
                 buttonObj.isLocked = buttonConfig.Locked
+                buttonObj.subLocked = buttonConfig.SubLocked
                 buttonObj.Instance = buttonObj.mainFrame
                 local yPosition = groupObj.element_y
                 
@@ -6159,14 +6183,15 @@ groupObj.groupTitle = create("TextLabel", {
                 buttonObj.Instance = buttonObj.mainFrame
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = buttonObj.mainFrame})
                 
-                -- Apply lock if needed
+                -- Apply lock on primary button
                 if buttonConfig.Locked then
+                    local lockSize = hasSubButton and UDim2.new(1, -subWidth - 4 * scale_factor, 1, 0) or UDim2.new(1, 0, 1, 0)
                     local buttonContainerFrame = create("Frame", {
                         BackgroundTransparency = 1,
-                        Position = UDim2.new(0, 0, 0, yPosition),
-                        Size = UDim2.new(1, 0, 0, 28 * scale_factor),
+                        Position = UDim2.new(0, 0, 0, 0),
+                        Size = lockSize,
                         ZIndex = 9,
-                        Parent = groupObj.mainFrame
+                        Parent = buttonObj.mainFrame
                     })
                     local lockMessage = buttonConfig.LockedText or "Locked"
                     buttonObj.lockOverlay = ApplyLock(buttonContainerFrame, true, lockMessage)
@@ -6194,16 +6219,94 @@ groupObj.groupTitle = create("TextLabel", {
                     TextColor3 = buttonObj.isLocked and Color3.fromRGB(46, 46, 46) or Color3.fromRGB(120, 120, 120),
                     Text = buttonConfig.Name .. (buttonObj.isLocked and " (locked)" or ""), BackgroundTransparency = 1,
                     Position = UDim2.new(0, textXPos * scale_factor, 0, 0), TextSize = 14 * scale_factor,
-                    Size = UDim2.new(1, -textXPos * scale_factor - 10, 1, 0),
+                    Size = hasSubButton and UDim2.new(1, -subWidth - textXPos * scale_factor - 16 * scale_factor, 1, 0) or UDim2.new(1, -textXPos * scale_factor - 10, 1, 0),
                     TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
                     Parent = buttonObj.mainFrame
                 })
                 
-                local buttonClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = buttonObj.mainFrame})
+                local buttonClickSize = hasSubButton and UDim2.new(1, -subWidth - 4 * scale_factor, 1, 0) or UDim2.new(1, 0, 1, 0)
+                local buttonClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = buttonClickSize, Parent = buttonObj.mainFrame})
                 buttonClickButton.MouseButton1Click:Connect(function() if not buttonObj.isLocked then buttonConfig.Callback() end end)
                 buttonClickButton.MouseEnter:Connect(function() if not buttonObj.isLocked then tween_to(buttonObj.mainFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2) end end)
                 buttonClickButton.MouseLeave:Connect(function() if not buttonObj.isLocked then tween_to(buttonObj.mainFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2) end end)
                 
+                if hasSubButton then
+                    buttonObj.subFrame = create("Frame", {
+                        BackgroundColor3 = buttonObj.subLocked and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(48, 48, 48),
+                        Position = UDim2.new(1, -subWidth - 4 * scale_factor, 0, 4 * scale_factor),
+                        Size = UDim2.new(0, subWidth, 0, 20 * scale_factor), Parent = buttonObj.mainFrame
+                    })
+                    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = buttonObj.subFrame})
+                    
+                    buttonObj.subLabel = create("TextLabel", {
+                        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                        TextColor3 = buttonObj.subLocked and Color3.fromRGB(110, 110, 110) or Color3.fromRGB(200, 200, 200),
+                        Text = buttonConfig.SubName, BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 8, 0, 0), TextSize = 12 * scale_factor,
+                        Size = UDim2.new(1, buttonConfig.SubIcon and -24 * scale_factor or -16 * scale_factor, 1, 0),
+                        TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                        Parent = buttonObj.subFrame
+                    })
+                    
+                    if buttonConfig.SubIcon then
+                        create("ImageLabel", {
+                            ImageColor3 = buttonObj.subLocked and Color3.fromRGB(90, 90, 90) or Color3.fromRGB(205, 205, 205),
+                            Image = buttonConfig.SubIcon, BackgroundTransparency = 1,
+                            Position = UDim2.new(1, -18 * scale_factor, 0.5, -8 * scale_factor),
+                            Size = UDim2.new(0, 16 * scale_factor, 0, 16 * scale_factor), Parent = buttonObj.subFrame
+                        })
+                    end
+                    
+                    local subClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = buttonObj.subFrame})
+                    subClickButton.MouseButton1Click:Connect(function() if not buttonObj.subLocked then buttonConfig.SubCallback() end end)
+                    subClickButton.MouseEnter:Connect(function() if not buttonObj.subLocked then tween_to(buttonObj.subFrame, {BackgroundColor3 = Color3.fromRGB(56, 56, 56)}, 0.2) end end)
+                    subClickButton.MouseLeave:Connect(function() if not buttonObj.subLocked then tween_to(buttonObj.subFrame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2) end end)
+                    
+                    if buttonConfig.SubLocked then
+                        local subLockFrame = create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, 0),
+                            Size = UDim2.new(1, 0, 1, 0),
+                            ZIndex = 9,
+                            Parent = buttonObj.subFrame
+                        })
+                        buttonObj.subLockOverlay = ApplyLock(subLockFrame, true, buttonConfig.SubLockedText or "Locked")
+                    end
+                end
+                
+                function buttonObj:SetSubName(name)
+                    if not hasSubButton or not buttonObj.subLabel then return end
+                    buttonConfig.SubName = tostring(name or "")
+                    buttonObj.subLabel.Text = buttonConfig.SubName
+                end
+
+                function buttonObj:SetSubLocked(locked)
+                    if not hasSubButton or not buttonObj.subFrame then return end
+                    buttonObj.subLocked = locked == true
+                    local newColor = buttonObj.subLocked and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(48, 48, 48)
+                    local newTextColor = buttonObj.subLocked and Color3.fromRGB(110, 110, 110) or Color3.fromRGB(200, 200, 200)
+                    tween_to(buttonObj.subFrame, {BackgroundColor3 = newColor}, 0.2)
+                    tween_to(buttonObj.subLabel, {TextColor3 = newTextColor}, 0.2)
+                    if buttonObj.subLockOverlay then
+                        buttonObj.subLockOverlay:SetLocked(buttonObj.subLocked)
+                    elseif buttonObj.subLocked then
+                        local subLockFrame = create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, 0),
+                            Size = UDim2.new(1, 0, 1, 0),
+                            ZIndex = 9,
+                            Parent = buttonObj.subFrame
+                        })
+                        buttonObj.subLockOverlay = ApplyLock(subLockFrame, true, buttonConfig.SubLockedText or "Locked")
+                    end
+                end
+
+                function buttonObj:SetSubCallback(callbackFn)
+                    if type(callbackFn) == "function" then
+                        buttonConfig.SubCallback = callbackFn
+                    end
+                end
+
                 function buttonObj:SetLocked(locked)
                     buttonObj.isLocked = locked == true
                     local newColor = buttonObj.isLocked and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(32, 32, 32)
@@ -6239,6 +6342,8 @@ groupObj.groupTitle = create("TextLabel", {
                 keybindConfig.ChangedCallback = keybindConfig.ChangedCallback or function() end
                 keybindConfig.ModeChangedCallback = keybindConfig.ModeChangedCallback or function() end
                 keybindConfig.Mode = tostring(keybindConfig.Mode or "Toggle")
+                local keybindHasExplicitFlag = type(keybindConfig.Flag) == "string" and keybindConfig.Flag ~= ""
+                local keybindModeHasExplicitFlag = type(keybindConfig.ModeFlag) == "string" and keybindConfig.ModeFlag ~= ""
                 keybindConfig.Flag = keybindConfig.Flag or createAutoFlag(keybindConfig.Name)
                 keybindConfig.ModeFlag = keybindConfig.ModeFlag or createAutoFlag(keybindConfig.Name .. ".Mode")
                 addSearchTerm(keybindConfig.Name)
@@ -6419,18 +6524,22 @@ groupObj.groupTitle = create("TextLabel", {
                     if not keybindObj.isListening then tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2) end
                 end)
                 
-                groupObj.Library:RegisterControl(keybindConfig.Flag, function()
-                    return keybindObj:Get()
-                end, function(value)
-                    if typeof(value) == "EnumItem" and value.EnumType == Enum.KeyCode then
-                        keybindObj:Set(value, true)
-                    end
-                end)
-                groupObj.Library:RegisterControl(keybindConfig.ModeFlag, function()
-                    return keybindObj:GetMode()
-                end, function(value)
-                    keybindObj:SetMode(value, true)
-                end)
+                if keybindHasExplicitFlag then
+                    groupObj.Library:RegisterControl(keybindConfig.Flag, function()
+                        return keybindObj:Get()
+                    end, function(value)
+                        if typeof(value) == "EnumItem" and value.EnumType == Enum.KeyCode then
+                            keybindObj:Set(value, true)
+                        end
+                    end)
+                end
+                if keybindModeHasExplicitFlag then
+                    groupObj.Library:RegisterControl(keybindConfig.ModeFlag, function()
+                        return keybindObj:GetMode()
+                    end, function(value)
+                        keybindObj:SetMode(value, true)
+                    end)
+                end
                 
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
@@ -6447,6 +6556,8 @@ groupObj.groupTitle = create("TextLabel", {
                 keybindToggleConfig.Callback = keybindToggleConfig.Callback or function() end
                 keybindToggleConfig.ToggleCallback = keybindToggleConfig.ToggleCallback or function() end
                 keybindToggleConfig.ChangedCallback = keybindToggleConfig.ChangedCallback or function() end
+                local keybindToggleHasExplicitFlag = type(keybindToggleConfig.Flag) == "string" and keybindToggleConfig.Flag ~= ""
+                local keybindToggleHasExplicitToggleFlag = type(keybindToggleConfig.ToggleFlag) == "string" and keybindToggleConfig.ToggleFlag ~= ""
                 keybindToggleConfig.Flag = keybindToggleConfig.Flag or createAutoFlag(keybindToggleConfig.Name .. ".Key")
                 keybindToggleConfig.ToggleFlag = keybindToggleConfig.ToggleFlag or createAutoFlag(keybindToggleConfig.Name .. ".Enabled")
                 addSearchTerm(keybindToggleConfig.Name)
@@ -6600,18 +6711,22 @@ groupObj.groupTitle = create("TextLabel", {
                 keybindClickButton.MouseEnter:Connect(function() if not keybindToggleObj.isListening then tween_to(keybindToggleObj.keybindButtonFrame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2) end end)
                 keybindClickButton.MouseLeave:Connect(function() if not keybindToggleObj.isListening then tween_to(keybindToggleObj.keybindButtonFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2) end end)
                 
-                groupObj.Library:RegisterControl(keybindToggleConfig.Flag, function()
-                    return keybindToggleObj:GetKey()
-                end, function(value)
-                    if typeof(value) == "EnumItem" and value.EnumType == Enum.KeyCode then
-                        keybindToggleObj:SetKey(value, true)
-                    end
-                end)
-                groupObj.Library:RegisterControl(keybindToggleConfig.ToggleFlag, function()
-                    return keybindToggleObj:GetToggle()
-                end, function(value)
-                    keybindToggleObj:SetToggle(value == true, true)
-                end)
+                if keybindToggleHasExplicitFlag then
+                    groupObj.Library:RegisterControl(keybindToggleConfig.Flag, function()
+                        return keybindToggleObj:GetKey()
+                    end, function(value)
+                        if typeof(value) == "EnumItem" and value.EnumType == Enum.KeyCode then
+                            keybindToggleObj:SetKey(value, true)
+                        end
+                    end)
+                end
+                if keybindToggleHasExplicitToggleFlag then
+                    groupObj.Library:RegisterControl(keybindToggleConfig.ToggleFlag, function()
+                        return keybindToggleObj:GetToggle()
+                    end, function(value)
+                        keybindToggleObj:SetToggle(value == true, true)
+                    end)
+                end
                 groupObj.element_y = groupObj.element_y + 31 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, keybindToggleObj)
@@ -6648,6 +6763,8 @@ groupObj.groupTitle = create("TextLabel", {
                 end
                 dropdownConfig.RefreshInterval = math.max(tonumber(dropdownConfig.RefreshInterval) or 0.85, 0.35)
                 dropdownConfig.Callback = dropdownConfig.Callback or function() end
+                dropdownConfig.DisabledOptions = dropdownConfig.DisabledOptions or {}
+                local dropdownHasExplicitFlag = type(dropdownConfig.Flag) == "string" and dropdownConfig.Flag ~= ""
                 dropdownConfig.Flag = dropdownConfig.Flag or createAutoFlag(dropdownConfig.Name)
                 local dropdownOptionsSource = dropdownConfig.Options
                 if type(dropdownConfig.OptionsProvider) == "function" then
@@ -6866,9 +6983,10 @@ groupObj.groupTitle = create("TextLabel", {
                     local optY = 0
                     for _, option in ipairs(filtered) do
                         local isSelected = dropdownObj.value == option
+                        local isDisabled = table.find(dropdownConfig.DisabledOptions, option) ~= nil
                         local optionLabelText = create("TextLabel", {
                             FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                            TextColor3 = isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124),
+                            TextColor3 = isDisabled and Color3.fromRGB(80, 80, 80) or (isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124)),
                             Text = tostring(option), BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0, optY),
                             TextSize = 14 * scale_factor, Size = UDim2.new(1, -24, 0, 18 * scale_factor),
                             TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
@@ -6878,20 +6996,22 @@ groupObj.groupTitle = create("TextLabel", {
                             Text = "", BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, optY),
                             Size = UDim2.new(1, 0, 0, 20 * scale_factor), ZIndex = 10002, Parent = dropdownObj.optionContainerFrame
                         })
-                        optionClickButton.MouseButton1Click:Connect(function()
-                            dropdownObj.value = option
-                            dropdownObj.Value = dropdownObj.value
-                            closeDropdown(false)
-                            local optionText = tostring(option)
-                            dropdownObj.selectedLabelText.Text = optionText
-                            local newWidth = math.max(70 * scale_factor, measure_text_width(optionText, 12 * scale_factor) + 30 * scale_factor)
-                            tween_to(dropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
-                            if dropdownObj.Changed then
-                                dropdownObj.Changed(option)
-                            end
-                        end)
-                        optionClickButton.MouseEnter:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(180, 180, 180)}, 0.2) end end)
-                        optionClickButton.MouseLeave:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(124, 124, 124)}, 0.2) end end)
+                        if not isDisabled then
+                            optionClickButton.MouseButton1Click:Connect(function()
+                                dropdownObj.value = option
+                                dropdownObj.Value = dropdownObj.value
+                                closeDropdown(false)
+                                local optionText = tostring(option)
+                                dropdownObj.selectedLabelText.Text = optionText
+                                local newWidth = math.max(70 * scale_factor, measure_text_width(optionText, 12 * scale_factor) + 30 * scale_factor)
+                                tween_to(dropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
+                                if dropdownObj.Changed then
+                                    dropdownObj.Changed(option)
+                                end
+                            end)
+                            optionClickButton.MouseEnter:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(180, 180, 180)}, 0.2) end end)
+                            optionClickButton.MouseLeave:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(124, 124, 124)}, 0.2) end end)
+                        end
                         optY = optY + 22 * scale_factor
                     end
                     dropdownObj.optionContainerFrame.Size = UDim2.new(1, -6, 0, optY)
@@ -7012,6 +7132,47 @@ groupObj.groupTitle = create("TextLabel", {
                     dropdownObj:UpdateOptions(newOptions)
                 end
 
+                function dropdownObj:SetDisabledOptions(disabledOptions)
+                    if type(disabledOptions) == "table" then
+                        dropdownConfig.DisabledOptions = disabledOptions
+                        createOptionsYay(search_query)
+                    end
+                end
+
+                function dropdownObj:AddDisabledOptions(disabledOptions)
+                    if type(disabledOptions) == "table" then
+                        for _, opt in ipairs(disabledOptions) do
+                            if not table.find(dropdownConfig.DisabledOptions, opt) then
+                                table.insert(dropdownConfig.DisabledOptions, opt)
+                            end
+                        end
+                        createOptionsYay(search_query)
+                    elseif type(disabledOptions) == "string" then
+                        if not table.find(dropdownConfig.DisabledOptions, disabledOptions) then
+                            table.insert(dropdownConfig.DisabledOptions, disabledOptions)
+                        end
+                        createOptionsYay(search_query)
+                    end
+                end
+
+                function dropdownObj:RemoveDisabledOptions(enableOptions)
+                    if type(enableOptions) == "table" then
+                        for _, opt in ipairs(enableOptions) do
+                            local idx = table.find(dropdownConfig.DisabledOptions, opt)
+                            if idx then
+                                table.remove(dropdownConfig.DisabledOptions, idx)
+                            end
+                        end
+                        createOptionsYay(search_query)
+                    elseif type(enableOptions) == "string" then
+                        local idx = table.find(dropdownConfig.DisabledOptions, enableOptions)
+                        if idx then
+                            table.remove(dropdownConfig.DisabledOptions, idx)
+                        end
+                        createOptionsYay(search_query)
+                    end
+                end
+
                 if dropdownConfig.AutoRefresh then
                     groupObj.Library:_RegisterRefreshJob(dropdownConfig.RefreshInterval, function()
                         return not groupObj.Library._destroyed and dropdownObj.button_frame and dropdownObj.button_frame.Parent
@@ -7048,13 +7209,15 @@ groupObj.groupTitle = create("TextLabel", {
                     end
                 end
                 
-                groupObj.Library:RegisterControl(dropdownConfig.Flag, function()
-                    return dropdownObj:Get()
-                end, function(value)
-                    if value ~= nil then
-                        dropdownObj:Set(value, true)
-                    end
-                end)
+                if dropdownHasExplicitFlag then
+                    groupObj.Library:RegisterControl(dropdownConfig.Flag, function()
+                        return dropdownObj:Get()
+                    end, function(value)
+                        if value ~= nil then
+                            dropdownObj:Set(value, true)
+                        end
+                    end)
+                end
                 
                 -- Store in global Options table
                 local flagKey = Idx or dropdownConfig.Flag or dropdownConfig.Name
@@ -7098,6 +7261,7 @@ groupObj.groupTitle = create("TextLabel", {
                 multiDropdownConfig.RefreshInterval = math.max(tonumber(multiDropdownConfig.RefreshInterval) or 0.85, 0.35)
                 multiDropdownConfig.Default = multiDropdownConfig.Default or {}
                 multiDropdownConfig.Callback = multiDropdownConfig.Callback or function() end
+                local multiDropdownHasExplicitFlag = type(multiDropdownConfig.Flag) == "string" and multiDropdownConfig.Flag ~= ""
                 multiDropdownConfig.Flag = multiDropdownConfig.Flag or createAutoFlag(multiDropdownConfig.Name)
                 local multiDropdownOptionsSource = multiDropdownConfig.Options
                 if type(multiDropdownConfig.OptionsProvider) == "function" then
@@ -7527,13 +7691,15 @@ groupObj.groupTitle = create("TextLabel", {
                 local flagKey = multiDropdownConfig.Flag or multiDropdownConfig.Name
                 Options[flagKey] = multiDropdownObj
 
-                groupObj.Library:RegisterControl(multiDropdownConfig.Flag, function()
-                    return multiDropdownObj:Get()
-                end, function(value)
-                    if type(value) == "table" then
-                        multiDropdownObj:Set(value, true)
-                    end
-                end)
+                if multiDropdownHasExplicitFlag then
+                    groupObj.Library:RegisterControl(multiDropdownConfig.Flag, function()
+                        return multiDropdownObj:Get()
+                    end, function(value)
+                        if type(value) == "table" then
+                            multiDropdownObj:Set(value, true)
+                        end
+                    end)
+                end
 
                 groupObj.element_y = groupObj.element_y + 31 * scale_factor
                 update_group_size()
@@ -7652,6 +7818,89 @@ groupObj.groupTitle = create("TextLabel", {
                 update_group_size()
                 return labelObj
             end
+
+            function groupObj:AddParagraph(paragraphConfig)
+                paragraphConfig = paragraphConfig or {}
+                paragraphConfig.Name = paragraphConfig.Name or paragraphConfig.Title or "Paragraph"
+                paragraphConfig.Content = paragraphConfig.Content or paragraphConfig.Text or ""
+                paragraphConfig.RichText = paragraphConfig.RichText ~= false
+                paragraphConfig.Font = paragraphConfig.Font or Enum.Font.GothamSemibold
+                paragraphConfig.TextSize = paragraphConfig.TextSize or 14 * scale_factor
+                paragraphConfig.TextColor3 = paragraphConfig.TextColor3 or Color3.fromRGB(170, 170, 170)
+                paragraphConfig.BackgroundTransparency = paragraphConfig.BackgroundTransparency or 1
+                paragraphConfig.MaxWidth = paragraphConfig.MaxWidth or 238 * scale_factor
+                addSearchTerm(paragraphConfig.Name)
+                addSearchTerm(paragraphConfig.Content)
+
+                local yPosition = groupObj.element_y
+                local contentBounds = text_service:GetTextSize(
+                    paragraphConfig.Content,
+                    paragraphConfig.TextSize,
+                    paragraphConfig.Font,
+                    Vector2.new(paragraphConfig.MaxWidth, math.huge)
+                )
+                local paragraphHeight = math.max(20 * scale_factor, contentBounds.Y)
+
+                local paragraphLabel = create("TextLabel", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = paragraphConfig.TextColor3,
+                    Text = paragraphConfig.Name .. "\n" .. paragraphConfig.Content,
+                    BackgroundTransparency = paragraphConfig.BackgroundTransparency,
+                    Position = UDim2.new(0, 10, 0, yPosition),
+                    Size = UDim2.new(0, paragraphConfig.MaxWidth, 0, paragraphHeight),
+                    TextSize = paragraphConfig.TextSize,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Top,
+                    TextWrapped = true,
+                    TextTruncate = Enum.TextTruncate.None,
+                    RichText = paragraphConfig.RichText,
+                    Parent = groupObj.mainFrame
+                })
+
+                local paragraphObj = {}
+                paragraphObj.Instance = paragraphLabel
+                paragraphObj.Name = paragraphConfig.Name
+                paragraphObj.Content = paragraphConfig.Content
+
+                function paragraphObj:SetName(name)
+                    paragraphObj.Name = tostring(name or "")
+                    paragraphLabel.Text = paragraphObj.Name .. "\n" .. paragraphObj.Content
+                    local newBounds = text_service:GetTextSize(
+                        paragraphLabel.Text,
+                        paragraphConfig.TextSize,
+                        paragraphConfig.Font,
+                        Vector2.new(paragraphConfig.MaxWidth, math.huge)
+                    )
+                    local newHeight = math.max(20 * scale_factor, newBounds.Y)
+                    paragraphLabel.Size = UDim2.new(0, paragraphConfig.MaxWidth, 0, newHeight)
+                end
+
+                function paragraphObj:SetContent(content)
+                    paragraphObj.Content = tostring(content or "")
+                    paragraphLabel.Text = paragraphObj.Name .. "\n" .. paragraphObj.Content
+                    local newBounds = text_service:GetTextSize(
+                        paragraphLabel.Text,
+                        paragraphConfig.TextSize,
+                        paragraphConfig.Font,
+                        Vector2.new(paragraphConfig.MaxWidth, math.huge)
+                    )
+                    local newHeight = math.max(20 * scale_factor, newBounds.Y)
+                    paragraphLabel.Size = UDim2.new(0, paragraphConfig.MaxWidth, 0, newHeight)
+                end
+
+                function paragraphObj:GetContent()
+                    return paragraphObj.Content
+                end
+
+                function paragraphObj:SetVisible(visible)
+                    paragraphObj.Instance.Visible = visible
+                end
+
+                table.insert(groupObj.elements, paragraphObj)
+                groupObj.element_y = groupObj.element_y + paragraphHeight + 6 * scale_factor
+                update_group_size()
+                return paragraphObj
+            end
             
             function groupObj:AddInput(textInputConfig, config)
                 -- Support old API: AddInput(name, config) - same as AddTextInput
@@ -7670,6 +7919,7 @@ groupObj.groupTitle = create("TextLabel", {
                 textInputConfig.Placeholder = textInputConfig.Placeholder or "Enter text..."
                 textInputConfig.Default = tostring(textInputConfig.Default or "")
                 textInputConfig.Callback = textInputConfig.Callback or function() end
+                local textInputHasExplicitFlag = type(textInputConfig.Flag) == "string" and textInputConfig.Flag ~= ""
                 textInputConfig.Flag = textInputConfig.Flag or createAutoFlag(textInputConfig.Name)
                 textInputConfig.Numeric = textInputConfig.Numeric == true
                 textInputConfig.Finished = textInputConfig.Finished == true
@@ -7799,11 +8049,13 @@ groupObj.groupTitle = create("TextLabel", {
 
                 Options[textInputConfig.Flag] = textInputObj
                 
-                groupObj.Library:RegisterControl(textInputConfig.Flag, function()
-                    return textInputObj:Get()
-                end, function(value)
-                    textInputObj:Set(tostring(value or ""))
-                end)
+                if textInputHasExplicitFlag then
+                    groupObj.Library:RegisterControl(textInputConfig.Flag, function()
+                        return textInputObj:Get()
+                    end, function(value)
+                        textInputObj:Set(tostring(value or ""))
+                    end)
+                end
                 
                 groupObj.element_y = groupObj.element_y + 58 * scale_factor
                 update_group_size()
@@ -7883,6 +8135,7 @@ groupObj.groupTitle = create("TextLabel", {
                 colorPickerConfig.Locked = colorPickerConfig.Locked or false
                 colorPickerConfig.Default = colorPickerConfig.Default or Color3.fromRGB(255, 100, 150)
                 colorPickerConfig.Callback = colorPickerConfig.Callback or function() end
+                local colorPickerHasExplicitFlag = type(colorPickerConfig.Flag) == "string" and colorPickerConfig.Flag ~= ""
                 colorPickerConfig.Flag = colorPickerConfig.Flag or createAutoFlag(colorPickerConfig.Name)
                 addSearchTerm(colorPickerConfig.Name)
                 
@@ -8235,13 +8488,15 @@ groupObj.groupTitle = create("TextLabel", {
                 function colorPickerObj:Close()
                     closeColorPicker(true)
                 end
-                groupObj.Library:RegisterControl(colorPickerConfig.Flag, function()
-                    return colorPickerObj:Get()
-                end, function(value)
-                    if typeof(value) == "Color3" then
-                        colorPickerObj:Set(value, true)
-                    end
-                end)
+                if colorPickerHasExplicitFlag then
+                    groupObj.Library:RegisterControl(colorPickerConfig.Flag, function()
+                        return colorPickerObj:Get()
+                    end, function(value)
+                        if typeof(value) == "Color3" then
+                            colorPickerObj:Set(value, true)
+                        end
+                    end)
+                end
 
                 groupObj.element_y = groupObj.element_y + 31 * scale_factor
                 update_group_size()
@@ -8277,17 +8532,7 @@ groupObj.groupTitle = create("TextLabel", {
 end
 
 function Modern:AddTab(tabConfig)
-    tabConfig = tabConfig or {}
-    local sectionConfig = {
-        Name = tabConfig.Name or "Section",
-        Icon = tabConfig.Icon,
-        NoCollapse = true
-    }
-    local section = self:AddSection(sectionConfig)
-    local tab = section:AddTab(tabConfig)
-    tab.button_frame.Visible = false
-    tab:Activate()
-    return tab
+    error("Modern:AddTab is removed. Use Modern:AddSection({ Name = \"Section Name\" }):AddTab({ Name = \"Tab Name\" }) instead.")
 end
 
 function Modern:SetAccentColor(color)
@@ -8338,6 +8583,14 @@ function Modern:SetAccentColor(color)
         end
     end
     self:_UpdateESPPreview(0)
+end
+
+function Modern:SetWindowColor(color)
+    if typeof(color) ~= "Color3" then
+        return
+    end
+    self.config.Color = color
+    self:SetAccentColor(color)
 end
 
 function Modern:Destroy()
