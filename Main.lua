@@ -243,7 +243,7 @@ local function ApplyLock(frame, isLocked, lockMessage)
         LockOverlay.Text = ""
         LockOverlay.Size = UDim2.new(1, 0, 1, 0)
         LockOverlay.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
-        LockOverlay.BackgroundTransparency = 0.28
+        LockOverlay.BackgroundTransparency = 0.35
         LockOverlay.BorderSizePixel = 0
         LockOverlay.ZIndex = 10
         LockOverlay.AutoButtonColor = false
@@ -256,7 +256,7 @@ local function ApplyLock(frame, isLocked, lockMessage)
         Inner.Name = "LockInner"
         Inner.AnchorPoint = Vector2.new(0.5, 0.5)
         Inner.Position = UDim2.new(0.5, 0, 0.5, 0)
-        Inner.Size = UDim2.new(0, 120, 0, 20)
+        Inner.Size = UDim2.new(0, 90 * scale_factor, 0, 14 * scale_factor)
         Inner.BackgroundTransparency = 1
         Inner.ClipsDescendants = false
         Inner.ZIndex = 11
@@ -266,13 +266,13 @@ local function ApplyLock(frame, isLocked, lockMessage)
         UIListLayout.FillDirection = Enum.FillDirection.Horizontal
         UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
         UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        UIListLayout.Padding = UDim.new(0, 7)
+        UIListLayout.Padding = UDim.new(0, 5 * scale_factor)
         UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
         UIListLayout.Parent = Inner
 
         local LockIcon = Instance.new("ImageLabel")
         LockIcon.Name = "LockIcon"
-        LockIcon.Size = UDim2.new(0, 15, 0, 15)
+        LockIcon.Size = UDim2.new(0, 12 * scale_factor, 0, 12 * scale_factor)
         LockIcon.BackgroundTransparency = 1
         LockIcon.ScaleType = Enum.ScaleType.Fit
         LockIcon.Image = "rbxassetid://134724289526879"
@@ -284,11 +284,11 @@ local function ApplyLock(frame, isLocked, lockMessage)
 
         local LockLabel = Instance.new("TextLabel")
         LockLabel.Name = "LockLabel"
-        LockLabel.Size = UDim2.new(0, 200, 0, 20)
+        LockLabel.Size = UDim2.new(0, 150 * scale_factor, 0, 14 * scale_factor)
         LockLabel.BackgroundTransparency = 1
         LockLabel.Font = Enum.Font.GothamBold
         LockLabel.Text = msg
-        LockLabel.TextSize = 13
+        LockLabel.TextSize = 11 * scale_factor
         LockLabel.TextColor3 = Color3.fromRGB(235, 235, 235)
         LockLabel.TextTransparency = 0.05
         LockLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -302,9 +302,9 @@ local function ApplyLock(frame, isLocked, lockMessage)
         local function UpdateInnerSize()
             task.defer(function()
                 if not LockLabel.Parent then return end
-                local textW = math.max(40, LockLabel.TextBounds.X)
-                LockLabel.Size = UDim2.new(0, textW, 0, 20)
-                Inner.Size = UDim2.new(0, 15 + 7 + textW, 0, 20)
+                local textW = math.max(30 * scale_factor, LockLabel.TextBounds.X)
+                LockLabel.Size = UDim2.new(0, textW, 0, 14 * scale_factor)
+                Inner.Size = UDim2.new(0, 12 * scale_factor + 5 * scale_factor + textW, 0, 14 * scale_factor)
             end)
         end
         LockLabel:GetPropertyChangedSignal("TextBounds"):Connect(UpdateInnerSize)
@@ -315,11 +315,11 @@ local function ApplyLock(frame, isLocked, lockMessage)
             if not Inner.Parent then return end
             local curW = Inner.Size.X.Offset
             tween_service:Create(Inner, TweenInfo.new(0.07, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-                { Size = UDim2.new(0, curW + 8, 0, 24) }):Play()
+                { Size = UDim2.new(0, curW + 6 * scale_factor, 0, 18 * scale_factor) }):Play()
             task.delay(0.18, function()
                 if not Inner.Parent then return end
                 tween_service:Create(Inner, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                    { Size = UDim2.new(0, curW, 0, 20) }):Play()
+                    { Size = UDim2.new(0, curW, 0, 14 * scale_factor) }):Play()
             end)
         end)
 
@@ -5904,6 +5904,7 @@ function Modern:AddSection(config)
                 local sliderObj = {}
                 sliderObj.value = normalize_slider_value(sliderConfig.Default, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
                 sliderObj.isLocked = sliderConfig.Locked
+                sliderObj.isLocked = sliderConfig.Locked
                 local yPosition = groupObj.element_y
                 local valueLabelWidth = 72 * scale_factor
                 local sliderHitHeight = 20 * scale_factor
@@ -6022,6 +6023,9 @@ function Modern:AddSection(config)
                 
                 function sliderObj:SetLocked(locked)
                     sliderObj.isLocked = locked == true
+                    if sliderObj.lockOverlay then
+                        sliderObj.lockOverlay:SetLocked(sliderObj.isLocked)
+                    end
                     if sliderObj.isLocked then
                         sliderObj.trackFrame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
                         tween_to(sliderObj.fillFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
@@ -6074,9 +6078,28 @@ function Modern:AddSection(config)
                     end
                 end)
                 
+                function sliderObj:SetLockedText(text)
+                    if sliderObj.lockOverlay then
+                        sliderObj.lockOverlay:SetMessage(text or "Locked")
+                    end
+                end
+                
                 -- Store in global Options table
                 Options[Idx or sliderConfig.Name] = sliderObj
                 sliderObj.Value = sliderObj.value
+                
+                -- Apply lock if needed
+                if sliderConfig.Locked then
+                    local sliderContainerFrame = create("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 0, 0, yPosition),
+                        Size = UDim2.new(1, 0, 0, 44 * scale_factor),
+                        ZIndex = 9,
+                        Parent = groupObj.mainFrame
+                    })
+                    local lockMessage = sliderConfig.LockedText or "Locked"
+                    sliderObj.lockOverlay = ApplyLock(sliderContainerFrame, true, lockMessage)
+                end
                 
                 groupObj.element_y = groupObj.element_y + 44 * scale_factor
                 update_group_size()
@@ -6107,6 +6130,19 @@ function Modern:AddSection(config)
                     Size = UDim2.new(1, -20 * scale_factor, 0, 28 * scale_factor), Parent = groupObj.mainFrame
                 })
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = buttonObj.mainFrame})
+                
+                -- Apply lock if needed
+                if buttonConfig.Locked then
+                    local buttonContainerFrame = create("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 0, 0, yPosition),
+                        Size = UDim2.new(1, 0, 0, 28 * scale_factor),
+                        ZIndex = 9,
+                        Parent = groupObj.mainFrame
+                    })
+                    local lockMessage = buttonConfig.LockedText or "Locked"
+                    buttonObj.lockOverlay = ApplyLock(buttonContainerFrame, true, lockMessage)
+                end
                 
                 local buttonStrokeThing = create("UIStroke", {Color = buttonObj.isLocked and Color3.fromRGB(32, 32, 32) or Color3.fromRGB(48, 48, 48), Parent = buttonObj.mainFrame})
                 create("UIGradient", {
@@ -6149,6 +6185,15 @@ function Modern:AddSection(config)
                     tween_to(buttonStrokeThing, {Color = newStrokeColor}, 0.2)
                     tween_to(buttonObj.labelText, {TextColor3 = newTextColor}, 0.2)
                     buttonObj.labelText.Text = buttonConfig.Name .. (buttonObj.isLocked and " (locked)" or "")
+                    if buttonObj.lockOverlay then
+                        buttonObj.lockOverlay:SetLocked(buttonObj.isLocked)
+                    end
+                end
+                
+                function buttonObj:SetLockedText(text)
+                    if buttonObj.lockOverlay then
+                        buttonObj.lockOverlay:SetMessage(text or "Locked")
+                    end
                 end
                 
                 groupObj.element_y = groupObj.element_y + 35 * scale_factor
@@ -6179,6 +6224,19 @@ function Modern:AddSection(config)
                 keybindObj.holdActive = false
                 keybindObj.isLocked = keybindConfig.Locked
                 local yPosition = groupObj.element_y
+                
+                -- Apply lock if needed
+                if keybindConfig.Locked then
+                    local keybindContainerFrame = create("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 0, 0, yPosition),
+                        Size = UDim2.new(1, 0, 0, 28 * scale_factor),
+                        ZIndex = 9,
+                        Parent = groupObj.mainFrame
+                    })
+                    local lockMessage = keybindConfig.LockedText or "Locked"
+                    keybindObj.lockOverlay = ApplyLock(keybindContainerFrame, true, lockMessage)
+                end
                 
                 keybindObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
@@ -6278,13 +6336,14 @@ function Modern:AddSection(config)
                     else
                         tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
                     end
+                    if keybindObj.lockOverlay then
+                        keybindObj.lockOverlay:SetLocked(keybindObj.isLocked)
+                    end
                 end
                 
-                function keybindObj:Close()
-                    keybindObj.isListening = false
-                    if keybindObj.holdActive then
-                        keybindObj.holdActive = false
-                        keybindConfig.Callback(false)
+                function keybindObj:SetLockedText(text)
+                    if keybindObj.lockOverlay then
+                        keybindObj.lockOverlay:SetMessage(text or "Locked")
                     end
                 end
                 
@@ -6353,6 +6412,7 @@ function Modern:AddSection(config)
             function groupObj:AddKeybindToggle(keybindToggleConfig)
                 keybindToggleConfig = keybindToggleConfig or {}
                 keybindToggleConfig.Name = keybindToggleConfig.Name or "Keybind Toggle"
+                keybindToggleConfig.Locked = keybindToggleConfig.Locked or false
                 keybindToggleConfig.Default = keybindToggleConfig.Default or Enum.KeyCode.Unknown
                 keybindToggleConfig.ToggleDefault = keybindToggleConfig.ToggleDefault or false
                 keybindToggleConfig.Callback = keybindToggleConfig.Callback or function() end
@@ -6365,8 +6425,22 @@ function Modern:AddSection(config)
                 local keybindToggleObj = {}
                 keybindToggleObj.keyValue = keybindToggleConfig.Default
                 keybindToggleObj.toggleValue = keybindToggleConfig.ToggleDefault
+                keybindToggleObj.isLocked = keybindToggleConfig.Locked
                 keybindToggleObj.isListening = false
                 local yPosition = groupObj.element_y
+                
+                -- Apply lock if needed
+                if keybindToggleConfig.Locked then
+                    local keybindToggleContainerFrame = create("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 0, 0, yPosition),
+                        Size = UDim2.new(1, 0, 0, 31 * scale_factor),
+                        ZIndex = 9,
+                        Parent = groupObj.mainFrame
+                    })
+                    local lockMessage = keybindToggleConfig.LockedText or "Locked"
+                    keybindToggleObj.lockOverlay = ApplyLock(keybindToggleContainerFrame, true, lockMessage)
+                end
                 
                 keybindToggleObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
@@ -6457,8 +6531,22 @@ function Modern:AddSection(config)
                     return keybindToggleObj.toggleValue
                 end
                 
-                toggleClickButton.MouseButton1Click:Connect(function() keybindToggleObj:SetToggle(not keybindToggleObj.toggleValue, false) end)
+                function keybindToggleObj:SetLocked(locked)
+                    keybindToggleObj.isLocked = locked == true
+                    if keybindToggleObj.lockOverlay then
+                        keybindToggleObj.lockOverlay:SetLocked(keybindToggleObj.isLocked)
+                    end
+                end
+                
+                function keybindToggleObj:SetLockedText(text)
+                    if keybindToggleObj.lockOverlay then
+                        keybindToggleObj.lockOverlay:SetMessage(text or "Locked")
+                    end
+                end
+                
+                toggleClickButton.MouseButton1Click:Connect(function() if not keybindToggleObj.isLocked then keybindToggleObj:SetToggle(not keybindToggleObj.toggleValue, false) end end)
                 keybindClickButton.MouseButton1Click:Connect(function()
+                    if keybindToggleObj.isLocked then return end
                     keybindToggleObj.isListening = true
                     keybindToggleObj.keyLabelText.Text = "..."
                     updateKeybindSizeYay("...")
@@ -6567,6 +6655,19 @@ function Modern:AddSection(config)
                     dropdownObj._optionsSignature = get_dropdown_signature(dropdownConfig.Options)
                 end
                 local yPosition = groupObj.element_y
+                
+                -- Apply lock if needed
+                if dropdownConfig.Locked then
+                    local dropdownContainerFrame = create("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 0, 0, yPosition),
+                        Size = UDim2.new(1, 0, 0, 28 * scale_factor),
+                        ZIndex = 9,
+                        Parent = groupObj.mainFrame
+                    })
+                    local lockMessage = dropdownConfig.LockedText or "Locked"
+                    dropdownObj.lockOverlay = ApplyLock(dropdownContainerFrame, true, lockMessage)
+                end
                 
                 dropdownObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
@@ -6902,6 +7003,20 @@ function Modern:AddSection(config)
                 function dropdownObj:Close()
                     closeDropdown(true)
                 end
+                
+                function dropdownObj:SetLocked(locked)
+                    dropdownObj.isLocked = locked == true
+                    if dropdownObj.lockOverlay then
+                        dropdownObj.lockOverlay:SetLocked(dropdownObj.isLocked)
+                    end
+                end
+                
+                function dropdownObj:SetLockedText(text)
+                    if dropdownObj.lockOverlay then
+                        dropdownObj.lockOverlay:SetMessage(text or "Locked")
+                    end
+                end
+                
                 groupObj.Library:RegisterControl(dropdownConfig.Flag, function()
                     return dropdownObj:Get()
                 end, function(value)
@@ -7002,6 +7117,19 @@ function Modern:AddSection(config)
                 end
 
                 local yPosition = groupObj.element_y
+                
+                -- Apply lock if needed
+                if multiDropdownConfig.Locked then
+                    local multiDropdownContainerFrame = create("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 0, 0, yPosition),
+                        Size = UDim2.new(1, 0, 0, 31 * scale_factor),
+                        ZIndex = 9,
+                        Parent = groupObj.mainFrame
+                    })
+                    local lockMessage = multiDropdownConfig.LockedText or "Locked"
+                    multiDropdownObj.lockOverlay = ApplyLock(multiDropdownContainerFrame, true, lockMessage)
+                end
                 
                 multiDropdownObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
@@ -7350,6 +7478,15 @@ function Modern:AddSection(config)
                         tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
                         tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.2)
                     end
+                    if multiDropdownObj.lockOverlay then
+                        multiDropdownObj.lockOverlay:SetLocked(multiDropdownObj.isLocked)
+                    end
+                end
+                
+                function multiDropdownObj:SetLockedText(text)
+                    if multiDropdownObj.lockOverlay then
+                        multiDropdownObj.lockOverlay:SetMessage(text or "Locked")
+                    end
                 end
 
                 function multiDropdownObj:Close()
@@ -7463,6 +7600,19 @@ function Modern:AddSection(config)
                 textInputObj.Name = textInputConfig.Name
                 local yPosition = groupObj.element_y
                 
+                -- Apply lock if needed
+                if textInputConfig.Locked then
+                    local textInputContainerFrame = create("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 0, 0, yPosition),
+                        Size = UDim2.new(1, 0, 0, 58 * scale_factor),
+                        ZIndex = 9,
+                        Parent = groupObj.mainFrame
+                    })
+                    local lockMessage = textInputConfig.LockedText or "Locked"
+                    textInputObj.lockOverlay = ApplyLock(textInputContainerFrame, true, lockMessage)
+                end
+                
                 textInputObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(124, 124, 124), Text = textInputConfig.Name, BackgroundTransparency = 1,
@@ -7551,6 +7701,15 @@ function Modern:AddSection(config)
                         tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(24, 24, 24)}, 0.2)
                     else
                         tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                    end
+                    if textInputObj.lockOverlay then
+                        textInputObj.lockOverlay:SetLocked(textInputObj.isLocked)
+                    end
+                end
+                
+                function textInputObj:SetLockedText(text)
+                    if textInputObj.lockOverlay then
+                        textInputObj.lockOverlay:SetMessage(text or "Locked")
                     end
                 end
 
@@ -7648,6 +7807,19 @@ function Modern:AddSection(config)
                 colorPickerObj.isOpen = false
                 colorPickerObj.isLocked = colorPickerConfig.Locked
                 local yPosition = groupObj.element_y
+                
+                -- Apply lock if needed
+                if colorPickerConfig.Locked then
+                    local colorPickerContainerFrame = create("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 0, 0, yPosition),
+                        Size = UDim2.new(1, 0, 0, 31 * scale_factor),
+                        ZIndex = 9,
+                        Parent = groupObj.mainFrame
+                    })
+                    local lockMessage = colorPickerConfig.LockedText or "Locked"
+                    colorPickerObj.lockOverlay = ApplyLock(colorPickerContainerFrame, true, lockMessage)
+                end
                 
                 -- Convert Color3 to HSV
                 local function rgbToHsv(color)
@@ -7963,6 +8135,15 @@ function Modern:AddSection(config)
                         tween_to(colorPickerObj.colorPreview, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
                     else
                         tween_to(colorPickerObj.colorPreview, {BackgroundColor3 = colorPickerObj.value}, 0.2)
+                    end
+                    if colorPickerObj.lockOverlay then
+                        colorPickerObj.lockOverlay:SetLocked(colorPickerObj.isLocked)
+                    end
+                end
+                
+                function colorPickerObj:SetLockedText(text)
+                    if colorPickerObj.lockOverlay then
+                        colorPickerObj.lockOverlay:SetMessage(text or "Locked")
                     end
                 end
 
@@ -8401,193 +8582,5 @@ function Modern:Dialog(config)
 
     return dialogObj
 end
-
-function Modern.Demo()
-    local lib = Modern:Window({
-        Title = "Modern Demo",
-        Color = Color3.fromRGB(0, 200, 255),
-        Image = "101833678008843",
-        Uitransparent = 0.15,
-        Keybind = Enum.KeyCode.RightShift,
-        ShowUser = true,
-        Search = true,
-        Config = {
-            ConfigFolder = "Modern/Config/",
-            AutoSaveFile = "Default",
-            AutoSave = false,
-            AutoLoad = false,
-        },
-    })
-
-    local main_section = lib:AddSection({Name = "Main", Icon = "sword"})
-
-    local combat_tab = main_section:AddTab({
-        Name = "Combat",
-        Description = "Combat settings",
-        Icon = "crosshair"
-    })
-
-    local aimbot_group = combat_tab:AddGroup({Name = "Aimbot", Side = "Left", Icon = "target"})
-
-    aimbot_group:AddToggle({
-        Name = "Enabled",
-        Default = false,
-        Callback = function(val) print("[Demo] Aimbot:", val) end
-    })
-
-    aimbot_group:AddSlider({
-        Name = "FOV",
-        Min = 10,
-        Max = 800,
-        Default = 120,
-        Increment = 5,
-        Callback = function(val) print("[Demo] FOV:", val) end
-    })
-
-    aimbot_group:AddDropdown({
-        Name = "Target Part",
-        Options = {"Head", "HumanoidRootPart", "Torso"},
-        Default = "Head",
-        Callback = function(val) print("[Demo] Part:", val) end
-    })
-
-    aimbot_group:AddKeybindToggle({
-        Name = "Toggle Key",
-        Default = Enum.KeyCode.E,
-        ToggleDefault = false,
-        Callback = function(val) print("[Demo] Keybind toggle:", val) end
-    })
-
-    local visuals_group = combat_tab:AddGroup({Name = "Visuals", Side = "Right", Icon = "eye"})
-
-    visuals_group:AddToggle({
-        Name = "Show FOV Circle",
-        Default = true,
-        Callback = function(val) print("[Demo] FOV Circle:", val) end
-    })
-
-    visuals_group:AddColorPicker({
-        Name = "FOV Color",
-        Default = Color3.fromRGB(255, 0, 0),
-        Callback = function(val) print("[Demo] Color:", val) end
-    })
-
-    visuals_group:AddLabel({Text = "Visuals are client-side only."})
-
-    local util_tab = main_section:AddTab({
-        Name = "Utility",
-        Description = "Utility features",
-        Icon = "wrench"
-    })
-
-    local movement_group = util_tab:AddGroup({Name = "Movement", Side = "Left", Icon = "move"})
-
-    movement_group:AddToggle({
-        Name = "Speed Hack",
-        Default = false,
-        Callback = function(val) print("[Demo] Speed:", val) end
-    })
-
-    movement_group:AddSlider({
-        Name = "Walk Speed",
-        Min = 16,
-        Max = 200,
-        Default = 16,
-        Increment = 1,
-        Callback = function(val) print("[Demo] WalkSpeed:", val) end
-    })
-
-    movement_group:AddSlider({
-        Name = "Jump Power",
-        Min = 50,
-        Max = 500,
-        Default = 50,
-        Increment = 5,
-        Callback = function(val) print("[Demo] JumpPower:", val) end
-    })
-
-    movement_group:AddKeybind({
-        Name = "Fly Key",
-        Default = Enum.KeyCode.F,
-        Callback = function() print("[Demo] Fly pressed") end
-    })
-
-    local misc_group = util_tab:AddGroup({Name = "Misc", Side = "Right", Icon = "box"})
-
-    misc_group:AddButton({
-        Name = "Rejoin Server",
-        Callback = function() print("[Demo] Rejoin clicked") end
-    })
-
-    misc_group:AddButton({
-        Name = "Copy Game Link",
-        Callback = function() print("[Demo] Copy link clicked") end
-    })
-
-    misc_group:AddTextInput({
-        Name = "Webhook URL",
-        Default = "",
-        PlaceholderText = "https://...",
-        Callback = function(val) print("[Demo] Webhook:", val) end
-    })
-
-    misc_group:AddDropdown({
-        Name = "Theme",
-        Options = {"Dark", "Midnight", "Ocean", "Sunset"},
-        Default = "Dark",
-        Callback = function(val) print("[Demo] Theme:", val) end
-    })
-
-    misc_group:AddMultiDropdown({
-        Name = "Notifications",
-        Options = {"Kills", "Deaths", "Chat", "Joins", "Teleports"},
-        Default = {"Kills", "Chat"},
-        Callback = function(val) print("[Demo] Notifs:", val) end
-    })
-
-    misc_group:AddDivider()
-
-    misc_group:AddLabel({Name = "v1.0.0 - Modern Demo"})
-
-    local settings_section = lib:AddSection({Name = "Config", Icon = "settings"})
-
-    local cfg_tab = settings_section:AddTab({
-        Name = "Settings",
-        Description = "Configuration",
-        Icon = "save"
-    })
-
-    local cfg_group = cfg_tab:AddGroup({Name = "Config", Side = "Left", Icon = "hard-drive"})
-
-    cfg_group:AddButton({
-        Name = "Save Config",
-        Callback = function()
-            pcall(function() lib:SaveConfig("demo_config") end)
-            lib:Notify({Title = "Config", Description = "Saved!", Duration = 3})
-        end
-    })
-
-    cfg_group:AddButton({
-        Name = "Load Config",
-        Callback = function()
-            pcall(function() lib:LoadConfig("demo_config") end)
-            lib:Notify({Title = "Config", Description = "Loaded!", Duration = 3})
-        end
-    })
-
-    local info_group = cfg_tab:AddGroup({Name = "Info", Side = "Right", Icon = "info"})
-    info_group:AddLabel({Name = "Game: " .. tostring(game.PlaceId)})
-    info_group:AddLabel({Name = "Player: " .. tostring(local_player.Name)})
-
-    lib:Notify({
-        Title = "Modern Demo",
-        Description = "UI loaded. Press RightShift to toggle.",
-        Duration = 5
-    })
-
-    return lib
-end
-
---#endregion═════════════════════════════════════════════════════════════════════
 
 return Modern
