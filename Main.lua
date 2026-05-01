@@ -1,4 +1,4 @@
--- Code Lama
+-- Code Lama | Version 1.0.0 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -8,6 +8,7 @@ local tween_service     = safe_clone(game:GetService("TweenService"))
 local input_service     = safe_clone(game:GetService("UserInputService"))
 local run_service       = safe_clone(game:GetService("RunService"))
 local players           = safe_clone(game:GetService("Players"))
+local thumbnail_service = safe_clone(game:GetService("ThumbnailService"))
 local text_service      = safe_clone(game:GetService("TextService"))
 local core_gui          = safe_clone(game:GetService("CoreGui"))
 local gui_service       = safe_clone(game:GetService("GuiService"))
@@ -3433,6 +3434,348 @@ function Modern:LoadConfig(fileName)
     return true, path
 end
 
+function Modern:CreateLoading(loadingConfig)
+    if self._activeLoading then
+        warn("Loading UI already exists, you cannot create multiple Loading UIs.")
+        return self._activeLoading
+    end
+
+    loadingConfig = loadingConfig or {}
+    loadingConfig.Title = loadingConfig.Title or "Loading"
+    loadingConfig.Message = loadingConfig.Message or ""
+    loadingConfig.Description = loadingConfig.Description or ""
+    loadingConfig.CurrentStep = tonumber(loadingConfig.CurrentStep) or 0
+    loadingConfig.TotalSteps = tonumber(loadingConfig.TotalSteps) or 0
+    loadingConfig.ShowProgress = loadingConfig.ShowProgress ~= false
+    loadingConfig.LoadingIconTweenTime = tonumber(loadingConfig.LoadingIconTweenTime) or 1.1
+    loadingConfig.WindowWidth = tonumber(loadingConfig.WindowWidth) or 380
+    loadingConfig.WindowHeight = tonumber(loadingConfig.WindowHeight) or 280
+    loadingConfig.ShowGameImage = loadingConfig.ShowGameImage ~= false
+    loadingConfig.ShowUserImage = loadingConfig.ShowUserImage ~= false
+    loadingConfig.Icon = get_icon(loadingConfig.Icon, default_icons.settings)
+
+    local screenGui = create("ScreenGui", {
+        Name = "ModernLoading",
+        DisplayOrder = 999,
+        ResetOnSpawn = false,
+    })
+    if syn then
+        syn.protect_gui(screenGui)
+        screenGui.Parent = core_gui
+    elseif gethui then
+        screenGui.Parent = core_gui
+    else
+        screenGui.Parent = core_gui
+    end
+
+    local mainFrame = create("Frame", {
+        Name = "Main",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+        Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(loadingConfig.WindowWidth, loadingConfig.WindowHeight),
+        ClipsDescendants = true,
+        Parent = screenGui,
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 14), Parent = mainFrame})
+    create("UIStroke", {Color = Color3.fromRGB(60, 60, 60), Thickness = 1, Parent = mainFrame})
+
+    local titleLabel = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 18, 0, 14),
+        Size = UDim2.new(1, -36, 0, 24),
+        Text = loadingConfig.Title,
+        TextSize = 18,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.GothamSemibold,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = mainFrame,
+    })
+
+    local function safeGetPlaceThumbnail(placeId)
+        if not thumbnail_service or not thumbnail_service.GetThumbnailAsync then
+            return ""
+        end
+        local ok, image = pcall(function()
+            return thumbnail_service:GetThumbnailAsync(placeId, Enum.ThumbnailType.PlaceIcon, Enum.ThumbnailSize.Size150x150)
+        end)
+        if ok and type(image) == "string" and image ~= "" then
+            return image
+        end
+        return ""
+    end
+
+    local function safeGetUserThumbnail(userId)
+        if not players or type(players.GetUserThumbnailAsync) ~= "function" then
+            return ""
+        end
+        local ok, image = pcall(function()
+            return players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+        end)
+        if ok and type(image) == "string" and image ~= "" then
+            return image
+        end
+        return ""
+    end
+
+    local function safeGetGameName(placeId)
+        if not marketplace_service or type(marketplace_service.GetProductInfo) ~= "function" then
+            return "Game"
+        end
+        local ok, info = pcall(function()
+            return marketplace_service:GetProductInfo(placeId, Enum.InfoType.Asset)
+        end)
+        if ok and type(info) == "table" and type(info.Name) == "string" then
+            return info.Name
+        end
+        return "Game"
+    end
+
+    local gameThumbnailImage = ""
+    local gameName = "Game"
+    if loadingConfig.ShowGameImage then
+        gameThumbnailImage = safeGetPlaceThumbnail(game.PlaceId)
+        gameName = safeGetGameName(game.PlaceId)
+    end
+
+    local userThumbnailImage = ""
+    local userName = "Player"
+    if loadingConfig.ShowUserImage and local_player then
+        userName = local_player.DisplayName ~= "" and local_player.DisplayName or local_player.Name
+        userThumbnailImage = safeGetUserThumbnail(local_player.UserId)
+    end
+
+    local infoRow = create("Frame", {
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 18, 0, 44),
+        Size = UDim2.new(1, -36, 0, 70),
+        Parent = mainFrame,
+    })
+    create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Padding = UDim.new(0, 12),
+        Parent = infoRow,
+    })
+    create("UIPadding", {
+        PaddingLeft = UDim.new(0, 0),
+        PaddingTop = UDim.new(0, 4),
+        PaddingBottom = UDim.new(0, 4),
+        Parent = infoRow,
+    })
+
+    local function createBadge(labelText, detailText, image, fallback)
+        local badge = create("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 148, 1, 0),
+            Parent = infoRow,
+        })
+        local imageLabel = create("ImageLabel", {
+            BackgroundColor3 = Color3.fromRGB(28, 28, 28),
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 0, 0.5, -26),
+            Size = UDim2.new(0, 52, 0, 52),
+            Image = (image ~= "" and image) or fallback,
+            ScaleType = Enum.ScaleType.Crop,
+            Parent = badge,
+        })
+        create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = imageLabel})
+
+        create("TextLabel", {
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 60, 0, 6),
+            Size = UDim2.new(1, -60, 0, 20),
+            Text = labelText,
+            TextSize = 12,
+            TextColor3 = Color3.fromRGB(220, 220, 220),
+            Font = Enum.Font.GothamSemibold,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = badge,
+        })
+
+        create("TextLabel", {
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 60, 0, 30),
+            Size = UDim2.new(1, -60, 0, 30),
+            Text = detailText,
+            TextSize = 11,
+            TextColor3 = Color3.fromRGB(170, 170, 170),
+            Font = Enum.Font.GothamSemibold,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextWrapped = true,
+            Parent = badge,
+        })
+    end
+
+    if loadingConfig.ShowGameImage then
+        createBadge("Game", gameName, gameThumbnailImage, default_icons.section)
+    end
+    if loadingConfig.ShowUserImage and local_player then
+        createBadge("Player", userName, userThumbnailImage, default_icons.section)
+    end
+
+    local iconFrame = create("Frame", {
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.5, -32, 0, 122),
+        Size = UDim2.new(0, 64, 0, 64),
+        Parent = mainFrame,
+    })
+    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = iconFrame})
+
+    local loadingIcon = create("ImageLabel", {
+        BackgroundTransparency = 1,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.new(1, 1, 1, 1),
+        Image = loadingConfig.Icon,
+        ImageColor3 = Color3.fromRGB(180, 180, 180),
+        Parent = iconFrame,
+    })
+
+    local iconTween = tween_service:Create(
+        loadingIcon,
+        TweenInfo.new(loadingConfig.LoadingIconTweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1),
+        {Rotation = 360}
+    )
+    iconTween:Play()
+
+    local messageLabel = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 18, 0, 126),
+        Size = UDim2.new(1, -36, 0, 24),
+        Text = loadingConfig.Message,
+        TextSize = 15,
+        TextColor3 = Color3.fromRGB(215, 215, 215),
+        Font = Enum.Font.GothamSemibold,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        Parent = mainFrame,
+    })
+
+    local descriptionLabel = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 18, 0, 148),
+        Size = UDim2.new(1, -36, 0, 36),
+        Text = loadingConfig.Description,
+        TextSize = 13,
+        TextColor3 = Color3.fromRGB(170, 170, 170),
+        Font = Enum.Font.GothamSemibold,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        Parent = mainFrame,
+    })
+
+    local progressBar = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(38, 38, 38),
+        Position = UDim2.new(0, 18, 1, -42),
+        Size = UDim2.new(1, -36, 0, 18),
+        Parent = mainFrame,
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 9), Parent = progressBar})
+
+    local progressFill = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(86, 135, 255),
+        Size = UDim2.new(0, 0, 1, 0),
+        Parent = progressBar,
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 9), Parent = progressFill})
+
+    local progressLabel = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Text = "",
+        TextSize = 12,
+        TextColor3 = Color3.fromRGB(240, 240, 240),
+        Font = Enum.Font.GothamSemibold,
+        Parent = progressBar,
+    })
+
+    local function updateProgress()
+        local total = math.max(loadingConfig.TotalSteps, 1)
+        local fraction = math.clamp(loadingConfig.CurrentStep / total, 0, 1)
+        progressFill.Size = UDim2.new(fraction, 0, 1, 0)
+        if loadingConfig.ShowProgress then
+            progressLabel.Text = string.format("%d / %d", loadingConfig.CurrentStep, loadingConfig.TotalSteps)
+        else
+            progressLabel.Text = ""
+        end
+    end
+
+    updateProgress()
+
+    local loadingObj = {
+        ScreenGui = screenGui,
+        MainFrame = mainFrame,
+        MessageLabel = messageLabel,
+        DescriptionLabel = descriptionLabel,
+        ProgressFill = progressFill,
+        ProgressLabel = progressLabel,
+        _IconTween = iconTween,
+    }
+
+    function loadingObj:SetTitle(title)
+        if title and type(title) == "string" then
+            titleLabel.Text = title
+        end
+    end
+
+    function loadingObj:SetMessage(message)
+        loadingConfig.Message = tostring(message or "")
+        messageLabel.Text = loadingConfig.Message
+    end
+
+    function loadingObj:SetDescription(description)
+        loadingConfig.Description = tostring(description or "")
+        descriptionLabel.Text = loadingConfig.Description
+    end
+
+    function loadingObj:SetCurrentStep(step)
+        loadingConfig.CurrentStep = tonumber(step) or 0
+        updateProgress()
+    end
+
+    function loadingObj:SetTotalSteps(total)
+        loadingConfig.TotalSteps = tonumber(total) or 0
+        updateProgress()
+    end
+
+    function loadingObj:SetProgress(value)
+        local percent = math.clamp(tonumber(value) or 0, 0, 1)
+        loadingConfig.CurrentStep = math.floor(percent * (loadingConfig.TotalSteps > 0 and loadingConfig.TotalSteps or 1))
+        progressFill.Size = UDim2.new(percent, 0, 1, 0)
+        if loadingConfig.ShowProgress then
+            progressLabel.Text = string.format("%d / %d", loadingConfig.CurrentStep, loadingConfig.TotalSteps)
+        end
+    end
+
+    function loadingObj:Destroy()
+        if self._IconTween then
+            self._IconTween:Cancel()
+        end
+        if screenGui then
+            screenGui:Destroy()
+        end
+        if self._onDestroyed then
+            self._onDestroyed()
+        end
+    end
+
+    function loadingObj:SetOnDestroyed(callback)
+        self._onDestroyed = callback
+    end
+
+    self._activeLoading = loadingObj
+    return loadingObj
+end
+
+function Modern:DestroyLoading()
+    if self._activeLoading then
+        self._activeLoading:Destroy()
+        self._activeLoading = nil
+    end
+end
+
 function Modern:CreateConfigFile(fileName)
     if not writefile then
         return false, "writefile API is unavailable in this executor."
@@ -5795,6 +6138,11 @@ groupObj.groupTitle = create("TextLabel", {
                             tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.0104, 0, 0.143, 0), BackgroundColor3 = Color3.fromRGB(75, 75, 75)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
                         end
                     end
+                    -- Always call Callback to sync external state, even when silent
+                    if toggleConfig.Callback then
+                        toggleConfig.Callback(toggleObj.value)
+                    end
+                    -- Only call Changed if not silent (user-triggered change)
                     if not silent and toggleObj.Changed then
                         toggleObj.Changed(toggleObj.value)
                     end
@@ -6030,6 +6378,11 @@ groupObj.groupTitle = create("TextLabel", {
                     sliderObj.value = value
                     sliderObj.Value = sliderObj.value
                     updateSliderVisuals(instant ~= true)
+                    -- Always call Callback to sync external state, even when silent
+                    if sliderConfig.Callback then
+                        sliderConfig.Callback(value)
+                    end
+                    -- Only call Changed if not silent (user-triggered change)
                     if not silent and sliderObj.Changed then
                         sliderObj.Changed(value)
                     end
@@ -6435,7 +6788,8 @@ groupObj.groupTitle = create("TextLabel", {
                     local newKeyText = getKeyText()
                     keybindObj.keyLabelText.Text = newKeyText
                     updateKeybindSizeYay(newKeyText)
-                    if not silent then
+                    -- Always call ChangedCallback to sync external state, even when silent
+                    if keybindConfig.ChangedCallback then
                         keybindConfig.ChangedCallback(key)
                     end
                 end
@@ -7092,6 +7446,11 @@ groupObj.groupTitle = create("TextLabel", {
                     dropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
                     dropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
                     createOptionsYay()
+                    -- Always call Callback to sync external state (e.g., _G variables), even when silent
+                    if dropdownConfig.Callback then
+                        dropdownConfig.Callback(value)
+                    end
+                    -- Only call Changed if not silent (user-triggered change)
                     if not silent and dropdownObj.Changed then
                         dropdownObj.Changed(value)
                     end
@@ -7606,6 +7965,11 @@ groupObj.groupTitle = create("TextLabel", {
                     multiDropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
                     multiDropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
                     createMultiOptionsYay()
+                    -- Always call Callback to sync external state, even when silent
+                    if multiDropdownConfig.Callback then
+                        multiDropdownConfig.Callback(getSelectedArray())
+                    end
+                    -- Only call Changed if not silent (user-triggered change)
                     if not silent and multiDropdownObj.Changed then
                         multiDropdownObj.Changed(getSelectedArray())
                     end
@@ -8017,7 +8381,8 @@ groupObj.groupTitle = create("TextLabel", {
 
                 function textInputObj:SetValue(text, silent)
                     textInputObj:Set(tostring(text or ""))
-                    if not silent then
+                    -- Always call Callback to sync external state, even when silent
+                    if textInputConfig.Callback then
                         textInputConfig.Callback(textInputObj.value, false)
                     end
                 end
@@ -8460,7 +8825,8 @@ groupObj.groupTitle = create("TextLabel", {
                     colorPickerObj.svBox.BackgroundColor3 = Color3.fromHSV(currentH, 1, 1)
                     colorPickerObj.svCursor.Position = UDim2.new(currentS, -6, 1 - currentV, -6)
                     colorPickerObj.hueCursor.Position = UDim2.new(currentH, -7, 0.5, -7)
-                    if not silent then
+                    -- Always call Callback to sync external state, even when silent
+                    if colorPickerConfig.Callback then
                         colorPickerConfig.Callback(color)
                     end
                 end
