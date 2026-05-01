@@ -5634,7 +5634,7 @@ function Modern:AddSection(config)
                 Size = UDim2.new(0, 17 * scale_factor, 0, 17 * scale_factor), Parent = groupObj.mainFrame
             })
             
-            create("TextLabel", {
+groupObj.groupTitle = create("TextLabel", {
                 FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                 TextColor3 = Color3.new(1, 1, 1), Text = groupConfig.Name, BackgroundTransparency = 1,
                 Position = UDim2.new(0, 33, 0, 8 * scale_factor), TextSize = 15.6 * scale_factor,
@@ -5646,6 +5646,30 @@ function Modern:AddSection(config)
                 local newHeight = groupObj.element_y + 12 * scale_factor
                 groupObj.mainFrame.Size = UDim2.new(1, -2, 0, newHeight)
                 relayout_groups()
+            end
+            
+            function groupObj:SetName(text, skipAnimation)
+                if not groupObj.groupTitle then return end
+                local newName = tostring(text or groupObj.group_name)
+                local oldText = groupObj.groupTitle.Text
+                if oldText == newName then return end
+                groupObj.groupTitle.Text = newName
+                groupObj.group_name = newName
+                task.defer(function()
+                    if not groupObj.groupTitle.Parent then return end
+                    local textBounds = groupObj.groupTitle.TextBounds
+                    local newWidth = math.max(33, textBounds.X + 4)
+                    newWidth = math.min(newWidth, 280 * scale_factor)
+                    if skipAnimation then
+                        groupObj.groupTitle.Size = UDim2.new(0, newWidth, 0, 16 * scale_factor)
+                    else
+                        tween_to(groupObj.groupTitle, {Size = UDim2.new(0, newWidth, 0, 16 * scale_factor)}, 0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                    end
+                end)
+            end
+            
+            function groupObj:GetName()
+                return groupObj.group_name
             end
 
             function groupObj:AddToggle(toggleConfig, config)
