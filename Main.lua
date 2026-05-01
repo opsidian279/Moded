@@ -5710,6 +5710,7 @@ groupObj.groupTitle = create("TextLabel", {
                     TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
                     Parent = groupObj.mainFrame
                 })
+                toggleObj.Instance = toggleObj.labelText
                 
                 local isCheckbox = toggleConfig.Type == "Checkbox"
                 local toggleClickButton
@@ -5945,6 +5946,7 @@ groupObj.groupTitle = create("TextLabel", {
                     TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
                     Parent = groupObj.mainFrame
                 })
+                sliderObj.Instance = sliderObj.labelText
                 
                 sliderObj.backgroundFrame = create("Frame", {
                     BackgroundTransparency = 1,
@@ -6146,6 +6148,7 @@ groupObj.groupTitle = create("TextLabel", {
                 
                 local buttonObj = {}
                 buttonObj.isLocked = buttonConfig.Locked
+                buttonObj.Instance = buttonObj.mainFrame
                 local yPosition = groupObj.element_y
                 
                 buttonObj.mainFrame = create("Frame", {
@@ -6153,6 +6156,7 @@ groupObj.groupTitle = create("TextLabel", {
                     Position = UDim2.new(0, 10, 0, yPosition),
                     Size = UDim2.new(1, -20 * scale_factor, 0, 28 * scale_factor), Parent = groupObj.mainFrame
                 })
+                buttonObj.Instance = buttonObj.mainFrame
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = buttonObj.mainFrame})
                 
                 -- Apply lock if needed
@@ -6270,6 +6274,7 @@ groupObj.groupTitle = create("TextLabel", {
                     TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
                     Parent = groupObj.mainFrame
                 })
+                keybindObj.Instance = keybindObj.labelText
                 
                 local function normalizeMode(modeValue)
                     return string.lower(tostring(modeValue or "toggle")) == "hold" and "Hold" or "Toggle"
@@ -6474,6 +6479,7 @@ groupObj.groupTitle = create("TextLabel", {
                     TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
                     Parent = groupObj.mainFrame
                 })
+                keybindToggleObj.Instance = keybindToggleObj.labelText
                 
                 local keyText = keybindToggleObj.keyValue == Enum.KeyCode.Unknown and "None" or keybindToggleObj.keyValue.Name
                 local keyWidth = math.max(48 * scale_factor, measure_text_width(keyText, 12 * scale_factor) + 30 * scale_factor)
@@ -6700,6 +6706,7 @@ groupObj.groupTitle = create("TextLabel", {
                     Size = UDim2.new(0, 130 * scale_factor, 0, 20 * scale_factor),
                     TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = groupObj.mainFrame
                 })
+                dropdownObj.Instance = dropdownObj.labelText
                 
                 local displayText = tostring(dropdownObj.value or "None")
                 local buttonWidth = math.max(80 * scale_factor, measure_text_width(displayText, 12 * scale_factor) + 36 * scale_factor)
@@ -7162,6 +7169,7 @@ groupObj.groupTitle = create("TextLabel", {
                     Size = UDim2.new(0, 100 * scale_factor, 0, 20 * scale_factor),
                     TextXAlignment = Enum.TextXAlignment.Left, Parent = groupObj.mainFrame
                 })
+                multiDropdownObj.Instance = multiDropdownObj.labelText
                 
                 local function getDisplayText()
                     local selected = {}
@@ -7579,16 +7587,67 @@ groupObj.groupTitle = create("TextLabel", {
                 
                 local labelObj = {}
                 labelObj.Instance = labelText
+                labelObj.wrap = labelConfig.Wrap
+                labelObj.richText = labelConfig.RichText
+                labelObj.maxWidth = labelMaxWidth
+                labelObj.textSize = labelTextSize
+                labelObj.yPosition = yPosition
+                labelObj.originalHeight = labelHeight
+                
                 function labelObj:SetText(text)
-                    labelText.Text = tostring(text)
+                    local newText = tostring(text)
+                    if labelText.Text == newText then return end
+                    
+                    labelText.Text = newText
+                    
+                    -- Recalculate text bounds
+                    local measuredBounds = text_service:GetTextSize(
+                        newText,
+                        labelObj.textSize,
+                        Enum.Font.GothamSemibold,
+                        Vector2.new(labelObj.maxWidth, labelObj.wrap and math.huge or (labelObj.textSize + 4))
+                    )
+                    
+                    local newHeight = labelObj.wrap and math.max(20 * scale_factor, measuredBounds.Y) or (20 * scale_factor)
+                    
+                    -- Update label size if height changed
+                    if newHeight ~= labelObj.originalHeight then
+                        labelText.Size = UDim2.new(0, labelObj.maxWidth, 0, newHeight)
+                        
+                        -- Calculate height difference
+                        local heightDiff = newHeight - labelObj.originalHeight
+                        
+                        -- Update group element_y
+                        groupObj.element_y = groupObj.element_y + heightDiff
+                        
+                        -- Update positions of elements below this label
+                        for _, element in ipairs(groupObj.elements) do
+                            if element.Instance and element.Instance.Position.Y.Offset > labelObj.yPosition then
+                                local currentPos = element.Instance.Position
+                                element.Instance.Position = UDim2.new(
+                                    currentPos.X.Scale, currentPos.X.Offset,
+                                    0, currentPos.Y.Offset + heightDiff
+                                )
+                            end
+                        end
+                        
+                        -- Update the label's stored height
+                        labelObj.originalHeight = newHeight
+                        
+                        -- Update group size
+                        update_group_size()
+                    end
                 end
+                
                 function labelObj:SetName(text)
-                    labelText.Text = tostring(text)
+                    labelObj:SetText(text)
                 end
+                
                 function labelObj:SetVisible(visible)
                     labelObj.Instance.Visible = visible
                 end
                 
+                table.insert(groupObj.elements, labelObj)
                 groupObj.element_y = groupObj.element_y + labelHeight + 6 * scale_factor
                 update_group_size()
                 return labelObj
@@ -7644,6 +7703,7 @@ groupObj.groupTitle = create("TextLabel", {
                     Size = UDim2.new(0, 80 * scale_factor, 0, 20 * scale_factor),
                     TextXAlignment = Enum.TextXAlignment.Left, Parent = groupObj.mainFrame
                 })
+                textInputObj.Instance = textInputObj.labelText
                 
                 textInputObj.inputFrame = create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(32, 32, 32),
@@ -7870,6 +7930,7 @@ groupObj.groupTitle = create("TextLabel", {
                     Size = UDim2.new(0, 100 * scale_factor, 0, 20 * scale_factor),
                     TextXAlignment = Enum.TextXAlignment.Left, Parent = groupObj.mainFrame
                 })
+                colorPickerObj.Instance = colorPickerObj.labelText
                 
                 -- Color preview button
                 colorPickerObj.colorPreview = create("Frame", {
