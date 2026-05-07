@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.1 | By nexahub
+-- Code Lama | Version 1.0.2 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -8196,14 +8196,14 @@ groupObj.groupTitle = create("TextLabel", {
                 addSearchTerm(paragraphConfig.Content)
 
                 local yPosition = groupObj.element_y
+                local fullText = paragraphConfig.Name .. "\n" .. paragraphConfig.Content
                 local contentBounds = text_service:GetTextSize(
-                    paragraphConfig.Content,
+                    fullText,
                     paragraphConfig.TextSize,
                     paragraphConfig.Font,
                     Vector2.new(paragraphConfig.MaxWidth, math.huge)
                 )
                 local paragraphHeight = math.max(20 * scale_factor, contentBounds.Y)
-
                 local paragraphLabel = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = paragraphConfig.TextColor3,
