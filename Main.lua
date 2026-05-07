@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.2 | By nexahub
+-- Code Lama | Version 1.0.3 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -7108,6 +7108,7 @@ groupObj.groupTitle = create("TextLabel", {
                 dropdownConfig.Locked = dropdownConfig.Locked or false
                 dropdownConfig.Options = dropdownConfig.Options or dropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 dropdownConfig.OptionsProvider = dropdownConfig.OptionsProvider or dropdownConfig.GetOptions
+                dropdownConfig.OptionsIcon = dropdownConfig.OptionsIcon or {}
                 local dropdownHasProvider = type(dropdownConfig.OptionsProvider) == "function"
                 if dropdownConfig.AutoRefresh == nil then
                     dropdownConfig.AutoRefresh = dropdownHasProvider
@@ -7179,7 +7180,9 @@ groupObj.groupTitle = create("TextLabel", {
                 dropdownObj.Instance = dropdownObj.labelText
                 
                 local displayText = tostring(dropdownObj.value or "None")
-                local buttonWidth = math.max(80 * scale_factor, measure_text_width(displayText, 12 * scale_factor) + 36 * scale_factor)
+                local selectedIconId = get_icon(dropdownConfig.OptionsIcon[dropdownObj.value], "")
+                local selectedIconPadding = selectedIconId ~= "" and 20 * scale_factor or 0
+                local buttonWidth = math.max(80 * scale_factor, measure_text_width(displayText, 12 * scale_factor) + 36 * scale_factor + selectedIconPadding)
                 
                 dropdownObj.button_frame = create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(32, 32, 32), Position = UDim2.new(1, -buttonWidth - 10, 0, yPosition),
@@ -7189,21 +7192,40 @@ groupObj.groupTitle = create("TextLabel", {
                 
                 local dropdownStrokeThing = create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = dropdownObj.button_frame})
                 
+                dropdownObj.selectedIcon = create("ImageLabel", {
+                    ImageColor3 = Color3.fromRGB(84, 84, 84), Image = selectedIconId,
+                    BackgroundTransparency = 1, Position = UDim2.new(0, 8, 0.5, -7 * scale_factor),
+                    Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor), Visible = selectedIconId ~= "",
+                    ZIndex = 10001, Parent = dropdownObj.button_frame
+                })
+
+                local selectedTextOffset = selectedIconId ~= "" and 30 * scale_factor or 8
+                local selectedTextRightPadding = selectedIconId ~= "" and 48 * scale_factor or 28 * scale_factor
                 dropdownObj.selectedLabelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(84, 84, 84), Text = displayText, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 8, 0, 0), TextSize = 12.8 * scale_factor,
-                    Size = UDim2.new(1, -28 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = UDim2.new(0, selectedTextOffset, 0, 0), TextSize = 12.8 * scale_factor,
+                    Size = UDim2.new(1, -selectedTextRightPadding, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
                     TextTruncate = Enum.TextTruncate.AtEnd, Parent = dropdownObj.button_frame
                 })
                 
+                local function updateSelectedDisplay(optionText, iconId)
+                    local hasIcon = iconId and iconId ~= ""
+                    dropdownObj.selectedIcon.Image = iconId or ""
+                    dropdownObj.selectedIcon.Visible = hasIcon
+                    dropdownObj.selectedLabelText.Position = UDim2.new(0, hasIcon and 30 * scale_factor or 8, 0, 0)
+                    dropdownObj.selectedLabelText.Size = UDim2.new(1, -(hasIcon and 48 * scale_factor or 28 * scale_factor), 1, 0)
+                    dropdownObj.selectedLabelText.Text = optionText
+                end
+                updateSelectedDisplay(displayText, selectedIconId)
+
                 dropdownObj.arrowImg = create("ImageLabel", {
                     ImageColor3 = Color3.fromRGB(80, 80, 80), Image = default_icons.expand, BackgroundTransparency = 1,
                     Position = UDim2.new(1, -20 * scale_factor, 0.5, -7.5 * scale_factor),
                     Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = dropdownObj.button_frame
                 })
                 
-                local dropdown_popup_w = math.max(220 * scale_factor, buttonWidth + 34 * scale_factor)
+                local dropdown_popup_w = math.max(260 * scale_factor, buttonWidth + 44 * scale_factor)
                 dropdownObj.optionHolderFrame = create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, dropdown_popup_w, 0, 0),
                     ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
@@ -7337,11 +7359,23 @@ groupObj.groupTitle = create("TextLabel", {
                     for _, option in ipairs(filtered) do
                         local isSelected = dropdownObj.value == option
                         local isDisabled = table.find(dropdownConfig.DisabledOptions, option) ~= nil
+                        local optionIconId = get_icon(dropdownConfig.OptionsIcon[option], "")
+                        local hasOptionIcon = optionIconId ~= ""
+                        local optionTextOffset = hasOptionIcon and 34 or 12
+                        local optionTextRightPadding = hasOptionIcon and -46 or -24
+                        if hasOptionIcon then
+                            create("ImageLabel", {
+                                ImageColor3 = Color3.fromRGB(140, 140, 140), Image = optionIconId,
+                                BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0.5, -7 * scale_factor),
+                                Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor), ZIndex = 10002,
+                                Parent = dropdownObj.optionContainerFrame
+                            })
+                        end
                         local optionLabelText = create("TextLabel", {
                             FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                             TextColor3 = isDisabled and Color3.fromRGB(80, 80, 80) or (isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124)),
-                            Text = tostring(option), BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0, optY),
-                            TextSize = 14 * scale_factor, Size = UDim2.new(1, -24, 0, 18 * scale_factor),
+                            Text = tostring(option), BackgroundTransparency = 1, Position = UDim2.new(0, optionTextOffset, 0, optY),
+                            TextSize = 14 * scale_factor, Size = UDim2.new(1, optionTextRightPadding, 0, 18 * scale_factor),
                             TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
                             ZIndex = 10001, Parent = dropdownObj.optionContainerFrame
                         })
@@ -7355,8 +7389,9 @@ groupObj.groupTitle = create("TextLabel", {
                                 dropdownObj.Value = dropdownObj.value
                                 closeDropdown(false)
                                 local optionText = tostring(option)
-                                dropdownObj.selectedLabelText.Text = optionText
-                                local newWidth = math.max(70 * scale_factor, measure_text_width(optionText, 12 * scale_factor) + 30 * scale_factor)
+                                local optionIconId = get_icon(dropdownConfig.OptionsIcon[option], "")
+                                updateSelectedDisplay(optionText, optionIconId)
+                                local newWidth = math.max(70 * scale_factor, measure_text_width(optionText, 12 * scale_factor) + 30 * scale_factor + (optionIconId ~= "" and 20 * scale_factor or 0))
                                 tween_to(dropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
                                 if dropdownObj.Changed then
                                     dropdownObj.Changed(option)
@@ -7610,6 +7645,7 @@ groupObj.groupTitle = create("TextLabel", {
                 multiDropdownConfig.Locked = multiDropdownConfig.Locked or false
                 multiDropdownConfig.Options = multiDropdownConfig.Options or multiDropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 multiDropdownConfig.OptionsProvider = multiDropdownConfig.OptionsProvider or multiDropdownConfig.GetOptions
+                multiDropdownConfig.OptionsIcon = multiDropdownConfig.OptionsIcon or {}
                 local multiDropdownHasProvider = type(multiDropdownConfig.OptionsProvider) == "function"
                 if multiDropdownConfig.AutoRefresh == nil then
                     multiDropdownConfig.AutoRefresh = multiDropdownHasProvider
@@ -7746,8 +7782,9 @@ groupObj.groupTitle = create("TextLabel", {
                 
                 local search_query = ""
                 local search_textbox
+                local multiDropdownPopupWidth = math.max(220 * scale_factor, buttonWidth + 48 * scale_factor)
                 multiDropdownObj.optionHolderFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, 160 * scale_factor, 0, 0),
+                    BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, multiDropdownPopupWidth, 0, 0),
                     ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
                 })
                 create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = multiDropdownObj.optionHolderFrame})
@@ -7830,14 +7867,14 @@ groupObj.groupTitle = create("TextLabel", {
                         search_query = ""
                     end
                     if isInstant then
-                        multiDropdownObj.optionHolderFrame.Size = UDim2.new(0, 160 * scale_factor, 0, 0)
+                        multiDropdownObj.optionHolderFrame.Size = UDim2.new(0, multiDropdownPopupWidth, 0, 0)
                         multiDropdownObj.optionHolderFrame.Visible = false
                         multiDropdownObj.arrowImg.Rotation = 0
                         multiDropdownObj.button_frame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
                         dropdownStrokeThing.Color = Color3.fromRGB(44, 44, 44)
                         return
                     end
-                    tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, 0)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+                    tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, multiDropdownPopupWidth, 0, 0)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
                     tween_to(multiDropdownObj.arrowImg, {Rotation = 0}, 0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
                     tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.18)
                     tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.18)
@@ -7871,6 +7908,8 @@ groupObj.groupTitle = create("TextLabel", {
                     local optY = 0
                     for _, option in ipairs(filtered) do
                         local isSelected = multiDropdownObj.selectedValues[option] == true
+                        local optionIconId = get_icon(multiDropdownConfig.OptionsIcon[option], "")
+                        local hasOptionIcon = optionIconId ~= ""
                         
                         local optionFrame = create("Frame", {
                             BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, optY),
@@ -7886,6 +7925,16 @@ groupObj.groupTitle = create("TextLabel", {
                         })
                         create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = checkboxFrame})
                         
+                        if hasOptionIcon then
+                            create("ImageLabel", {
+                                ImageColor3 = Color3.fromRGB(140, 140, 140), Image = optionIconId,
+                                BackgroundTransparency = 1, Position = UDim2.new(0, 36, 0.5, -7 * scale_factor),
+                                Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor), ZIndex = 10003,
+                                Parent = optionFrame
+                            })
+                        end
+                        create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = checkboxFrame})
+                        
                         local checkmarkImg = create("ImageLabel", {
                             Image = "rbxassetid://10709790644", ImageColor3 = Color3.new(1, 1, 1),
                             ImageTransparency = isSelected and 0 or 1, BackgroundTransparency = 1,
@@ -7897,8 +7946,9 @@ groupObj.groupTitle = create("TextLabel", {
                         local optionLabelText = create("TextLabel", {
                             FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                             TextColor3 = isSelected and groupObj.Library.config.AccentColor or Color3.fromRGB(124, 124, 124),
-                            Text = tostring(option), BackgroundTransparency = 1, Position = UDim2.new(0, 34, 0, 0),
-                            TextSize = 14 * scale_factor, Size = UDim2.new(1, -46, 1, 0),
+                            Text = tostring(option), BackgroundTransparency = 1,
+                            Position = UDim2.new(0, hasOptionIcon and 58 or 34, 0, 0),
+                            TextSize = 14 * scale_factor, Size = UDim2.new(1, hasOptionIcon and -66 or -46, 1, 0),
                             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 10002, Parent = optionFrame
                         })
                         
@@ -7946,7 +7996,7 @@ groupObj.groupTitle = create("TextLabel", {
                     if multiDropdownObj.isOpen then
                         local contentHeight = (70 * scale_factor + currentOptionsHeight)
                         local height = math.min(contentHeight, maxMultiDropdownHeight)
-                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, height)}, 0.14, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, multiDropdownPopupWidth, 0, height)}, 0.14, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                     end
                 end
                 createMultiOptionsYay()
@@ -7972,7 +8022,7 @@ groupObj.groupTitle = create("TextLabel", {
                         multiDropdownObj.optionHolderFrame.Visible = true
                         local contentHeight = (70 * scale_factor + currentOptionsHeight)
                         local height = math.min(contentHeight, maxMultiDropdownHeight)
-                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, multiDropdownPopupWidth, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                         tween_to(multiDropdownObj.arrowImg, {Rotation = 180}, 0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                         if multiDropdownPositionConn then multiDropdownPositionConn() end
                         multiDropdownPositionConn = start_position_tracker(groupObj.Library, multiDropdownObj.button_frame, function()
