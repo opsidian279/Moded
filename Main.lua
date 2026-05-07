@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.3 | By nexahub
+-- Code Lama | Version 1.0.2 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -7602,6 +7602,16 @@ groupObj.groupTitle = create("TextLabel", {
                     end
                 end
                 
+                function dropdownObj:SetOptionsIcon(icons)
+                    dropdownConfig.OptionsIcon = icons or {}
+                    createOptionsYay(search_query)
+                end
+                
+                function dropdownObj:AddOptionsIcon(option, icon)
+                    dropdownConfig.OptionsIcon[option] = icon
+                    createOptionsYay(search_query)
+                end
+                
                 if dropdownHasExplicitFlag then
                     groupObj.Library:RegisterControl(dropdownConfig.Flag, function()
                         return dropdownObj:Get()
@@ -8151,6 +8161,16 @@ groupObj.groupTitle = create("TextLabel", {
                     if multiDropdownObj.lockOverlay then
                         multiDropdownObj.lockOverlay:SetMessage(text or "Locked")
                     end
+                end
+                
+                function multiDropdownObj:SetOptionsIcon(icons)
+                    multiDropdownConfig.OptionsIcon = icons or {}
+                    createMultiOptionsYay(search_query)
+                end
+                
+                function multiDropdownObj:AddOptionsIcon(option, icon)
+                    multiDropdownConfig.OptionsIcon[option] = icon
+                    createMultiOptionsYay(search_query)
                 end
 
                 function multiDropdownObj:Close()
@@ -9389,6 +9409,10 @@ function Modern:Dialog(config)
     end
 
     return dialogObj
+end
+
+function Modern:Lock(frame, isLocked, message)
+    return ApplyLock(frame, isLocked, message)
 end
 
 return Modern
