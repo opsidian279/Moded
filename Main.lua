@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.3 | By nexahub
+-- Code Lama | Version 0.0.2 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -119,6 +119,7 @@ end
 
 local Modern = {}
 Modern.__index = Modern
+local MODERN_UI_VERSION = "0.0.2"
 
 local Toggles = {}
 local Options = {}
@@ -8242,22 +8243,24 @@ groupObj.groupTitle = create("TextLabel", {
                 labelConfig.Text = labelConfig.Text or "Label"
                 labelConfig.Wrap = labelConfig.Wrap == true
                 labelConfig.RichText = labelConfig.RichText ~= false
+                labelConfig.Font = labelConfig.Font or Enum.Font.GothamSemibold
+                labelConfig.TextSize = labelConfig.TextSize or 14 * scale_factor
+                labelConfig.TextColor3 = labelConfig.TextColor3 or Color3.fromRGB(124, 124, 124)
+                labelConfig.MaxWidth = labelConfig.MaxWidth or 238 * scale_factor
                 addSearchTerm(labelConfig.Text)
                 local yPosition = groupObj.element_y
-                local labelMaxWidth = 238 * scale_factor
-                local labelTextSize = 14 * scale_factor
                 local measuredBounds = text_service:GetTextSize(
                     tostring(labelConfig.Text),
-                    labelTextSize,
-                    Enum.Font.GothamSemibold,
-                    Vector2.new(labelMaxWidth, labelConfig.Wrap and math.huge or (labelTextSize + 4))
+                    labelConfig.TextSize,
+                    labelConfig.Font,
+                    Vector2.new(labelConfig.MaxWidth, labelConfig.Wrap and math.huge or (labelConfig.TextSize + 4))
                 )
                 local labelHeight = labelConfig.Wrap and math.max(20 * scale_factor, measuredBounds.Y) or (20 * scale_factor)
                 local labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = labelConfig.Text, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = labelTextSize,
-                    Size = UDim2.new(0, labelMaxWidth, 0, labelHeight), TextXAlignment = Enum.TextXAlignment.Left,
+                    TextColor3 = labelConfig.TextColor3, Text = labelConfig.Text, BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = labelConfig.TextSize,
+                    Size = UDim2.new(0, labelConfig.MaxWidth, 0, labelHeight), TextXAlignment = Enum.TextXAlignment.Left,
                     TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = labelConfig.Wrap,
                     TextTruncate = labelConfig.Wrap and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
                     RichText = labelConfig.RichText,
@@ -8269,38 +8272,32 @@ groupObj.groupTitle = create("TextLabel", {
                 labelObj.Instance = labelText
                 labelObj.wrap = labelConfig.Wrap
                 labelObj.richText = labelConfig.RichText
-                labelObj.maxWidth = labelMaxWidth
-                labelObj.textSize = labelTextSize
+                labelObj.maxWidth = labelConfig.MaxWidth
+                labelObj.textSize = labelConfig.TextSize
+                labelObj.font = labelConfig.Font
+                labelObj.textColor = labelConfig.TextColor3
                 labelObj.yPosition = yPosition
                 labelObj.originalHeight = labelHeight
+
+                local function recalcLabelHeight(text)
+                    local bounds = text_service:GetTextSize(
+                        tostring(text),
+                        labelObj.textSize,
+                        labelObj.font,
+                        Vector2.new(labelObj.maxWidth, labelObj.wrap and math.huge or (labelObj.textSize + 4))
+                    )
+                    return labelObj.wrap and math.max(20 * scale_factor, bounds.Y) or (20 * scale_factor)
+                end
                 
                 function labelObj:SetText(text)
                     local newText = tostring(text)
                     if labelText.Text == newText then return end
-                    
                     labelText.Text = newText
-                    
-                    -- Recalculate text bounds
-                    local measuredBounds = text_service:GetTextSize(
-                        newText,
-                        labelObj.textSize,
-                        Enum.Font.GothamSemibold,
-                        Vector2.new(labelObj.maxWidth, labelObj.wrap and math.huge or (labelObj.textSize + 4))
-                    )
-                    
-                    local newHeight = labelObj.wrap and math.max(20 * scale_factor, measuredBounds.Y) or (20 * scale_factor)
-                    
-                    -- Update label size if height changed
+                    local newHeight = recalcLabelHeight(newText)
                     if newHeight ~= labelObj.originalHeight then
-                        labelText.Size = UDim2.new(0, labelObj.maxWidth, 0, newHeight)
-                        
-                        -- Calculate height difference
                         local heightDiff = newHeight - labelObj.originalHeight
-                        
-                        -- Update group element_y
+                        labelText.Size = UDim2.new(0, labelObj.maxWidth, 0, newHeight)
                         groupObj.element_y = groupObj.element_y + heightDiff
-                        
-                        -- Update positions of elements below this label
                         for _, element in ipairs(groupObj.elements) do
                             if element.Instance and element.Instance.Position.Y.Offset > labelObj.yPosition then
                                 local currentPos = element.Instance.Position
@@ -8310,11 +8307,7 @@ groupObj.groupTitle = create("TextLabel", {
                                 )
                             end
                         end
-                        
-                        -- Update the label's stored height
                         labelObj.originalHeight = newHeight
-                        
-                        -- Update group size
                         update_group_size()
                     end
                 end
@@ -8358,7 +8351,7 @@ groupObj.groupTitle = create("TextLabel", {
                 local paragraphLabel = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = paragraphConfig.TextColor3,
-                    Text = paragraphConfig.Name .. "\n" .. paragraphConfig.Content,
+                    Text = fullText,
                     BackgroundTransparency = paragraphConfig.BackgroundTransparency,
                     Position = UDim2.new(0, 10, 0, yPosition),
                     Size = UDim2.new(0, paragraphConfig.MaxWidth, 0, paragraphHeight),
@@ -8375,31 +8368,49 @@ groupObj.groupTitle = create("TextLabel", {
                 paragraphObj.Instance = paragraphLabel
                 paragraphObj.Name = paragraphConfig.Name
                 paragraphObj.Content = paragraphConfig.Content
+                paragraphObj.textSize = paragraphConfig.TextSize
+                paragraphObj.font = paragraphConfig.Font
+                paragraphObj.maxWidth = paragraphConfig.MaxWidth
+                paragraphObj.yPosition = yPosition
+                paragraphObj.originalHeight = paragraphHeight
+
+                local function updateParagraphSize()
+                    local text = paragraphObj.Name .. "\n" .. paragraphObj.Content
+                    local bounds = text_service:GetTextSize(
+                        text,
+                        paragraphObj.textSize,
+                        paragraphObj.font,
+                        Vector2.new(paragraphObj.maxWidth, math.huge)
+                    )
+                    local newHeight = math.max(20 * scale_factor, bounds.Y)
+                    if newHeight ~= paragraphObj.originalHeight then
+                        local heightDiff = newHeight - paragraphObj.originalHeight
+                        paragraphLabel.Size = UDim2.new(0, paragraphObj.maxWidth, 0, newHeight)
+                        paragraphObj.originalHeight = newHeight
+                        groupObj.element_y = groupObj.element_y + heightDiff
+                        for _, element in ipairs(groupObj.elements) do
+                            if element.Instance and element.Instance.Position.Y.Offset > paragraphObj.yPosition then
+                                local currentPos = element.Instance.Position
+                                element.Instance.Position = UDim2.new(
+                                    currentPos.X.Scale, currentPos.X.Offset,
+                                    0, currentPos.Y.Offset + heightDiff
+                                )
+                            end
+                        end
+                        update_group_size()
+                    end
+                end
 
                 function paragraphObj:SetName(name)
                     paragraphObj.Name = tostring(name or "")
                     paragraphLabel.Text = paragraphObj.Name .. "\n" .. paragraphObj.Content
-                    local newBounds = text_service:GetTextSize(
-                        paragraphLabel.Text,
-                        paragraphConfig.TextSize,
-                        paragraphConfig.Font,
-                        Vector2.new(paragraphConfig.MaxWidth, math.huge)
-                    )
-                    local newHeight = math.max(20 * scale_factor, newBounds.Y)
-                    paragraphLabel.Size = UDim2.new(0, paragraphConfig.MaxWidth, 0, newHeight)
+                    updateParagraphSize()
                 end
 
                 function paragraphObj:SetContent(content)
                     paragraphObj.Content = tostring(content or "")
                     paragraphLabel.Text = paragraphObj.Name .. "\n" .. paragraphObj.Content
-                    local newBounds = text_service:GetTextSize(
-                        paragraphLabel.Text,
-                        paragraphConfig.TextSize,
-                        paragraphConfig.Font,
-                        Vector2.new(paragraphConfig.MaxWidth, math.huge)
-                    )
-                    local newHeight = math.max(20 * scale_factor, newBounds.Y)
-                    paragraphLabel.Size = UDim2.new(0, paragraphConfig.MaxWidth, 0, newHeight)
+                    updateParagraphSize()
                 end
 
                 function paragraphObj:GetContent()
