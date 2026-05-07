@@ -7619,6 +7619,7 @@ groupObj.groupTitle = create("TextLabel", {
                 multiDropdownConfig.RefreshInterval = math.max(tonumber(multiDropdownConfig.RefreshInterval) or 0.85, 0.35)
                 multiDropdownConfig.Default = multiDropdownConfig.Default or {}
                 multiDropdownConfig.Callback = multiDropdownConfig.Callback or function() end
+                multiDropdownConfig.Searchable = multiDropdownConfig.Searchable ~= false
                 local multiDropdownHasExplicitFlag = type(multiDropdownConfig.Flag) == "string" and multiDropdownConfig.Flag ~= ""
                 multiDropdownConfig.Flag = multiDropdownConfig.Flag or createAutoFlag(multiDropdownConfig.Name)
                 local multiDropdownOptionsSource = multiDropdownConfig.Options
@@ -7743,13 +7744,36 @@ groupObj.groupTitle = create("TextLabel", {
                     Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor), Parent = multiDropdownObj.button_frame
                 })
                 
+                local search_query = ""
+                local search_textbox
                 multiDropdownObj.optionHolderFrame = create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, 160 * scale_factor, 0, 0),
                     ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
                 })
                 create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = multiDropdownObj.optionHolderFrame})
                 create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Parent = multiDropdownObj.optionHolderFrame})
-                
+
+                local search_frame
+                if multiDropdownConfig.Searchable then
+                    search_frame = create("Frame", {
+                        BackgroundColor3 = Color3.fromRGB(22, 22, 22), BorderSizePixel = 0,
+                        Position = UDim2.new(0, 8, 0, 32 * scale_factor),
+                        Size = UDim2.new(1, -16, 0, 22 * scale_factor),
+                        ZIndex = 10001, Parent = multiDropdownObj.optionHolderFrame
+                    })
+                    create("UICorner", {CornerRadius = UDim.new(0, 5), Parent = search_frame})
+                    create("UIStroke", {Color = Color3.fromRGB(50, 50, 50), Thickness = 1, Parent = search_frame})
+
+                    search_textbox = create("TextBox", {
+                        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular),
+                        TextColor3 = Color3.fromRGB(200, 200, 200), PlaceholderColor3 = Color3.fromRGB(70, 70, 70),
+                        PlaceholderText = "Search...", Text = "", BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 8, 0, 0), TextSize = 12 * scale_factor,
+                        Size = UDim2.new(1, -16, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
+                        ClearTextOnFocus = false, ZIndex = 10002, Parent = search_frame
+                    })
+                end
+
                 create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.new(1, 1, 1), Text = multiDropdownConfig.Name, BackgroundTransparency = 1,
@@ -7768,9 +7792,11 @@ groupObj.groupTitle = create("TextLabel", {
                 })
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = multiDropdownCloseButton})
                 
+                local optionScrollTop = multiDropdownConfig.Searchable and 58 or 30
+                local optionScrollBottom = multiDropdownConfig.Searchable and 70 or 35
                 multiDropdownObj.optionScrollFrame = create("ScrollingFrame", {
-                    BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 30 * scale_factor),
-                    Size = UDim2.new(1, 0, 1, -35 * scale_factor), ScrollBarThickness = 0,
+                    BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, optionScrollTop * scale_factor),
+                    Size = UDim2.new(1, 0, 1, -optionScrollBottom * scale_factor), ScrollBarThickness = 0,
                     ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80), CanvasSize = UDim2.new(0, 0, 0, 0),
                     ZIndex = 10000, Parent = multiDropdownObj.optionHolderFrame
                 })
@@ -7790,6 +7816,7 @@ groupObj.groupTitle = create("TextLabel", {
                 })
                 
                 local maxMultiDropdownHeight = 220 * scale_factor
+                local currentOptionsHeight = 0
                 local multiDropdownPositionConn = nil
 
                 local function closeMultiDropdown(isInstant)
@@ -7797,6 +7824,10 @@ groupObj.groupTitle = create("TextLabel", {
                     if multiDropdownPositionConn then
                         multiDropdownPositionConn()
                         multiDropdownPositionConn = nil
+                    end
+                    if search_textbox then
+                        search_textbox.Text = ""
+                        search_query = ""
                     end
                     if isInstant then
                         multiDropdownObj.optionHolderFrame.Size = UDim2.new(0, 160 * scale_factor, 0, 0)
@@ -7827,12 +7858,18 @@ groupObj.groupTitle = create("TextLabel", {
                     tween_to(multiDropdownCloseButton, {BackgroundColor3 = Color3.fromRGB(24, 24, 24), TextColor3 = Color3.fromRGB(138, 138, 138)}, 0.12)
                 end)
 
-                local function createMultiOptionsYay()
+                local function createMultiOptionsYay(filter_text)
                     for _, child in pairs(multiDropdownObj.optionContainerFrame:GetChildren()) do
                         if child:IsA("Frame") or child:IsA("TextButton") then child:Destroy() end
                     end
-                    local optY = 0
+                    local filtered = {}
                     for _, option in ipairs(multiDropdownConfig.Options) do
+                        if not filter_text or filter_text == "" or string.find(tostring(option):lower(), filter_text:lower(), 1, true) then
+                            table.insert(filtered, option)
+                        end
+                    end
+                    local optY = 0
+                    for _, option in ipairs(filtered) do
                         local isSelected = multiDropdownObj.selectedValues[option] == true
                         
                         local optionFrame = create("Frame", {
@@ -7905,6 +7942,12 @@ groupObj.groupTitle = create("TextLabel", {
                     end
                     multiDropdownObj.optionContainerFrame.Size = UDim2.new(1, -6, 0, optY)
                     multiDropdownObj.optionScrollFrame.CanvasSize = UDim2.new(0, 0, 0, optY)
+                    currentOptionsHeight = optY
+                    if multiDropdownObj.isOpen then
+                        local contentHeight = (70 * scale_factor + currentOptionsHeight)
+                        local height = math.min(contentHeight, maxMultiDropdownHeight)
+                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, height)}, 0.14, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    end
                 end
                 createMultiOptionsYay()
                 
@@ -7920,9 +7963,14 @@ groupObj.groupTitle = create("TextLabel", {
                     if multiDropdownObj.isLocked then return end
                     multiDropdownObj.isOpen = not multiDropdownObj.isOpen
                     if multiDropdownObj.isOpen then
+                        if search_textbox then
+                            search_textbox.Text = ""
+                        end
+                        search_query = ""
+                        createMultiOptionsYay()
                         updateDropdownPositionYay()
                         multiDropdownObj.optionHolderFrame.Visible = true
-                        local contentHeight = (38 + (#multiDropdownConfig.Options * 24)) * scale_factor
+                        local contentHeight = (70 * scale_factor + currentOptionsHeight)
                         local height = math.min(contentHeight, maxMultiDropdownHeight)
                         tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                         tween_to(multiDropdownObj.arrowImg, {Rotation = 180}, 0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
@@ -7963,7 +8011,7 @@ groupObj.groupTitle = create("TextLabel", {
                     local newWidth = math.max(85 * scale_factor, measure_text_width(newDisplayText, 12 * scale_factor) + 35 * scale_factor)
                     multiDropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
                     multiDropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
-                    createMultiOptionsYay()
+                    createMultiOptionsYay(search_query)
                     -- Always call Callback to sync external state, even when silent
                     if multiDropdownConfig.Callback then
                         multiDropdownConfig.Callback(getSelectedArray())
@@ -8005,6 +8053,13 @@ groupObj.groupTitle = create("TextLabel", {
                 -- Backward compatibility: SetValues method
                 function multiDropdownObj:SetValues(newOptions)
                     multiDropdownObj:UpdateOptions(newOptions)
+                end
+
+                if search_textbox then
+                    search_textbox:GetPropertyChangedSignal("Text"):Connect(function()
+                        search_query = search_textbox.Text
+                        createMultiOptionsYay(search_query)
+                    end)
                 end
 
                 if multiDropdownConfig.AutoRefresh then
