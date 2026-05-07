@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.2 | By nexahub
+-- Code Lama | Version 1.0.3 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -5851,14 +5851,23 @@ function Modern:AddSection(config)
         })
         --sectionObj.Library:SetSmoothScroll(tabObj.content_scroll, 38)
         
-        tabObj.left_column = create("Frame", {BackgroundTransparency = 1, Size = UDim2.new(0, 262 * scale_factor, 0, 1000), Parent = tabObj.content_scroll})
-        tabObj.right_column = create("Frame", {BackgroundTransparency = 1, Position = UDim2.new(0, 272 * scale_factor, 0, 0), Size = UDim2.new(0, 262 * scale_factor, 0, 1000), Parent = tabObj.content_scroll})
+        tabObj.tabboxes = {}
+        tabObj.body_holder = create("Frame", {BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 0), Size = UDim2.new(1, 0, 1, 0), Parent = tabObj.content_scroll})
+        tabObj.left_column = create("Frame", {BackgroundTransparency = 1, Size = UDim2.new(0, 262 * scale_factor, 0, 1000), Parent = tabObj.body_holder})
+        tabObj.right_column = create("Frame", {BackgroundTransparency = 1, Position = UDim2.new(0, 272 * scale_factor, 0, 0), Size = UDim2.new(0, 262 * scale_factor, 0, 1000), Parent = tabObj.body_holder})
+        tabObj.left_tabbox_holder = create("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), Parent = tabObj.left_column})
+        tabObj.right_tabbox_holder = create("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), Parent = tabObj.right_column})
+        local leftTabboxLayout = create("UIListLayout", {Padding = UDim.new(0, 4 * scale_factor), SortOrder = Enum.SortOrder.LayoutOrder, Parent = tabObj.left_tabbox_holder})
+        local rightTabboxLayout = create("UIListLayout", {Padding = UDim.new(0, 4 * scale_factor), SortOrder = Enum.SortOrder.LayoutOrder, Parent = tabObj.right_tabbox_holder})
         
         local groupSpacingY = 15 * scale_factor
         local function relayout_groups()
-            local sideOffsets = {Left = 0, Right = 0}
+            local sideOffsets = {
+                Left = tabObj.left_tabbox_holder.AbsoluteSize.Y > 0 and tabObj.left_tabbox_holder.AbsoluteSize.Y + groupSpacingY or 0,
+                Right = tabObj.right_tabbox_holder.AbsoluteSize.Y > 0 and tabObj.right_tabbox_holder.AbsoluteSize.Y + groupSpacingY or 0
+            }
             for _, group in ipairs(tabObj.groups) do
-                if group.mainFrame and group.mainFrame.Parent then
+                if group.mainFrame and group.mainFrame.Parent and group.mainFrame.Visible then
                     local side = group.side == "Right" and "Right" or "Left"
                     local nextY = sideOffsets[side]
                     group.mainFrame.Position = UDim2.new(0, 1, 0, nextY + 1)
@@ -5871,6 +5880,150 @@ function Modern:AddSection(config)
             tabObj.content_scroll.CanvasSize = UDim2.new(0, tabObj.content_scroll.AbsoluteSize.X, 0, maxHeight)
         end
         
+        leftTabboxLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            tabObj.left_tabbox_holder.Size = UDim2.new(1, 0, 0, leftTabboxLayout.AbsoluteContentSize.Y)
+            relayout_groups()
+        end)
+        rightTabboxLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            tabObj.right_tabbox_holder.Size = UDim2.new(1, 0, 0, rightTabboxLayout.AbsoluteContentSize.Y)
+            relayout_groups()
+        end)
+        
+        function tabObj:AddTabbox(info)
+            info = info or {}
+            info.Name = info.Name or "Tabbox"
+            info.Side = tonumber(info.Side) == 2 and 2 or 1
+            local parentHolder = info.Side == 2 and tabObj.right_tabbox_holder or tabObj.left_tabbox_holder
+
+            local tabboxFrame = create("Frame", {
+                BackgroundTransparency = 1,
+                AutomaticSize = Enum.AutomaticSize.Y,
+                Size = UDim2.new(1, 0, 0, 0),
+                Parent = parentHolder,
+            })
+
+            local buttonRow = create("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 34 * scale_factor),
+                Parent = tabboxFrame,
+            })
+            create("UIListLayout", {
+                FillDirection = Enum.FillDirection.Horizontal,
+                HorizontalAlignment = Enum.HorizontalAlignment.Left,
+                Padding = UDim.new(0, 4 * scale_factor),
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Parent = buttonRow,
+            })
+
+            local Tabbox = {
+                Name = info.Name,
+                Side = info.Side,
+                ActiveTab = nil,
+                Holder = tabboxFrame,
+                ButtonHolder = buttonRow,
+                Tabs = {},
+            }
+
+            local function update_tabbox_buttons()
+                for _, subtab in ipairs(Tabbox.Tabs) do
+                    if subtab.Button then
+                        if Tabbox.ActiveTab == subtab then
+                            subtab.Button.BackgroundColor3 = sectionObj.Library.config.AccentColor
+                            subtab.Button.TextColor3 = Color3.new(1, 1, 1)
+                        else
+                            subtab.Button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                            subtab.Button.TextColor3 = Color3.fromRGB(170, 170, 170)
+                        end
+                    end
+                end
+            end
+
+            function Tabbox:ActivateTab(subtab)
+                if Tabbox.ActiveTab == subtab then
+                    return
+                end
+                if Tabbox.ActiveTab then
+                    Tabbox.ActiveTab:Hide()
+                end
+                Tabbox.ActiveTab = subtab
+                for _, group in ipairs(subtab.Groups) do
+                    if group.mainFrame then
+                        group.mainFrame.Visible = true
+                    end
+                end
+                update_tabbox_buttons()
+                relayout_groups()
+            end
+
+            function Tabbox:AddTab(name, icon)
+                name = name or "Tab"
+                local button = create("TextButton", {
+                    BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+                    BorderSizePixel = 0,
+                    AutoButtonColor = false,
+                    Text = name,
+                    TextColor3 = Color3.fromRGB(170, 170, 170),
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextSize = 13 * scale_factor,
+                    Size = UDim2.new(0, 0, 1, 0),
+                    AutomaticSize = Enum.AutomaticSize.X,
+                    Parent = buttonRow,
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = button})
+
+                local subtab = {
+                    Name = name,
+                    Icon = get_icon(icon, default_icons.tab),
+                    Groups = {},
+                    Button = button,
+                    Tabbox = Tabbox,
+                }
+
+                function subtab:Show()
+                    Tabbox:ActivateTab(self)
+                end
+
+                function subtab:Hide()
+                    for _, group in ipairs(self.Groups) do
+                        if group.mainFrame then
+                            group.mainFrame.Visible = false
+                        end
+                    end
+                end
+
+                function subtab:AddGroup(groupConfig)
+                    local group = tabObj:AddGroup(groupConfig)
+                    group.tabbox_subtab = self
+                    group.tabbox = Tabbox
+                    group.mainFrame.Visible = (Tabbox.ActiveTab == self)
+                    table.insert(self.Groups, group)
+                    return group
+                end
+
+                button.MouseButton1Click:Connect(function()
+                    subtab:Show()
+                end)
+
+                table.insert(Tabbox.Tabs, subtab)
+                if not Tabbox.ActiveTab then
+                    subtab:Show()
+                end
+
+                return subtab
+            end
+
+            table.insert(tabObj.tabboxes, Tabbox)
+            return Tabbox
+        end
+
+        function tabObj:AddLeftTabbox(name)
+            return tabObj:AddTabbox({Side = 1, Name = name})
+        end
+
+        function tabObj:AddRightTabbox(name)
+            return tabObj:AddTabbox({Side = 2, Name = name})
+        end
+
         function tabObj:Activate()
             if tabObj.isActive then
                 return
@@ -5879,8 +6032,6 @@ function Modern:AddSection(config)
             if previousTab and previousTab ~= tabObj then
                 previousTab:Deactivate(true)
             end
-            sectionObj.Library.active_tab = tabObj
-            tabObj.isActive = true
             tabObj.content_scroll.Position = UDim2.new(0, 14 * scale_factor, 0, 4)
             tabObj.content_scroll.Visible = true
             tween_to(tabObj.content_scroll, {Position = UDim2.new(0, 4, 0, 4)}, 0.26, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
