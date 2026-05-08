@@ -1,4 +1,4 @@
-
+-- |||||||||||||||||||||||||||||
 repeat task.wait() until game:IsLoaded()
 
 local cloneref = cloneref or function(obj) return obj end
@@ -296,11 +296,23 @@ local function ValidatePandaKey(key)
     end
 end
 
+local function getPandaGetKeyLink()
+    if not PandaDevelopment.Service or PandaDevelopment.Service == "" then
+        return ""
+    end
+    local hwid = getPandaHardwareId()
+    return PandaDevelopment.BaseUrl:gsub("/api/v1", "") .. "/getkey/" .. PandaDevelopment.Service .. "?hwid=" .. hwid
+end
+
 function Modern:SetupPanda(config)
     if type(config) ~= "table" then return self end
     if config.Service then PandaDevelopment.Service = config.Service end
     if config.BaseUrl then PandaDevelopment.BaseUrl = config.BaseUrl end
     self.Callbacks.OnVerify = ValidatePandaKey
+    -- Auto-set GetKey link if not already set
+    if self.Links.GetKey == "" or not self.Links.GetKey then
+        self.Links.GetKey = getPandaGetKeyLink()
+    end
     return self
 end
 
