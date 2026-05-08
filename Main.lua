@@ -5713,10 +5713,11 @@ function Modern:AddSection(config)
     local noCollapse = config.NoCollapse == true
     config.Name = config.Name or "Section"
     config.Icon = get_icon(config.Icon, default_icons.section)
+    config.Open = config.Open ~= false -- Default to true if not specified
     
     local sectionObj = {}
     sectionObj.tabs = {}
-    sectionObj.isExpanded = true
+    sectionObj.isExpanded = config.Open
     sectionObj.Library = self
     
     sectionObj.container = create("Frame", {
@@ -5754,6 +5755,8 @@ function Modern:AddSection(config)
                 Position = UDim2.new(1, -24, 0.5, -8.5 * scale_factor),
                 Size = UDim2.new(0, 17 * scale_factor, 0, 17 * scale_factor), Parent = sectionObj.mainFrame
             })
+            -- Set initial rotation based on Open state
+            expandButtonImg.Rotation = config.Open and 0 or -90
         end
     end
     
@@ -6048,6 +6051,8 @@ groupObj.groupTitle = create("TextLabel", {
                     end
                 })
                 local yPosition = groupObj.element_y
+                toggleObj._yPosition = yPosition
+                toggleObj._containerSize = 28 * scale_factor
                 
                 toggleObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
@@ -6174,6 +6179,16 @@ groupObj.groupTitle = create("TextLabel", {
                 
                 function toggleObj:SetLocked(locked)
                     toggleObj.isLocked = locked == true
+                    if not toggleObj.lockOverlay and toggleObj.isLocked then
+                        local toggleContainerFrame = create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, toggleObj._yPosition),
+                            Size = UDim2.new(1, 0, 0, toggleObj._containerSize),
+                            ZIndex = 9,
+                            Parent = groupObj.mainFrame
+                        })
+                        toggleObj.lockOverlay = ApplyLock(toggleContainerFrame, true, "Locked")
+                    end
                     if toggleObj.lockOverlay then
                         toggleObj.lockOverlay:SetLocked(toggleObj.isLocked)
                     end
@@ -6286,6 +6301,8 @@ groupObj.groupTitle = create("TextLabel", {
                 sliderObj.isLocked = sliderConfig.Locked
                 sliderObj.isLocked = sliderConfig.Locked
                 local yPosition = groupObj.element_y
+                sliderObj._yPosition = yPosition
+                sliderObj._containerSize = 44 * scale_factor
                 local valueLabelWidth = 72 * scale_factor
                 local sliderHitHeight = 20 * scale_factor
                 local sliderTrackHeight = 8 * scale_factor
@@ -6409,6 +6426,16 @@ groupObj.groupTitle = create("TextLabel", {
                 
                 function sliderObj:SetLocked(locked)
                     sliderObj.isLocked = locked == true
+                    if not sliderObj.lockOverlay and sliderObj.isLocked then
+                        local sliderContainerFrame = create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, sliderObj._yPosition),
+                            Size = UDim2.new(1, 0, 0, sliderObj._containerSize),
+                            ZIndex = 9,
+                            Parent = groupObj.mainFrame
+                        })
+                        sliderObj.lockOverlay = ApplyLock(sliderContainerFrame, true, "Locked")
+                    end
                     if sliderObj.lockOverlay then
                         sliderObj.lockOverlay:SetLocked(sliderObj.isLocked)
                     end
@@ -6526,6 +6553,8 @@ groupObj.groupTitle = create("TextLabel", {
                 buttonObj.subLocked = buttonConfig.SubLocked
                 buttonObj.Instance = buttonObj.mainFrame
                 local yPosition = groupObj.element_y
+                buttonObj._yPosition = yPosition
+                buttonObj._containerSize = 28 * scale_factor
                 
                 buttonObj.mainFrame = create("Frame", {
                     BackgroundColor3 = buttonObj.isLocked and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(32, 32, 32),
@@ -6668,6 +6697,16 @@ groupObj.groupTitle = create("TextLabel", {
                     tween_to(buttonStrokeThing, {Color = newStrokeColor}, 0.2)
                     tween_to(buttonObj.labelText, {TextColor3 = newTextColor}, 0.2)
                     buttonObj.labelText.Text = buttonConfig.Name .. (buttonObj.isLocked and " (locked)" or "")
+                    if not buttonObj.lockOverlay and buttonObj.isLocked then
+                        local buttonContainerFrame = create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, buttonObj._yPosition),
+                            Size = UDim2.new(1, 0, 0, buttonObj._containerSize),
+                            ZIndex = 9,
+                            Parent = groupObj.mainFrame
+                        })
+                        buttonObj.lockOverlay = ApplyLock(buttonContainerFrame, true, "Locked")
+                    end
                     if buttonObj.lockOverlay then
                         buttonObj.lockOverlay:SetLocked(buttonObj.isLocked)
                     end
@@ -6709,6 +6748,8 @@ groupObj.groupTitle = create("TextLabel", {
                 keybindObj.holdActive = false
                 keybindObj.isLocked = keybindConfig.Locked
                 local yPosition = groupObj.element_y
+                keybindObj._yPosition = yPosition
+                keybindObj._containerSize = 28 * scale_factor
                 
                 -- Apply lock if needed
                 if keybindConfig.Locked then
@@ -6823,6 +6864,16 @@ groupObj.groupTitle = create("TextLabel", {
                     else
                         tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
                     end
+                    if not keybindObj.lockOverlay and keybindObj.isLocked then
+                        local keybindContainerFrame = create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, keybindObj._yPosition),
+                            Size = UDim2.new(1, 0, 0, keybindObj._containerSize),
+                            ZIndex = 9,
+                            Parent = groupObj.mainFrame
+                        })
+                        keybindObj.lockOverlay = ApplyLock(keybindContainerFrame, true, "Locked")
+                    end
                     if keybindObj.lockOverlay then
                         keybindObj.lockOverlay:SetLocked(keybindObj.isLocked)
                     end
@@ -6921,6 +6972,8 @@ groupObj.groupTitle = create("TextLabel", {
                 keybindToggleObj.isLocked = keybindToggleConfig.Locked
                 keybindToggleObj.isListening = false
                 local yPosition = groupObj.element_y
+                keybindToggleObj._yPosition = yPosition
+                keybindToggleObj._containerSize = 31 * scale_factor
                 
                 -- Apply lock if needed
                 if keybindToggleConfig.Locked then
@@ -7027,6 +7080,16 @@ groupObj.groupTitle = create("TextLabel", {
                 
                 function keybindToggleObj:SetLocked(locked)
                     keybindToggleObj.isLocked = locked == true
+                    if not keybindToggleObj.lockOverlay and keybindToggleObj.isLocked then
+                        local keybindToggleContainerFrame = create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, keybindToggleObj._yPosition),
+                            Size = UDim2.new(1, 0, 0, keybindToggleObj._containerSize),
+                            ZIndex = 9,
+                            Parent = groupObj.mainFrame
+                        })
+                        keybindToggleObj.lockOverlay = ApplyLock(keybindToggleContainerFrame, true, "Locked")
+                    end
                     if keybindToggleObj.lockOverlay then
                         keybindToggleObj.lockOverlay:SetLocked(keybindToggleObj.isLocked)
                     end
@@ -7156,6 +7219,8 @@ groupObj.groupTitle = create("TextLabel", {
                     dropdownObj._optionsSignature = get_dropdown_signature(dropdownConfig.Options)
                 end
                 local yPosition = groupObj.element_y
+                dropdownObj._yPosition = yPosition
+                dropdownObj._containerSize = 28 * scale_factor
                 
                 -- Apply lock if needed
                 if dropdownConfig.Locked then
@@ -7591,6 +7656,16 @@ groupObj.groupTitle = create("TextLabel", {
                 
                 function dropdownObj:SetLocked(locked)
                     dropdownObj.isLocked = locked == true
+                    if not dropdownObj.lockOverlay and dropdownObj.isLocked then
+                        local dropdownContainerFrame = create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, dropdownObj._yPosition),
+                            Size = UDim2.new(1, 0, 0, dropdownObj._containerSize),
+                            ZIndex = 9,
+                            Parent = groupObj.mainFrame
+                        })
+                        dropdownObj.lockOverlay = ApplyLock(dropdownContainerFrame, true, "Locked")
+                    end
                     if dropdownObj.lockOverlay then
                         dropdownObj.lockOverlay:SetLocked(dropdownObj.isLocked)
                     end
@@ -7717,6 +7792,8 @@ groupObj.groupTitle = create("TextLabel", {
                 end
 
                 local yPosition = groupObj.element_y
+                multiDropdownObj._yPosition = yPosition
+                multiDropdownObj._containerSize = 31 * scale_factor
                 
                 -- Apply lock if needed
                 if multiDropdownConfig.Locked then
@@ -8151,6 +8228,16 @@ groupObj.groupTitle = create("TextLabel", {
                     else
                         tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
                         tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.2)
+                    end
+                    if not multiDropdownObj.lockOverlay and multiDropdownObj.isLocked then
+                        local multiDropdownContainerFrame = create("Frame", {
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, 0, 0, multiDropdownObj._yPosition),
+                            Size = UDim2.new(1, 0, 0, multiDropdownObj._containerSize),
+                            ZIndex = 9,
+                            Parent = groupObj.mainFrame
+                        })
+                        multiDropdownObj.lockOverlay = ApplyLock(multiDropdownContainerFrame, true, "Locked")
                     end
                     if multiDropdownObj.lockOverlay then
                         multiDropdownObj.lockOverlay:SetLocked(multiDropdownObj.isLocked)
@@ -8994,6 +9081,53 @@ groupObj.groupTitle = create("TextLabel", {
                 return colorPickerObj
             end
             
+            function groupObj:AddDependency(dependencyConfig)
+                dependencyConfig = dependencyConfig or {}
+                local conditionElement = dependencyConfig.Condition or dependencyConfig.Toggle or dependencyConfig.Element
+                local dependentElements = dependencyConfig.Elements or dependencyConfig.Dependents or {}
+                local conditionValue = dependencyConfig.Value ~= false -- default true
+                
+                if not conditionElement or not dependentElements then
+                    warn("[UI Dependency] Invalid dependency config: missing Condition or Elements")
+                    return
+                end
+                
+                if type(dependentElements) ~= "table" then
+                    dependentElements = {dependentElements}
+                end
+                
+                local function updateVisibility()
+                    local currentValue = conditionElement:Get()
+                    local shouldShow = (currentValue == conditionValue)
+                    
+                    for _, element in ipairs(dependentElements) do
+                        if element and type(element) == "table" and element.Instance then
+                            element.Instance.Visible = shouldShow
+                        end
+                    end
+                end
+                
+                -- Initial update
+                updateVisibility()
+                
+                -- Connect to condition element's change
+                if conditionElement.Changed then
+                    conditionElement.Changed:Connect(updateVisibility)
+                elseif conditionElement.OnChanged then
+                    conditionElement.OnChanged(updateVisibility)
+                end
+                
+                -- Return dependency object for management
+                local dependencyObj = {
+                    Condition = conditionElement,
+                    Elements = dependentElements,
+                    Value = conditionValue,
+                    Update = updateVisibility
+                }
+                
+                return dependencyObj
+            end
+            
             table.insert(tabObj.groups, groupObj)
             update_group_size()
             return groupObj
@@ -9016,8 +9150,10 @@ groupObj.groupTitle = create("TextLabel", {
         
         return tabObj
     end
-    
+
     table.insert(self.sections, sectionObj)
+    -- Initialize container size based on Open state
+    update_container_size()
     return sectionObj
 end
 
