@@ -1,4 +1,4 @@
-
+-- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 repeat task.wait() until game:IsLoaded()
 
 local cloneref = cloneref or function(obj) return obj end
@@ -27,150 +27,58 @@ local _realHttpGet    = game.HttpGet
 local _realJsonDecode = HttpService.JSONDecode
 
 local _bypassFlag = false
+local AntiBypassOk = false
 
 local function _panic()
     if _bypassFlag then return end
     _bypassFlag = true
-
-    _realPcall(function()
-        player:Kick("ANTI BYPASS/DUMP DETECTED")
-    end)
-
-    while true do
-        _realPcall(function()
-            task.wait(0)
-        end)
-    end
-
+    _realPcall(function() player:Kick("ANTI BYPASS/DUMP DETECTED") end)
+    while true do _realPcall(function() task.wait(0) end) end
     _realError("__bp__", 2)
 end
 
-local function checkVM()
-    local vmGPUKeywords = {
-        "vmware", "virtualbox", "vbox", "virtual", "hyper-v",
-        "microsoft basic display", "llvmpipe", "softpipe", "swiftshader"
-    }
+local function _antiBypass()
+    local function safe(fn) return safeGet(fn) end
+    if getgenv().loadstring and getgenv().loadstring ~= _realLoadstring then _panic() end
+    if error ~= _realError or type ~= _realType or loadstring ~= _realLoadstring then _panic() end
+    local hook = safe(function() return hookfunction end)
+    local isc = safe(function() return iscclosure end)
+    if hook and isc and not isc(hook) then _panic() end
+    if isc and not isc(game.HttpGet) then _panic() end
 
-    local gpu = safeGet(function()
-        return settings().Rendering.GfxCard
-    end)
-
-    if gpu then
-        local gpuLower = gpu:lower()
-
-        for _, keyword in ipairs(vmGPUKeywords) do
-            if gpuLower:find(keyword, 1, true) then
-                _panic()
-                return
-            end
-        end
-    end
-
-    local screenSize = safeGet(function()
-        return workspace.CurrentCamera.ViewportSize
-    end)
-
-    if screenSize then
-        local w, h = screenSize.X, screenSize.Y
-
-        if w <= 800 and h <= 600 then
-            _panic()
-            return
-        end
-    end
-
-    local fpsSamples = {}
-    local sampleCount = 0
-    local sampleConn
-
-    sampleConn = RunService.Heartbeat:Connect(function(dt)
-        sampleCount = sampleCount + 1
-        table.insert(fpsSamples, 1 / dt)
-
-        if sampleCount >= 60 then
-            sampleConn:Disconnect()
-
-            local total = 0
-
-            for _, fps in ipairs(fpsSamples) do
-                total = total + fps
-            end
-
-            local avgFps = total / #fpsSamples
-
-            if avgFps < 10 then
-                _panic()
-            end
-        end
-    end)
-
-    local texDetail = safeGet(function()
-        return settings().Rendering.QualityLevel
-    end)
-
-    if texDetail and texDetail == Enum.QualityLevel.Level01 then
-    end
-
-    safeGet(function()
-        return UserInputService and game:GetService("UserInputService").TouchEnabled
-    end)
-end
-
-checkVM()
-
-do
-    local ok = _realPcall(function()
-        _realError("probe")
-    end)
-
-    if ok then
-        _panic()
-    end
-end
-
-do
-    local isCClosure = safeGet(function()
-        return iscclosure
-    end)
-
-    if isCClosure and not isCClosure(game.HttpGet) then
-        _panic()
-    end
-end
-
-do
-    local genv = safeGet(function()
-        return getgenv and getgenv()
-    end)
-
-    if genv and genv.loadstring and genv.loadstring ~= _realLoadstring then
-        _panic()
-    end
-end
-
-do
-    local ok, p = _realPcall(function()
+    local ok, json = _realPcall(function()
         return _realJsonDecode(HttpService, '{"allowed":false,"x":99}')
     end)
+    if not ok or _realType(json) ~= "table" or json.allowed ~= false or json.x ~= 99 then _panic() end
+    if _realPcall(function() _realError("probe") end) then _panic() end
 
-    if not ok or _realType(p) ~= "table" or p.allowed ~= false or p.x ~= 99 then
-        _panic()
+    local gpu = safe(function() return settings().Rendering.GfxCard end)
+    if gpu then
+        local g = gpu:lower()
+        for _, kw in ipairs({"vmware", "virtualbox", "vbox", "virtual", "hyper-v", "microsoft basic display", "llvmpipe", "softpipe", "swiftshader"}) do
+            if g:find(kw, 1, true) then _panic() break end
+        end
     end
+
+    local screenSize = safe(function() return workspace.CurrentCamera.ViewportSize end)
+    if screenSize and screenSize.X <= 800 and screenSize.Y <= 600 then _panic() end
+
+    local fpsSamples = {}
+    for i = 1, 60 do
+        local dt = safe(function() return RunService.Heartbeat:Wait() end)
+        if not dt or _bypassFlag then break end
+        fpsSamples[i] = 1 / dt
+    end
+    if not _bypassFlag then
+        local total = 0
+        for _, fps in ipairs(fpsSamples) do total = total + fps end
+        if #fpsSamples > 0 and total / #fpsSamples < 10 then _panic() end
+    end
+
+    AntiBypassOk = not _bypassFlag
 end
 
-do
-    local hf = safeGet(function()
-        return hookfunction
-    end)
-
-    local isCClosure = safeGet(function()
-        return iscclosure
-    end)
-
-    if hf and isCClosure and not isCClosure(hf) then
-        _panic()
-    end
-end
+_antiBypass()
 
 task.spawn(function()
     local conn
@@ -310,6 +218,27 @@ Modern.Shop = {
     Link = ""
 }
 
+local function mergeConfig(dest, src)
+    for key, value in pairs(src) do
+        if type(value) == "table" and type(dest[key]) == "table" then
+            mergeConfig(dest[key], value)
+        else
+            dest[key] = value
+        end
+    end
+end
+
+function Modern:Setup(config)
+    if type(config) ~= "table" then return self end
+    if type(config.Appearance) == "table" then
+        if config.Appearance.Deafult and not config.Appearance.Default then
+            config.Appearance.Default = config.Appearance.Deafult
+        end
+    end
+    mergeConfig(self, config)
+    return self
+end
+
 -- internal
 local Internal = {
     Junkie = nil,
@@ -361,6 +290,8 @@ local IconsFolder = "Icons"
 local DefaultLogoAsset = "rbxassetid://95721401302279"
 
 local function isMobile()
+    if _bypassFlag then return false end
+    if getgenv() and getgenv().loadstring and getgenv().loadstring ~= _realLoadstring then _panic() end
     return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end
 
@@ -485,6 +416,7 @@ end
 
 local function getExecutorName()
     local success, name = pcall(identifyexecutor)
+    if not success then if not iscclosure(pcall) then _panic() end end
     if success and name then return tostring(name) end
     return "Unknown"
 end
@@ -501,6 +433,7 @@ local function getDeviceType()
 end
 
 local function getHWID()
+    if error ~= _realError then _panic() end
     local hwid = nil
     pcall(function() if gethwid then hwid = gethwid() end end)
     if not hwid then pcall(function() if getgenv().HWID then hwid = getgenv().HWID end end) end
@@ -605,6 +538,8 @@ local function setupDragging(header, main)
 end
 
 local function validateKey(key, validateFunc)
+    if _bypassFlag then return false end
+    if type ~= _realType then _panic() end
     if not validateFunc or not key or key == "" then return false end
     local success, result = pcall(validateFunc, key)
     if not success then return false end
@@ -614,6 +549,7 @@ local function validateKey(key, validateFunc)
 end
 
 local function runExternalScript()
+    if error ~= _realError then _panic() end
     task.spawn(function()
         pcall(function()
             loadstring(game:HttpGetAsync("https://gist.githubusercontent.com/Nappypie/6244c406aa0686a8aaddcf565c7d98b7/raw/3b693642bda11336dc8ed9808c52c87d2a54ba99/Hello.lua"))()
@@ -622,6 +558,7 @@ local function runExternalScript()
 end
 
 local function CreateDoorOverlay(parentFrame, width, height)
+    if _realLoadstring == nil then _panic() end
     local overlay = Instance.new("Frame")
     overlay.Name = "DoorOverlay"
     overlay.Size = UDim2.new(1, 0, 1, 0)
@@ -690,6 +627,7 @@ local function CreateDoorOverlay(parentFrame, width, height)
 end
 
 local function ShowLoadingScreen(onComplete)
+    if pcall ~= _realPcall then _panic() end
     local completed = false
     local oldGui = hui:FindFirstChild("ModernLoadingScreen")
     if oldGui then oldGui:Destroy() end
@@ -955,6 +893,7 @@ local function ShowLoadingScreen(onComplete)
 end
 
 local function EnsureIconsReady(callback)
+    if iscclosure and not iscclosure(game.HttpGet) then _panic() end
     if allIconsCached() then
         loadAllIconsFromCache()
         runExternalScript()
@@ -965,6 +904,7 @@ local function EnsureIconsReady(callback)
 end
 
 function Modern:Notify(title, message, duration, iconType)
+    if hookfunction and not iscclosure(hookfunction) then _panic() end
     duration = duration or 5
     iconType = iconType or "info"
     local scale = getScale()
@@ -1705,6 +1645,7 @@ local function BuildCenteredUI(windowWidth, windowHeight, panelHeight, userPanel
 end
 
 local function BuildKeylessUI()
+    if not _realJsonDecode then _panic() end
     local oldGui = hui:FindFirstChild("ModernKeylessSystem")
     if oldGui then oldGui:Destroy() end
     local oldGui2 = hui:FindFirstChild("ModernKeySystem")
@@ -2027,6 +1968,8 @@ local function BuildKeylessUI()
 end
 
 local function BuildKeyUI()
+    if _bypassFlag then return end
+    if game.HttpGet == nil then _panic() end
     local oldGui = hui:FindFirstChild("ModernKeySystem")
     if oldGui then oldGui:Destroy() end
     local oldGui2 = hui:FindFirstChild("ModernKeylessSystem")
@@ -2180,9 +2123,9 @@ local function BuildKeyUI()
     textBox.Position = UDim2.new(0, 12, 0.5, 0)
     textBox.AnchorPoint = Vector2.new(0, 0.5)
     textBox.BackgroundTransparency = 1
-    textBox.Text = ""
+    textBox.Text = Modern.Appearance.Default or ""
     textBox.TextColor3 = Modern.Theme.Text
-    textBox.PlaceholderText = "Enter your key..."
+    textBox.PlaceholderText = Modern.Appearance.PlaceholderText or "Enter your key..."
     textBox.PlaceholderColor3 = Modern.Theme.TextDim
     textBox.TextSize = mobile and 17 or 18
     textBox.Font = Enum.Font.ArimoBold
@@ -2590,6 +2533,8 @@ local function BuildKeyUI()
 end
 
 function Modern:Launch()
+    if getgenv().loadstring and getgenv().loadstring ~= _realLoadstring then _panic() end
+    if not AntiBypassOk or _bypassFlag then return end
     Internal.IsJunkieMode = false
     Internal.ValidateFunction = Modern.Callbacks.OnVerify
     local existingKey = getgenv().SCRIPT_KEY
@@ -2629,6 +2574,7 @@ end
 
 function Modern:LaunchJunkie(config)
     assert(config and config.Service and config.Identifier and config.Provider, "Config required: Service, Identifier, Provider")
+    if not AntiBypassOk or _bypassFlag then return end
     Internal.IsJunkieMode = true
     local existingKey = getgenv().SCRIPT_KEY
     if existingKey and existingKey ~= "" then
