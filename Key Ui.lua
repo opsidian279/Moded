@@ -12,6 +12,226 @@ local Workspace = cloneref(game:GetService("Workspace"))
 local RunService = cloneref(game:GetService("RunService"))
 local Lighting = cloneref(game:GetService("Lighting"))
 local Players = cloneref(game:GetService("Players"))
+local player = Players.LocalPlayer
+
+local function safeGet(fn)
+    local ok, v = pcall(fn)
+    return ok and v or nil
+end
+
+local _realPcall      = pcall
+local _realError      = error
+local _realType       = type
+local _realLoadstring = loadstring
+local _realHttpGet    = game.HttpGet
+local _realJsonDecode = HttpService.JSONDecode
+
+local _bypassFlag = false
+
+local function _panic()
+    if _bypassFlag then return end
+    _bypassFlag = true
+
+    _realPcall(function()
+        player:Kick("ANTI BYPASS/DUMP DETECTED")
+    end)
+
+    while true do
+        _realPcall(function()
+            task.wait(0)
+        end)
+    end
+
+    _realError("__bp__", 2)
+end
+
+local function checkVM()
+    local vmGPUKeywords = {
+        "vmware", "virtualbox", "vbox", "virtual", "hyper-v",
+        "microsoft basic display", "llvmpipe", "softpipe", "swiftshader"
+    }
+
+    local gpu = safeGet(function()
+        return settings().Rendering.GfxCard
+    end)
+
+    if gpu then
+        local gpuLower = gpu:lower()
+
+        for _, keyword in ipairs(vmGPUKeywords) do
+            if gpuLower:find(keyword, 1, true) then
+                _panic()
+                return
+            end
+        end
+    end
+
+    local screenSize = safeGet(function()
+        return workspace.CurrentCamera.ViewportSize
+    end)
+
+    if screenSize then
+        local w, h = screenSize.X, screenSize.Y
+
+        if w <= 800 and h <= 600 then
+            _panic()
+            return
+        end
+    end
+
+    local fpsSamples = {}
+    local sampleCount = 0
+    local sampleConn
+
+    sampleConn = RunService.Heartbeat:Connect(function(dt)
+        sampleCount = sampleCount + 1
+        table.insert(fpsSamples, 1 / dt)
+
+        if sampleCount >= 60 then
+            sampleConn:Disconnect()
+
+            local total = 0
+
+            for _, fps in ipairs(fpsSamples) do
+                total = total + fps
+            end
+
+            local avgFps = total / #fpsSamples
+
+            if avgFps < 10 then
+                _panic()
+            end
+        end
+    end)
+
+    local texDetail = safeGet(function()
+        return settings().Rendering.QualityLevel
+    end)
+
+    if texDetail and texDetail == Enum.QualityLevel.Level01 then
+    end
+
+    safeGet(function()
+        return UserInputService and game:GetService("UserInputService").TouchEnabled
+    end)
+end
+
+checkVM()
+
+do
+    local ok = _realPcall(function()
+        _realError("probe")
+    end)
+
+    if ok then
+        _panic()
+    end
+end
+
+do
+    local isCClosure = safeGet(function()
+        return iscclosure
+    end)
+
+    if isCClosure and not isCClosure(game.HttpGet) then
+        _panic()
+    end
+end
+
+do
+    local genv = safeGet(function()
+        return getgenv and getgenv()
+    end)
+
+    if genv and genv.loadstring and genv.loadstring ~= _realLoadstring then
+        _panic()
+    end
+end
+
+do
+    local ok, p = _realPcall(function()
+        return _realJsonDecode(HttpService, '{"allowed":false,"x":99}')
+    end)
+
+    if not ok or _realType(p) ~= "table" or p.allowed ~= false or p.x ~= 99 then
+        _panic()
+    end
+end
+
+do
+    local hf = safeGet(function()
+        return hookfunction
+    end)
+
+    local isCClosure = safeGet(function()
+        return iscclosure
+    end)
+
+    if hf and isCClosure and not isCClosure(hf) then
+        _panic()
+    end
+end
+
+task.spawn(function()
+    local conn
+
+    conn = RunService.Heartbeat:Connect(function()
+        if _bypassFlag then
+            conn:Disconnect()
+            return
+        end
+
+        if pcall ~= _realPcall then
+            conn:Disconnect()
+            _panic()
+            return
+        end
+
+        local isCClosure = safeGet(function()
+            return iscclosure
+        end)
+
+        if isCClosure and not isCClosure(game.HttpGet) then
+            conn:Disconnect()
+            _panic()
+            return
+        end
+
+        local genv = safeGet(function()
+            return getgenv and getgenv()
+        end)
+
+        if genv and genv.loadstring and genv.loadstring ~= _realLoadstring then
+            conn:Disconnect()
+            _panic()
+            return
+        end
+    end)
+end)
+
+function SafeJsonDecode(body)
+    local ok, result = _realPcall(function()
+        return _realJsonDecode(HttpService, body)
+    end)
+
+    if not ok or _realType(result) ~= "table" then
+        return nil
+    end
+
+    return result
+end
+
+function SafeLoadstring(src)
+    return _realLoadstring(src)
+end
+
+function SafeHttpGet(url)
+    local ok, result = _realPcall(function()
+        return _realHttpGet(game, url)
+    end)
+
+    return ok and result or nil
+end
 
 local hui = gethui()
 
