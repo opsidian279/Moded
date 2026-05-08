@@ -1,4 +1,4 @@
--- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
 repeat task.wait() until game:IsLoaded()
 
 local cloneref = cloneref or function(obj) return obj end
@@ -236,6 +236,71 @@ function Modern:Setup(config)
         end
     end
     mergeConfig(self, config)
+    -- Auto-setup PandaDevelopment if provided
+    if config.PandaDevelopment then
+        self:SetupPanda(config.PandaDevelopment)
+    end
+    return self
+end
+
+-- PandaDevelopment Support
+local PandaDevelopment = {
+    Service = "",
+    BaseUrl = "https://new.pandadevelopment.net/api/v1"
+}
+
+local function getPandaHardwareId()
+    local success, hwid = pcall(gethwid)
+    if success and hwid then
+        return hwid
+    end
+    local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
+    local clientId = tostring(RbxAnalyticsService:GetClientId())
+    return clientId:gsub("-", "")
+end
+
+local function ValidatePandaKey(key)
+    if not PandaDevelopment.Service or PandaDevelopment.Service == "" then
+        return false, "PandaDevelopment Service not configured"
+    end
+
+    local response = request({
+        Url = PandaDevelopment.BaseUrl .. "/keys/validate",
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = HttpService:JSONEncode({
+            ServiceID = PandaDevelopment.Service,
+            HWID = getPandaHardwareId(),
+            Key = key
+        })
+    })
+
+    if not response or not response.Body then
+        return false, "Network error"
+    end
+
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(response.Body)
+    end)
+
+    if not success then
+        return false, "Invalid response"
+    end
+
+    if data.Authenticated_Status == "Success" then
+        return true
+    else
+        return false, data.message or "Invalid key"
+    end
+end
+
+function Modern:SetupPanda(config)
+    if type(config) ~= "table" then return self end
+    if config.Service then PandaDevelopment.Service = config.Service end
+    if config.BaseUrl then PandaDevelopment.BaseUrl = config.BaseUrl end
+    self.Callbacks.OnVerify = ValidatePandaKey
     return self
 end
 
