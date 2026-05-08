@@ -1,3 +1,4 @@
+
 repeat task.wait() until game:IsLoaded()
 
 local cloneref = cloneref or function(obj) return obj end
@@ -25,7 +26,7 @@ local Modern = {}
 Modern.Appearance = {
     Title = "Modern",
     Subtitle = "Enter your key to continue",
-    Icon = "rbxassetid://95721401302279",
+    Icon = "rbxassetid://111000330386703",
     IconSize = UDim2.new(0, 30, 0, 30)
 }
 
@@ -52,8 +53,8 @@ Modern.Options = {
 
 -- theme
 Modern.Theme = {
-    Accent = Color3.fromRGB(139, 0, 0),
-    AccentHover = Color3.fromRGB(170, 20, 20),
+    Accent = Color3.fromRGB(20, 120, 220),
+    AccentHover = Color3.fromRGB(100, 180, 255),
     Background = Color3.fromRGB(15, 15, 15),
     Header = Color3.fromRGB(20, 20, 20),
     Input = Color3.fromRGB(25, 25, 25),
@@ -62,7 +63,7 @@ Modern.Theme = {
     Success = Color3.fromRGB(50, 205, 110),
     Error = Color3.fromRGB(245, 70, 90),
     Warning = Color3.fromRGB(255, 180, 50),
-    StatusIdle = Color3.fromRGB(180, 80, 80),
+    StatusIdle = Color3.fromRGB(80, 160, 220),
     Discord = Color3.fromRGB(88, 101, 242),
     DiscordHover = Color3.fromRGB(114, 137, 218),
     Divider = Color3.fromRGB(45, 45, 70),
