@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.2 | By nexahub
+-- Code Lama | Version 1.0.3 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -153,6 +153,51 @@ local function make_font_descriptor(family, weight, style, enumFont)
         Style = style or Enum.FontStyle.Normal,
         EnumFont = enumFont or resolve_font_enum(weight)
     }
+end
+
+local function resolve_font_from_config(fontConfig)
+    if not fontConfig then
+        return make_font_descriptor(default_font_family, Enum.FontWeight.SemiBold)
+    end
+    
+    -- Handle Enum.FontWeight (SemiBold, Bold, Medium, etc.)
+    if typeof(fontConfig) == "EnumItem" and fontConfig.EnumType == Enum.FontWeight then
+        return make_font_descriptor(default_font_family, fontConfig, Enum.FontStyle.Normal)
+    end
+    
+    -- Handle Enum.Font (Bodoni, Garamond, etc.)
+    if typeof(fontConfig) == "EnumItem" and fontConfig.EnumType == Enum.Font then
+        return make_font_descriptor(default_font_family, Enum.FontWeight.SemiBold, Enum.FontStyle.Normal, fontConfig)
+    end
+    
+    -- Handle string (font name, family, or asset ID)
+    if typeof(fontConfig) == "string" then
+        local fontLower = string.lower(fontConfig)
+        
+        -- Check if it's an asset ID (numeric or with rbxassetid:// prefix)
+        if fontConfig:match("^%d+$") or fontConfig:match("^rbxassetid://") then
+            local assetId = fontConfig:match("^%d+$") and ("rbxassetid://" .. fontConfig) or fontConfig
+            return make_font_descriptor(assetId, Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
+        end
+        
+        -- Map common font names to Enum.Font
+        local fontMap = {
+            ["bodoni"] = Enum.Font.Bodoni,
+            ["garamond"] = Enum.Font.Garamond,
+            ["code"] = Enum.Font.Code,
+            ["gotham"] = Enum.Font.Gotham,
+            ["highway"] = Enum.Font.Highway,
+            ["antique"] = Enum.Font.Antique,
+            ["sourcesans"] = Enum.Font.SourceSans,
+        }
+        local mappedFont = fontMap[fontLower]
+        if mappedFont then
+            return make_font_descriptor(default_font_family, Enum.FontWeight.SemiBold, Enum.FontStyle.Normal, mappedFont)
+        end
+    end
+    
+    -- Default fallback
+    return make_font_descriptor(default_font_family, Enum.FontWeight.SemiBold)
 end
 
 local function is_font_descriptor(value)
@@ -978,6 +1023,8 @@ function Modern:Window(config)
     self.config.SecondaryColor = config.SecondaryColor or Color3.fromRGB(18, 18, 18)
     self.config.TextColor = config.TextColor or Color3.fromRGB(255, 255, 255)
     self.config.SubTextColor = config.SubTextColor or Color3.fromRGB(124, 124, 124)
+    self.config.Font = config.Font or Enum.Font.Gotham
+    self._resolvedFont = resolve_font_from_config(self.config.Font)
     
     -- New features
     self.config.Image = resolve_image(config.Image)
@@ -1149,6 +1196,36 @@ function Modern:RegisterControl(flag, getter, setter)
         set = setter
     }
     self._lastControlRegistration = os.clock()
+end
+
+function Modern:GetFont(weight)
+    weight = weight or self._resolvedFont.Weight or Enum.FontWeight.SemiBold
+    return Font.new(self._resolvedFont.Family, weight, self._resolvedFont.Style)
+end
+
+function Modern:SetFontWindow(fontConfig)
+    -- Resolve the font from config (supports Enum.Font, string names, asset IDs, etc.)
+    local resolvedFont = resolve_font_from_config(fontConfig)
+    
+    -- Update the window's config and resolved font
+    self.config.Font = fontConfig
+    self._resolvedFont = resolvedFont
+    
+    -- Apply the resolved font to all text elements in the screen GUI
+    if self.screen_gui and self.screen_gui.Parent then
+        for _, obj in ipairs(self.screen_gui:GetDescendants()) do
+            if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+                local okFont, generatedFont = pcall(function()
+                    return Font.new(resolvedFont.Family, resolvedFont.Weight or Enum.FontWeight.SemiBold, resolvedFont.Style or Enum.FontStyle.Normal)
+                end)
+                if okFont and generatedFont then
+                    pcall(function()
+                        obj.Font = generatedFont
+                    end)
+                end
+            end
+        end
+    end
 end
 
 function Modern:_RegisterRefreshJob(interval, isAliveFn, stepFn)
@@ -6055,7 +6132,7 @@ groupObj.groupTitle = create("TextLabel", {
                 toggleObj._containerSize = 28 * scale_factor
                 
                 toggleObj.labelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    FontFace = groupObj.Library:GetFont(Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(124, 124, 124), Text = toggleConfig.Text or toggleConfig.Name, BackgroundTransparency = 1,
                     Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
                     Size = UDim2.new(0, 195 * scale_factor, 0, 20 * scale_factor),
@@ -6311,7 +6388,7 @@ groupObj.groupTitle = create("TextLabel", {
                 local slider_padding = 10 * scale_factor
                 
                 sliderObj.labelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    FontFace = groupObj.Library:GetFont(Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(118, 118, 130), Text = sliderConfig.Name, BackgroundTransparency = 1,
                     Position = UDim2.new(0, slider_padding, 0, yPosition), TextSize = 14.2 * scale_factor,
                     Size = UDim2.new(1, -valueLabelWidth - slider_padding * 3, 0, 19 * scale_factor),
@@ -6362,7 +6439,7 @@ groupObj.groupTitle = create("TextLabel", {
                 })
                 
                 sliderObj.valueLabelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    FontFace = groupObj.Library:GetFont(Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(184, 184, 194), Text = formatDisplayValue(sliderObj.value),
                     BackgroundTransparency = 1, Position = UDim2.new(1, -valueLabelWidth - slider_padding, 0, yPosition),
                     TextSize = 14.2 * scale_factor, Size = UDim2.new(0, valueLabelWidth, 0, 19 * scale_factor),
@@ -6596,7 +6673,7 @@ groupObj.groupTitle = create("TextLabel", {
                 end
                 
                 buttonObj.labelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    FontFace = groupObj.Library:GetFont(Enum.FontWeight.SemiBold),
                     TextColor3 = buttonObj.isLocked and Color3.fromRGB(46, 46, 46) or Color3.fromRGB(120, 120, 120),
                     Text = buttonConfig.Name .. (buttonObj.isLocked and " (locked)" or ""), BackgroundTransparency = 1,
                     Position = UDim2.new(0, textXPos * scale_factor, 0, 0), TextSize = 14 * scale_factor,
@@ -6765,7 +6842,7 @@ groupObj.groupTitle = create("TextLabel", {
                 end
                 
                 keybindObj.labelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    FontFace = groupObj.Library:GetFont(Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(124, 124, 124), Text = keybindConfig.Name, BackgroundTransparency = 1,
                     Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
                     Size = UDim2.new(0, 145 * scale_factor, 0, 20 * scale_factor),
@@ -6798,7 +6875,7 @@ groupObj.groupTitle = create("TextLabel", {
                 })
                 
                 keybindObj.keyLabelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    FontFace = groupObj.Library:GetFont(Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(113, 113, 113), Text = keyText, BackgroundTransparency = 1,
                     Position = UDim2.new(0, 2, 0, 0), TextSize = 12.8 * scale_factor,
                     Size = UDim2.new(1, -24 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
@@ -6989,7 +7066,7 @@ groupObj.groupTitle = create("TextLabel", {
                 end
                 
                 keybindToggleObj.labelText = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    FontFace = groupObj.Library:GetFont(Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(124, 124, 124), Text = keybindToggleConfig.Name, BackgroundTransparency = 1,
                     Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
                     Size = UDim2.new(0, 115 * scale_factor, 0, 20 * scale_factor),
