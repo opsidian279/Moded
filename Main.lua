@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.3 | By nexahub
+-- Code Lama | Version 1.0.4 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -1225,6 +1225,233 @@ function Modern:SetFontWindow(fontConfig)
                 end
             end
         end
+    end
+end
+
+function Modern:AddTweaksToggle(config)
+    config = config or {}
+    config.Name = config.Name or config.Text or "Toggle"
+    config.Default = config.Default or false
+    config.Callback = config.Callback or function() end
+    
+    -- Add to UI Tweaks panel
+    if self.settings_panel then
+        local scale_factor = self._cachedViewportWidth / 1280
+        local rowY = self.settings_panel.Size.Y.Offset + 10 * scale_factor
+        
+        local rowFrame = create("Frame", {
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 10, 0, rowY),
+            Size = UDim2.new(1, -20, 0, 20 * scale_factor),
+            Parent = self.settings_panel
+        })
+        
+        create("TextLabel", {
+            FontFace = self:GetFont(Enum.FontWeight.SemiBold),
+            Text = config.Name,
+            TextColor3 = Color3.fromRGB(150, 150, 150),
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -46 * scale_factor, 1, 0),
+            TextSize = 12 * scale_factor,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = rowFrame
+        })
+        
+        local switchFrame = create("Frame", {
+            BackgroundColor3 = config.Default and self.config.AccentColor or Color3.fromRGB(33, 33, 33),
+            Position = UDim2.new(1, -34 * scale_factor, 0.5, -8 * scale_factor),
+            Size = UDim2.new(0, 34 * scale_factor, 0, 16 * scale_factor),
+            Parent = rowFrame
+        })
+        create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = switchFrame})
+        
+        local knob = create("Frame", {
+            BackgroundColor3 = config.Default and Color3.new(1, 1, 1) or Color3.fromRGB(95, 95, 95),
+            Position = config.Default and UDim2.new(0.5, 0, 0.5, -6 * scale_factor) or UDim2.new(0, 2 * scale_factor, 0.5, -6 * scale_factor),
+            Size = UDim2.new(0, 12 * scale_factor, 0, 12 * scale_factor),
+            Parent = switchFrame
+        })
+        create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = knob})
+        
+        local state = config.Default
+        local function setState(nextState)
+            state = nextState == true
+            tween_to(switchFrame, {BackgroundColor3 = state and self.config.AccentColor or Color3.fromRGB(33, 33, 33)}, 0.16)
+            tween_to(knob, {
+                Position = state and UDim2.new(0.5, 0, 0.5, -6 * scale_factor) or UDim2.new(0, 2 * scale_factor, 0.5, -6 * scale_factor),
+                BackgroundColor3 = state and Color3.new(1, 1, 1) or Color3.fromRGB(95, 95, 95)
+            }, 0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            config.Callback(state)
+        end
+        
+        local toggleButton = create("TextButton", {
+            Text = "",
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Parent = rowFrame
+        })
+        toggleButton.MouseButton1Click:Connect(function()
+            setState(not state)
+        end)
+        
+        -- Update panel height
+        self.settings_panel.Size = UDim2.new(0, self.settings_panel.Size.X.Offset, 0, rowY + 30 * scale_factor)
+        
+        return {
+            Set = setState,
+            Get = function() return state end
+        }
+    end
+end
+
+function Modern:AddTweaksButton(config)
+    config = config or {}
+    config.Name = config.Name or config.Text or "Button"
+    config.Callback = config.Callback or function() end
+    
+    -- Add to UI Tweaks panel
+    if self.settings_panel then
+        local scale_factor = self._cachedViewportWidth / 1280
+        local rowY = self.settings_panel.Size.Y.Offset + 10 * scale_factor
+        
+        local buttonFrame = create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+            Position = UDim2.new(0, 10, 0, rowY),
+            Size = UDim2.new(1, -20, 0, 28 * scale_factor),
+            Parent = self.settings_panel
+        })
+        create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = buttonFrame})
+        
+        create("UIStroke", {
+            Color = Color3.fromRGB(48, 48, 48),
+            Parent = buttonFrame
+        })
+        
+        create("UIGradient", {
+            Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150,150,150)), ColorSequenceKeypoint.new(1, Color3.new(1,1,1))}),
+            Rotation = 260,
+            Parent = buttonFrame.UIStroke
+        })
+        
+        local buttonLabel = create("TextLabel", {
+            FontFace = self:GetFont(Enum.FontWeight.SemiBold),
+            Text = config.Name,
+            TextColor3 = Color3.fromRGB(120, 120, 120),
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -10, 1, 0),
+            Position = UDim2.new(0, 5, 0, 0),
+            TextSize = 14 * scale_factor,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = buttonFrame
+        })
+        
+        local buttonClick = create("TextButton", {
+            Text = "",
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Parent = buttonFrame
+        })
+        
+        buttonClick.MouseButton1Click:Connect(function()
+            config.Callback()
+        end)
+        
+        buttonClick.MouseEnter:Connect(function()
+            tween_to(buttonFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2)
+        end)
+        
+        buttonClick.MouseLeave:Connect(function()
+            tween_to(buttonFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+        end)
+        
+        -- Update panel height
+        self.settings_panel.Size = UDim2.new(0, self.settings_panel.Size.X.Offset, 0, rowY + 38 * scale_factor)
+        
+        return buttonFrame
+    end
+end
+
+function Modern:AddTweaksInput(config)
+    config = config or {}
+    config.Name = config.Name or config.Text or "Input"
+    config.Placeholder = config.Placeholder or "Enter text..."
+    config.Default = config.Default or ""
+    config.Callback = config.Callback or function() end
+    config.Finished = config.Finished == true
+    
+    -- Add to UI Tweaks panel
+    if self.settings_panel then
+        local scale_factor = self._cachedViewportWidth / 1280
+        local rowY = self.settings_panel.Size.Y.Offset + 10 * scale_factor
+        
+        -- Label
+        create("TextLabel", {
+            FontFace = self:GetFont(Enum.FontWeight.SemiBold),
+            Text = config.Name,
+            TextColor3 = Color3.fromRGB(150, 150, 150),
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 10, 0, rowY),
+            Size = UDim2.new(1, -20, 0, 20 * scale_factor),
+            TextSize = 12 * scale_factor,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = self.settings_panel
+        })
+        
+        rowY = rowY + 20 * scale_factor
+        
+        -- Input frame
+        local inputFrame = create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+            Position = UDim2.new(0, 10, 0, rowY),
+            Size = UDim2.new(1, -20, 0, 28 * scale_factor),
+            Parent = self.settings_panel
+        })
+        create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = inputFrame})
+        create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = inputFrame})
+        
+        local textBox = create("TextBox", {
+            FontFace = self:GetFont(Enum.FontWeight.SemiBold),
+            PlaceholderText = config.Placeholder,
+            PlaceholderColor3 = Color3.fromRGB(80, 80, 80),
+            Text = config.Default,
+            TextColor3 = Color3.fromRGB(200, 200, 200),
+            TextSize = 13.8 * scale_factor,
+            BackgroundTransparency = 1,
+            ClearTextOnFocus = false,
+            Position = UDim2.new(0, 8, 0, 0),
+            Size = UDim2.new(1, -16, 1, 0),
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = inputFrame
+        })
+        
+        textBox.Focused:Connect(function()
+            tween_to(inputFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2)
+        end)
+        
+        textBox.FocusLost:Connect(function(enterPressed)
+            tween_to(inputFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+            local value = textBox.Text
+            if config.Finished then
+                if enterPressed then
+                    config.Callback(value, enterPressed)
+                end
+            else
+                config.Callback(value, enterPressed)
+            end
+        end)
+        
+        -- Update panel height
+        self.settings_panel.Size = UDim2.new(0, self.settings_panel.Size.X.Offset, 0, rowY + 38 * scale_factor)
+        
+        return {
+            Set = function(text)
+                textBox.Text = tostring(text or "")
+            end,
+            Get = function()
+                return textBox.Text
+            end,
+            Instance = textBox
+        }
     end
 end
 
@@ -3508,348 +3735,6 @@ function Modern:LoadConfig(fileName)
     self._isApplyingConfig = false
 
     return true, path
-end
-
-function Modern:CreateLoading(loadingConfig)
-    if self._activeLoading then
-        warn("Loading UI already exists, you cannot create multiple Loading UIs.")
-        return self._activeLoading
-    end
-
-    loadingConfig = loadingConfig or {}
-    loadingConfig.Title = loadingConfig.Title or "Loading"
-    loadingConfig.Message = loadingConfig.Message or ""
-    loadingConfig.Description = loadingConfig.Description or ""
-    loadingConfig.CurrentStep = tonumber(loadingConfig.CurrentStep) or 0
-    loadingConfig.TotalSteps = tonumber(loadingConfig.TotalSteps) or 0
-    loadingConfig.ShowProgress = loadingConfig.ShowProgress ~= false
-    loadingConfig.LoadingIconTweenTime = tonumber(loadingConfig.LoadingIconTweenTime) or 1.1
-    loadingConfig.WindowWidth = tonumber(loadingConfig.WindowWidth) or 380
-    loadingConfig.WindowHeight = tonumber(loadingConfig.WindowHeight) or 280
-    loadingConfig.ShowGameImage = loadingConfig.ShowGameImage ~= false
-    loadingConfig.ShowUserImage = loadingConfig.ShowUserImage ~= false
-    loadingConfig.Icon = get_icon(loadingConfig.Icon, default_icons.settings)
-
-    local screenGui = create("ScreenGui", {
-        Name = "ModernLoading",
-        DisplayOrder = 999,
-        ResetOnSpawn = false,
-    })
-    if syn then
-        syn.protect_gui(screenGui)
-        screenGui.Parent = core_gui
-    elseif gethui then
-        screenGui.Parent = core_gui
-    else
-        screenGui.Parent = core_gui
-    end
-
-    local mainFrame = create("Frame", {
-        Name = "Main",
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(loadingConfig.WindowWidth, loadingConfig.WindowHeight),
-        ClipsDescendants = true,
-        Parent = screenGui,
-    })
-    create("UICorner", {CornerRadius = UDim.new(0, 14), Parent = mainFrame})
-    create("UIStroke", {Color = Color3.fromRGB(60, 60, 60), Thickness = 1, Parent = mainFrame})
-
-    local titleLabel = create("TextLabel", {
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 18, 0, 14),
-        Size = UDim2.new(1, -36, 0, 24),
-        Text = loadingConfig.Title,
-        TextSize = 18,
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Enum.Font.GothamSemibold,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = mainFrame,
-    })
-
-    local function safeGetPlaceThumbnail(placeId)
-        if not thumbnail_service or not thumbnail_service.GetThumbnailAsync then
-            return ""
-        end
-        local ok, image = pcall(function()
-            return thumbnail_service:GetThumbnailAsync(placeId, Enum.ThumbnailType.PlaceIcon, Enum.ThumbnailSize.Size150x150)
-        end)
-        if ok and type(image) == "string" and image ~= "" then
-            return image
-        end
-        return ""
-    end
-
-    local function safeGetUserThumbnail(userId)
-        if not players or type(players.GetUserThumbnailAsync) ~= "function" then
-            return ""
-        end
-        local ok, image = pcall(function()
-            return players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
-        end)
-        if ok and type(image) == "string" and image ~= "" then
-            return image
-        end
-        return ""
-    end
-
-    local function safeGetGameName(placeId)
-        if not marketplace_service or type(marketplace_service.GetProductInfo) ~= "function" then
-            return "Game"
-        end
-        local ok, info = pcall(function()
-            return marketplace_service:GetProductInfo(placeId, Enum.InfoType.Asset)
-        end)
-        if ok and type(info) == "table" and type(info.Name) == "string" then
-            return info.Name
-        end
-        return "Game"
-    end
-
-    local gameThumbnailImage = ""
-    local gameName = "Game"
-    if loadingConfig.ShowGameImage then
-        gameThumbnailImage = safeGetPlaceThumbnail(game.PlaceId)
-        gameName = safeGetGameName(game.PlaceId)
-    end
-
-    local userThumbnailImage = ""
-    local userName = "Player"
-    if loadingConfig.ShowUserImage and local_player then
-        userName = local_player.DisplayName ~= "" and local_player.DisplayName or local_player.Name
-        userThumbnailImage = safeGetUserThumbnail(local_player.UserId)
-    end
-
-    local infoRow = create("Frame", {
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 18, 0, 44),
-        Size = UDim2.new(1, -36, 0, 70),
-        Parent = mainFrame,
-    })
-    create("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal,
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 12),
-        Parent = infoRow,
-    })
-    create("UIPadding", {
-        PaddingLeft = UDim.new(0, 0),
-        PaddingTop = UDim.new(0, 4),
-        PaddingBottom = UDim.new(0, 4),
-        Parent = infoRow,
-    })
-
-    local function createBadge(labelText, detailText, image, fallback)
-        local badge = create("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, 148, 1, 0),
-            Parent = infoRow,
-        })
-        local imageLabel = create("ImageLabel", {
-            BackgroundColor3 = Color3.fromRGB(28, 28, 28),
-            BorderSizePixel = 0,
-            Position = UDim2.new(0, 0, 0.5, -26),
-            Size = UDim2.new(0, 52, 0, 52),
-            Image = (image ~= "" and image) or fallback,
-            ScaleType = Enum.ScaleType.Crop,
-            Parent = badge,
-        })
-        create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = imageLabel})
-
-        create("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 60, 0, 6),
-            Size = UDim2.new(1, -60, 0, 20),
-            Text = labelText,
-            TextSize = 12,
-            TextColor3 = Color3.fromRGB(220, 220, 220),
-            Font = Enum.Font.GothamSemibold,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = badge,
-        })
-
-        create("TextLabel", {
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 60, 0, 30),
-            Size = UDim2.new(1, -60, 0, 30),
-            Text = detailText,
-            TextSize = 11,
-            TextColor3 = Color3.fromRGB(170, 170, 170),
-            Font = Enum.Font.GothamSemibold,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextWrapped = true,
-            Parent = badge,
-        })
-    end
-
-    if loadingConfig.ShowGameImage then
-        createBadge("Game", gameName, gameThumbnailImage, default_icons.section)
-    end
-    if loadingConfig.ShowUserImage and local_player then
-        createBadge("Player", userName, userThumbnailImage, default_icons.section)
-    end
-
-    local iconFrame = create("Frame", {
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0.5, -32, 0, 122),
-        Size = UDim2.new(0, 64, 0, 64),
-        Parent = mainFrame,
-    })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = iconFrame})
-
-    local loadingIcon = create("ImageLabel", {
-        BackgroundTransparency = 1,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.new(1, 1, 1, 1),
-        Image = loadingConfig.Icon,
-        ImageColor3 = Color3.fromRGB(180, 180, 180),
-        Parent = iconFrame,
-    })
-
-    local iconTween = tween_service:Create(
-        loadingIcon,
-        TweenInfo.new(loadingConfig.LoadingIconTweenTime, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1),
-        {Rotation = 360}
-    )
-    iconTween:Play()
-
-    local messageLabel = create("TextLabel", {
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 18, 0, 126),
-        Size = UDim2.new(1, -36, 0, 24),
-        Text = loadingConfig.Message,
-        TextSize = 15,
-        TextColor3 = Color3.fromRGB(215, 215, 215),
-        Font = Enum.Font.GothamSemibold,
-        TextXAlignment = Enum.TextXAlignment.Center,
-        Parent = mainFrame,
-    })
-
-    local descriptionLabel = create("TextLabel", {
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 18, 0, 148),
-        Size = UDim2.new(1, -36, 0, 36),
-        Text = loadingConfig.Description,
-        TextSize = 13,
-        TextColor3 = Color3.fromRGB(170, 170, 170),
-        Font = Enum.Font.GothamSemibold,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Center,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        Parent = mainFrame,
-    })
-
-    local progressBar = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(38, 38, 38),
-        Position = UDim2.new(0, 18, 1, -42),
-        Size = UDim2.new(1, -36, 0, 18),
-        Parent = mainFrame,
-    })
-    create("UICorner", {CornerRadius = UDim.new(0, 9), Parent = progressBar})
-
-    local progressFill = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(86, 135, 255),
-        Size = UDim2.new(0, 0, 1, 0),
-        Parent = progressBar,
-    })
-    create("UICorner", {CornerRadius = UDim.new(0, 9), Parent = progressFill})
-
-    local progressLabel = create("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0),
-        Text = "",
-        TextSize = 12,
-        TextColor3 = Color3.fromRGB(240, 240, 240),
-        Font = Enum.Font.GothamSemibold,
-        Parent = progressBar,
-    })
-
-    local function updateProgress()
-        local total = math.max(loadingConfig.TotalSteps, 1)
-        local fraction = math.clamp(loadingConfig.CurrentStep / total, 0, 1)
-        progressFill.Size = UDim2.new(fraction, 0, 1, 0)
-        if loadingConfig.ShowProgress then
-            progressLabel.Text = string.format("%d / %d", loadingConfig.CurrentStep, loadingConfig.TotalSteps)
-        else
-            progressLabel.Text = ""
-        end
-    end
-
-    updateProgress()
-
-    local loadingObj = {
-        ScreenGui = screenGui,
-        MainFrame = mainFrame,
-        MessageLabel = messageLabel,
-        DescriptionLabel = descriptionLabel,
-        ProgressFill = progressFill,
-        ProgressLabel = progressLabel,
-        _IconTween = iconTween,
-    }
-
-    function loadingObj:SetTitle(title)
-        if title and type(title) == "string" then
-            titleLabel.Text = title
-        end
-    end
-
-    function loadingObj:SetMessage(message)
-        loadingConfig.Message = tostring(message or "")
-        messageLabel.Text = loadingConfig.Message
-    end
-
-    function loadingObj:SetDescription(description)
-        loadingConfig.Description = tostring(description or "")
-        descriptionLabel.Text = loadingConfig.Description
-    end
-
-    function loadingObj:SetCurrentStep(step)
-        loadingConfig.CurrentStep = tonumber(step) or 0
-        updateProgress()
-    end
-
-    function loadingObj:SetTotalSteps(total)
-        loadingConfig.TotalSteps = tonumber(total) or 0
-        updateProgress()
-    end
-
-    function loadingObj:SetProgress(value)
-        local percent = math.clamp(tonumber(value) or 0, 0, 1)
-        loadingConfig.CurrentStep = math.floor(percent * (loadingConfig.TotalSteps > 0 and loadingConfig.TotalSteps or 1))
-        progressFill.Size = UDim2.new(percent, 0, 1, 0)
-        if loadingConfig.ShowProgress then
-            progressLabel.Text = string.format("%d / %d", loadingConfig.CurrentStep, loadingConfig.TotalSteps)
-        end
-    end
-
-    function loadingObj:Destroy()
-        if self._IconTween then
-            self._IconTween:Cancel()
-        end
-        if screenGui then
-            screenGui:Destroy()
-        end
-        if self._onDestroyed then
-            self._onDestroyed()
-        end
-    end
-
-    function loadingObj:SetOnDestroyed(callback)
-        self._onDestroyed = callback
-    end
-
-    self._activeLoading = loadingObj
-    return loadingObj
-end
-
-function Modern:DestroyLoading()
-    if self._activeLoading then
-        self._activeLoading:Destroy()
-        self._activeLoading = nil
-    end
 end
 
 function Modern:CreateConfigFile(fileName)
@@ -6799,6 +6684,331 @@ groupObj.groupTitle = create("TextLabel", {
                 update_group_size()
                 table.insert(groupObj.elements, buttonObj)
                 return buttonObj
+            end
+
+            function groupObj:AddViewport(viewportConfig)
+                viewportConfig = viewportConfig or {}
+                viewportConfig.Name = viewportConfig.Name or viewportConfig.Text or "Viewport"
+                viewportConfig.Object = viewportConfig.Object or Instance.new("Part")
+                viewportConfig.Camera = viewportConfig.Camera or Instance.new("Camera")
+                viewportConfig.Interactive = viewportConfig.Interactive == true
+                viewportConfig.AutoFocus = viewportConfig.AutoFocus ~= false
+                viewportConfig.Height = math.max(80 * scale_factor, tonumber(viewportConfig.Height) or 200 * scale_factor)
+                addSearchTerm(viewportConfig.Name)
+
+                local viewportObj = {}
+                viewportObj.isLocked = false
+                viewportObj.Object = viewportConfig.Object
+                viewportObj.Camera = viewportConfig.Camera
+                viewportObj.Interactive = viewportConfig.Interactive
+                viewportObj.AutoFocus = viewportConfig.AutoFocus
+                local yPosition = groupObj.element_y
+                viewportObj._yPosition = yPosition
+                viewportObj._containerSize = viewportConfig.Height + 26 * scale_factor
+
+                viewportObj.labelText = create("TextLabel", {
+                    FontFace = groupObj.Library:GetFont(Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = viewportConfig.Name,
+                    BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, yPosition),
+                    TextSize = 14.6 * scale_factor, Size = UDim2.new(1, -20, 0, 18 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    Parent = groupObj.mainFrame
+                })
+                viewportObj.Instance = viewportObj.labelText
+
+                viewportObj.viewportFrame = create("ViewportFrame", {
+                    BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 10, 0, yPosition + 22 * scale_factor),
+                    Size = UDim2.new(1, -20, 0, viewportConfig.Height),
+                    CurrentCamera = viewportObj.Camera,
+                    Active = viewportObj.Interactive,
+                    Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = viewportObj.viewportFrame})
+                create("UIStroke", {Color = Color3.fromRGB(35, 35, 35), Parent = viewportObj.viewportFrame})
+
+                local function normalizePartObject(object)
+                    if not object or typeof(object) ~= "Instance" then
+                        return nil
+                    end
+                    local target = object
+                    if target.Parent then
+                        local ok, cloned = pcall(function()
+                            return target:Clone()
+                        end)
+                        if ok and cloned then
+                            target = cloned
+                        end
+                    end
+                    if target.Parent == nil then
+                        target.Parent = viewportObj.viewportFrame
+                    end
+                    if target:IsA("BasePart") then
+                        target.Anchored = true
+                        target.CanCollide = false
+                    end
+                    for _, child in ipairs(target:GetDescendants()) do
+                        if child:IsA("BasePart") then
+                            child.Anchored = true
+                            child.CanCollide = false
+                        end
+                    end
+                    return target
+                end
+
+                local function resolveCamera(camera)
+                    if not camera or typeof(camera) ~= "Instance" or not camera:IsA("Camera") then
+                        camera = Instance.new("Camera")
+                    end
+                    if camera.Parent == nil then
+                        camera.Parent = viewportObj.viewportFrame
+                    end
+                    return camera
+                end
+
+                viewportObj._renderObject = normalizePartObject(viewportObj.Object)
+                viewportObj.Camera = resolveCamera(viewportObj.Camera)
+                viewportObj.viewportFrame.CurrentCamera = viewportObj.Camera
+
+                local function focusViewport()
+                    if not viewportObj.AutoFocus or not viewportObj._renderObject or not viewportObj.Camera then
+                        return
+                    end
+                    local targetCFrame, targetPosition
+                    if viewportObj._renderObject:IsA("Model") then
+                        local ok, cf, size = pcall(function()
+                            return viewportObj._renderObject:GetBoundingBox()
+                        end)
+                        if ok and cf and typeof(cf) == "CFrame" then
+                            targetPosition = cf.Position
+                            local distance = math.max(4, size.Magnitude * 0.8)
+                            viewportObj.Camera.CFrame = CFrame.new(targetPosition + Vector3.new(0, distance * 0.5, distance), targetPosition)
+                            return
+                        end
+                    elseif viewportObj._renderObject:IsA("BasePart") then
+                        targetPosition = viewportObj._renderObject.Position
+                        local distance = math.max(4, viewportObj._renderObject.Size.Magnitude * 0.85)
+                        viewportObj.Camera.CFrame = CFrame.new(targetPosition + Vector3.new(0, distance * 0.5, distance), targetPosition)
+                        return
+                    end
+                end
+
+                if viewportObj.AutoFocus then
+                    viewportObj._focusConnection = run_service.Heartbeat:Connect(focusViewport)
+                    groupObj.Library:_TrackConnection(viewportObj._focusConnection)
+                    focusViewport()
+                end
+
+                function viewportObj:SetObject(object)
+                    if object and typeof(object) == "Instance" then
+                        viewportObj.Object = object
+                        if viewportObj._renderObject and viewportObj._renderObject.Parent == viewportObj.viewportFrame then
+                            viewportObj._renderObject:Destroy()
+                        end
+                        viewportObj._renderObject = normalizePartObject(object)
+                        focusViewport()
+                    end
+                end
+
+                function viewportObj:SetCamera(camera)
+                    viewportObj.Camera = resolveCamera(camera)
+                    viewportObj.viewportFrame.CurrentCamera = viewportObj.Camera
+                    focusViewport()
+                end
+
+                function viewportObj:SetInteractive(interactive)
+                    viewportObj.Interactive = interactive == true
+                    if viewportObj.viewportFrame then
+                        viewportObj.viewportFrame.Active = viewportObj.Interactive
+                    end
+                end
+
+                function viewportObj:SetAutoFocus(autoFocus)
+                    viewportObj.AutoFocus = autoFocus ~= false
+                    if viewportObj.AutoFocus then
+                        if not viewportObj._focusConnection then
+                            viewportObj._focusConnection = run_service.Heartbeat:Connect(focusViewport)
+                            groupObj.Library:_TrackConnection(viewportObj._focusConnection)
+                        end
+                        focusViewport()
+                    elseif viewportObj._focusConnection then
+                        viewportObj._focusConnection:Disconnect()
+                        viewportObj._focusConnection = nil
+                    end
+                end
+
+                function viewportObj:SetHeight(height)
+                    viewportConfig.Height = math.max(80 * scale_factor, tonumber(height) or viewportConfig.Height)
+                    viewportObj._containerSize = viewportConfig.Height + 26 * scale_factor
+                    if viewportObj.viewportFrame then
+                        viewportObj.viewportFrame.Size = UDim2.new(1, -20, 0, viewportConfig.Height)
+                    end
+                    groupObj.element_y = yPosition + viewportObj._containerSize
+                    update_group_size()
+                end
+
+                function viewportObj:Refresh()
+                    focusViewport()
+                end
+
+                groupObj.element_y = groupObj.element_y + viewportObj._containerSize
+                update_group_size()
+                table.insert(groupObj.elements, viewportObj)
+                return viewportObj
+            end
+
+            function groupObj:AddVideo(videoConfig)
+                videoConfig = videoConfig or {}
+                videoConfig.Name = videoConfig.Name or videoConfig.Text or "Video"
+                videoConfig.Video = videoConfig.Video or videoConfig.VideoId or ""
+                videoConfig.Looped = videoConfig.Looped == true
+                videoConfig.Playing = videoConfig.Playing ~= false
+                videoConfig.Volume = tonumber(videoConfig.Volume) or 1
+                videoConfig.Height = math.max(80 * scale_factor, tonumber(videoConfig.Height) or 200 * scale_factor)
+                addSearchTerm(videoConfig.Name)
+
+                local function resolve_video_url(source)
+                    local str = tostring(source or "")
+                    if str == "" then
+                        return ""
+                    end
+                    if str:match("^rbxassetid://") or str:match("^http[s]?://") then
+                        return str
+                    end
+                    if str:match("^%d+$") then
+                        return "rbxassetid://" .. str
+                    end
+                    return str
+                end
+
+                local videoObj = {}
+                videoObj.isLocked = false
+                videoObj.Video = resolve_video_url(videoConfig.Video)
+                videoObj.Looped = videoConfig.Looped
+                videoObj.Playing = videoConfig.Playing
+                videoObj.Volume = math.clamp(videoConfig.Volume, 0, 10)
+                local yPosition = groupObj.element_y
+                videoObj._yPosition = yPosition
+                videoObj._containerSize = videoConfig.Height + 26 * scale_factor
+
+                videoObj.labelText = create("TextLabel", {
+                    FontFace = groupObj.Library:GetFont(Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = videoConfig.Name,
+                    BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, yPosition),
+                    TextSize = 14.6 * scale_factor, Size = UDim2.new(1, -20, 0, 18 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                    Parent = groupObj.mainFrame
+                })
+                videoObj.Instance = videoObj.labelText
+
+                videoObj.videoFrame = create("VideoFrame", {
+                    BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 10, 0, yPosition + 22 * scale_factor),
+                    Size = UDim2.new(1, -20, 0, videoConfig.Height),
+                    Video = videoObj.Video,
+                    Loop = videoObj.Looped,
+                    Playing = videoObj.Playing,
+                    Volume = videoObj.Volume,
+                    Active = true,
+                    Parent = groupObj.mainFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = videoObj.videoFrame})
+                create("UIStroke", {Color = Color3.fromRGB(35, 35, 35), Parent = videoObj.videoFrame})
+
+                function videoObj:SetVideo(source)
+                    local resolved = resolve_video_url(source)
+                    videoObj.Video = resolved
+                    if videoObj.videoFrame then
+                        pcall(function()
+                            videoObj.videoFrame.Video = resolved
+                        end)
+                    end
+                end
+
+                function videoObj:SetLooped(looped)
+                    videoObj.Looped = looped == true
+                    if videoObj.videoFrame then
+                        pcall(function()
+                            videoObj.videoFrame.Loop = videoObj.Looped
+                        end)
+                    end
+                end
+
+                function videoObj:SetPlaying(playing)
+                    videoObj.Playing = playing ~= false
+                    if videoObj.videoFrame then
+                        pcall(function()
+                            videoObj.videoFrame.Playing = videoObj.Playing
+                        end)
+                    end
+                end
+
+                function videoObj:SetVolume(volume)
+                    videoObj.Volume = math.clamp(tonumber(volume) or videoObj.Volume, 0, 10)
+                    if videoObj.videoFrame then
+                        pcall(function()
+                            videoObj.videoFrame.Volume = videoObj.Volume
+                        end)
+                    end
+                end
+
+                function videoObj:Play()
+                    videoObj:SetPlaying(true)
+                end
+
+                function videoObj:Pause()
+                    videoObj:SetPlaying(false)
+                end
+
+                function videoObj:Stop()
+                    videoObj:SetPlaying(false)
+                    if videoObj.videoFrame then
+                        pcall(function()
+                            videoObj.videoFrame.TimePosition = 0
+                        end)
+                    end
+                end
+
+                function videoObj:GetPlaying()
+                    return videoObj.Playing
+                end
+
+                function videoObj:GetVolume()
+                    return videoObj.Volume
+                end
+
+                function videoObj:GetVideo()
+                    return videoObj.Video
+                end
+
+                function videoObj:GetLooped()
+                    return videoObj.Looped
+                end
+
+                function videoObj:SetHeight(height)
+                    videoConfig.Height = math.max(80 * scale_factor, tonumber(height) or videoConfig.Height)
+                    videoObj._containerSize = videoConfig.Height + 26 * scale_factor
+                    if videoObj.videoFrame then
+                        videoObj.videoFrame.Size = UDim2.new(1, -20, 0, videoConfig.Height)
+                    end
+                    groupObj.element_y = yPosition + videoObj._containerSize
+                    update_group_size()
+                end
+
+                function videoObj:Refresh()
+                    if videoObj.videoFrame then
+                        pcall(function()
+                            videoObj.videoFrame:Play()
+                        end)
+                    end
+                end
+
+                groupObj.element_y = groupObj.element_y + videoObj._containerSize
+                update_group_size()
+                table.insert(groupObj.elements, videoObj)
+                return videoObj
             end
 
             function groupObj:AddKeybind(keybindConfig)
