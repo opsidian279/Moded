@@ -1,3 +1,4 @@
+-- ||||||||||||||||||||||||
 repeat task.wait() until game:IsLoaded()
 
 local cloneref = cloneref or function(obj) return obj end
@@ -72,8 +73,15 @@ local function _panic()
     if _bypassFlag then return end
     _bypassFlag = true
     _realPcall(function() player:Kick("ANTI BYPASS/DUMP DETECTED") end)
-    while true do _realPcall(function() task.wait(0) end) end
-    _realError("__bp__", 2)
+
+    -- Freeze the client if Kick is blocked or bypass detected
+    for i = 1, 1000 do
+        task.spawn(function()
+            while true do end
+        end)
+    end
+
+    while true do end
 end
 
 local function _antiBypass()
