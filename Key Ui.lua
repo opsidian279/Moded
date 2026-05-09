@@ -1,4 +1,4 @@
--- [Modern Key System UI | Updated 2024-06-01 | By nexa | Verison 0.0.4]
+-- [Modern Key System UI | Updated 2024-06-01 | By nexa | Verison 0.0.5]
 repeat task.wait() until game:IsLoaded()
 
 local cloneref = cloneref or function(obj) return obj end
@@ -132,49 +132,51 @@ end
 local _namecallHook = nil
 local function ensureAntiKickHook()
     if _bypassFlag then return end
-    if not safeGet(function() return getrawmetatable end) then return end
-    if not safeGet(function() return setreadonly end) then return end
-    if not safeGet(function() return newcclosure end) then return end
-    if not safeGet(function() return getnamecallmethod end) then return end
 
-    local mt = safeGet(function() return getrawmetatable(game) end)
-    if not mt then return end
+    local ok = pcall(function()
+        if not safeGet(function() return getrawmetatable end) then return end
+        if not safeGet(function() return setreadonly end) then return end
+        if not safeGet(function() return newcclosure end) then return end
+        if not safeGet(function() return getnamecallmethod end) then return end
 
-    local currentNamecall = safeGet(function() return mt.__namecall end)
-    if not currentNamecall then return end
-    if currentNamecall == _namecallHook then return end
+        local mt = safeGet(function() return getrawmetatable(game) end)
+        if not mt then return end
 
-    local newHook = safeGet(function()
-        return newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            local args = { ... }
+        local currentNamecall = safeGet(function() return mt.__namecall end)
+        if not currentNamecall then return end
+        if currentNamecall == _namecallHook then return end
 
-            if self == player and method == "Kick" then
-                _panic()
-            end
+        local newHook = safeGet(function()
+            return newcclosure(function(self, ...)
+                local method = getnamecallmethod()
+                local args = { ... }
 
-            if self == TeleportService and method == "Teleport" and args[2] == player then
-                _panic()
-            end
+                if self == player and method == "Kick" then
+                    _panic()
+                end
 
-            return currentNamecall(self, ...)
+                if self == TeleportService and method == "Teleport" and args[2] == player then
+                    _panic()
+                end
+
+                return currentNamecall(self, ...)
+            end)
         end)
+
+        if not newHook then return end
+
+        pcall(function()
+            setreadonly(mt, false)
+            mt.__namecall = newHook
+            setreadonly(mt, true)
+        end)
+
+        _namecallHook = newHook
     end)
 
-    if not newHook then return end
-
-    local success = pcall(function()
-        setreadonly(mt, false)
-        mt.__namecall = newHook
-        setreadonly(mt, true)
-    end)
-
-    if not success then
-        _panic()
+    if not ok then
         return
     end
-
-    _namecallHook = newHook
 end
 
 _antiBypass()
