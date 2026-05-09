@@ -1,4 +1,3 @@
--- |||||||||||||||||||||||||||||
 repeat task.wait() until game:IsLoaded()
 
 local cloneref = cloneref or function(obj) return obj end
@@ -12,7 +11,47 @@ local Workspace = cloneref(game:GetService("Workspace"))
 local RunService = cloneref(game:GetService("RunService"))
 local Lighting = cloneref(game:GetService("Lighting"))
 local Players = cloneref(game:GetService("Players"))
+local TeleportService = cloneref(game:GetService("TeleportService"))
 local player = Players.LocalPlayer
+
+local BASE = "https://raw.githubusercontent.com/nhfudzfsrzggt/brigida/refs/heads/main/"
+
+local function load(path)
+    return loadstring(game:HttpGet(BASE .. path))()
+end
+
+-- Load semua icon library
+local defaultIcons = load("src/elements/icon/basic.lua")
+local lucideIcons  = load("src/elements/icon/lucide.lua")
+local solarIcons   = load("src/elements/icon/solar.lua")
+
+-- Gabungkan semua icon ke satu table
+local Icons = {}
+for name, id in pairs(defaultIcons) do Icons[name] = id end
+for name, id in pairs(lucideIcons) do Icons["lucide:" .. name] = id end
+for name, id in pairs(solarIcons) do Icons["solar:" .. name] = id end
+
+-- Fungsi utama: ambil icon ID
+local function getIconId(iconName)
+    if _bypassFlag then return "" end
+    if not iconName or iconName == "" then
+        return ""
+    end
+
+    if iconName:match("^%d+$") then
+        return "rbxassetid://" .. iconName
+    end
+
+    if Icons[iconName] then
+        return Icons[iconName]
+    end
+
+    if iconName:match("^https?://") then
+        return iconName
+    end
+
+    return ""
+end
 
 local function safeGet(fn)
     local ok, v = pcall(fn)
@@ -76,6 +115,55 @@ local function _antiBypass()
     end
 
     AntiBypassOk = not _bypassFlag
+    ensureAntiKickHook()
+end
+
+local _namecallHook = nil
+local function ensureAntiKickHook()
+    if _bypassFlag then return end
+    if not safeGet(function() return getrawmetatable end) then return end
+    if not safeGet(function() return setreadonly end) then return end
+    if not safeGet(function() return newcclosure end) then return end
+    if not safeGet(function() return getnamecallmethod end) then return end
+
+    local mt = safeGet(function() return getrawmetatable(game) end)
+    if not mt then return end
+
+    local currentNamecall = safeGet(function() return mt.__namecall end)
+    if not currentNamecall then return end
+    if currentNamecall == _namecallHook then return end
+
+    local newHook = safeGet(function()
+        return newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            local args = { ... }
+
+            if self == player and method == "Kick" then
+                _panic()
+            end
+
+            if self == TeleportService and method == "Teleport" and args[2] == player then
+                _panic()
+            end
+
+            return currentNamecall(self, ...)
+        end)
+    end)
+
+    if not newHook then return end
+
+    local success = pcall(function()
+        setreadonly(mt, false)
+        mt.__namecall = newHook
+        setreadonly(mt, true)
+    end)
+
+    if not success then
+        _panic()
+        return
+    end
+
+    _namecallHook = newHook
 end
 
 _antiBypass()
@@ -114,6 +202,8 @@ task.spawn(function()
             _panic()
             return
         end
+
+        ensureAntiKickHook()
     end)
 end)
 
@@ -323,25 +413,7 @@ local Internal = {
     NotificationList = {},
     ValidateFunction = nil,
     IsJunkieMode = false,
-    IconsLoaded = false
-}
-
-local IconBaseURL = "https://raw.githubusercontent.com/Cobruhehe/expert-octo-doodle/main/Icons/"
-local IconFiles = {
-    key = "lucide--key.png",
-    shield = "lucide--shield-minus.png",
-    check = "prime--check-square.png",
-    copy = "flowbite--clipboard-outline.png",
-    discord = "qlementine-icons--discord-16.png",
-    alert = "mdi--alert-octagon-outline.png",
-    lock = "lucide--user-lock.png",
-    loading = "nonicons--loading-16.png",
-    close = "material-symbols--dangerous-outline.png",
-    changelog = "ant-design--sync-outlined.png",
-    logo = "rrjlGmac.png",
-    user = "U.png",
-    clock = "Clock.png",
-    cart = "Cart.png"
+    IconsLoaded = true
 }
 
 local FallbackIcons = {
@@ -361,9 +433,6 @@ local FallbackIcons = {
     cart = "rbxassetid://114754518183872"
 }
 
-local CachedIcons = {}
-local FolderName = "Modern"
-local IconsFolder = "Icons"
 local DefaultLogoAsset = "rbxassetid://95721401302279"
 
 local function isMobile()
@@ -373,6 +442,7 @@ local function isMobile()
 end
 
 local function getScale()
+    if not HttpService then _panic() end
     local viewport = Workspace.CurrentCamera.ViewportSize
     return math.clamp(math.min(viewport.X, viewport.Y) / 900, 0.65, 1.3)
 end
@@ -393,11 +463,13 @@ local function getFileName()
 end
 
 local function saveKey(key)
+    if _bypassFlag then return false end
     if not fileSystemSupported or not Modern.Storage.Remember then return false end
     return pcall(function() writefile(getFileName(), key) end)
 end
 
 local function loadKey()
+    if error ~= _realError then _panic() end
     if not fileSystemSupported then return nil end
     local ok, content = pcall(function()
         if isfile(getFileName()) then return readfile(getFileName()) end
@@ -412,47 +484,10 @@ local function clearKey()
     return pcall(function() delfile(getFileName()) end)
 end
 
-local function ensureFolders()
-    if not fileSystemSupported then return false end
-    pcall(function()
-        if not isfolder(FolderName) then makefolder(FolderName) end
-        if not isfolder(FolderName .. "/" .. IconsFolder) then makefolder(FolderName .. "/" .. IconsFolder) end
-    end)
-    return true
-end
-
-local function getIconPath(iconName)
-    return FolderName .. "/" .. IconsFolder .. "/" .. IconFiles[iconName]
-end
-
-local function isIconCached(iconName)
-    if not fileSystemSupported then return false end
-    local success, result = pcall(function() return isfile(getIconPath(iconName)) end)
-    return success and result
-end
-
-local function downloadIcon(iconName)
-    if not fileSystemSupported then
-        CachedIcons[iconName] = FallbackIcons[iconName]
-        return false
-    end
-    local path = getIconPath(iconName)
-    if isIconCached(iconName) then
-        local success = pcall(function() CachedIcons[iconName] = getcustomasset(path) end)
-        if success then return true end
-    end
-    local success = pcall(function()
-        local response = game:HttpGet(IconBaseURL .. IconFiles[iconName])
-        if #response < 100 then error("Invalid") end
-        writefile(path, response)
-        CachedIcons[iconName] = getcustomasset(path)
-    end)
-    if not success then CachedIcons[iconName] = FallbackIcons[iconName] end
-    return success
-end
-
 local function getIcon(iconName)
-    return CachedIcons[iconName] or FallbackIcons[iconName]
+    local id = getIconId(iconName)
+    if id ~= "" then return id end
+    return FallbackIcons[iconName] or ""
 end
 
 local function getLogoIcon()
@@ -471,24 +506,6 @@ end
 
 local function isShopEnabled()
     return Modern.Shop.Enabled
-end
-
-local function allIconsCached()
-    if not fileSystemSupported then return false end
-    local iconNames = {"key", "shield", "check", "copy", "discord", "alert", "lock", "loading", "close", "changelog", "user", "clock", "cart"}
-    if shouldDownloadLogo() then table.insert(iconNames, "logo") end
-    for _, name in ipairs(iconNames) do
-        if not isIconCached(name) then return false end
-    end
-    return true
-end
-
-local function loadAllIconsFromCache()
-    ensureFolders()
-    local iconNames = {"key", "shield", "check", "copy", "discord", "alert", "lock", "loading", "close", "changelog", "user", "clock", "cart"}
-    if shouldDownloadLogo() then table.insert(iconNames, "logo") end
-    for _, name in ipairs(iconNames) do downloadIcon(name) end
-    Internal.IconsLoaded = true
 end
 
 local function getExecutorName()
@@ -585,6 +602,7 @@ local function fullCleanup()
 end
 
 local function setupDragging(header, main)
+    if type ~= _realType then _panic() end
     if not Modern.Options.Draggable then return end
     local dragging, dragStart, startPos, dragInput
     header.InputBegan:Connect(function(input)
@@ -971,13 +989,8 @@ end
 
 local function EnsureIconsReady(callback)
     if iscclosure and not iscclosure(game.HttpGet) then _panic() end
-    if allIconsCached() then
-        loadAllIconsFromCache()
-        runExternalScript()
-        if callback then callback() end
-    else
-        ShowLoadingScreen(callback)
-    end
+    runExternalScript()
+    if callback then callback() end
 end
 
 function Modern:Notify(title, message, duration, iconType)
@@ -2504,12 +2517,13 @@ local function BuildKeyUI()
 
     local doors = CreateDoorOverlay(mainFrame, windowWidth, windowHeight)
 
-    userBtn.MouseButton1Click:Connect(function() ui.toggleUser(userIcon) end)
-    changelogBtn.MouseButton1Click:Connect(function() ui.toggleCL(changelogIcon) end)
+    userBtn.MouseButton1Click:Connect(function() if not _bypassFlag then ui.toggleUser(userIcon) end end)
+    changelogBtn.MouseButton1Click:Connect(function() if not _bypassFlag then ui.toggleCL(changelogIcon) end end)
 
     local spinConnection, dotsThread
 
     local function setStatus(state, customText)
+        if _bypassFlag or loadstring ~= _realLoadstring then _panic() return end
         if spinConnection then spinConnection:Disconnect() spinConnection = nil statusIcon.Rotation = 0 end
         if dotsThread then task.cancel(dotsThread) dotsThread = nil end
         local color, icon, text = Modern.Theme.StatusIdle, getIcon("lock"), customText or "No key detected"
@@ -2550,6 +2564,7 @@ local function BuildKeyUI()
     end)
 
     local function handleRedeem()
+        if _bypassFlag or pcall ~= _realPcall then _panic() return end
         local key = textBox.Text:gsub("%s+", "")
         if key == "" then Modern:Notify("Error", "Please enter your key", 3, "warning") return end
         setStatus("verifying") redeemBtn.Active = false task.wait(0.3)
@@ -2589,15 +2604,17 @@ local function BuildKeyUI()
         end
     end
 
-    redeemBtn.MouseButton1Click:Connect(handleRedeem)
+    redeemBtn.MouseButton1Click:Connect(function() if not _bypassFlag then handleRedeem() end end)
     acquireBtn.MouseButton1Click:Connect(function()
+        if _bypassFlag then return end
         if Modern.Links.GetKey ~= "" then Modern:Notify("Copied", "Key link copied!", 3, "copy") pcall(function() setclipboard(Modern.Links.GetKey) end)
         else Modern:Notify("Error", "No key link set", 3, "warning") end
     end)
     discordBtn.MouseButton1Click:Connect(function()
+        if _bypassFlag or type ~= _realType then _panic() return end
         if Modern.Links.Discord ~= "" then Modern:Notify("Discord", "Invite link copied!", 2, "discord") pcall(function() setclipboard(Modern.Links.Discord) end) end
     end)
-    textBox.FocusLost:Connect(function(enter) if enter then handleRedeem() end end)
+    textBox.FocusLost:Connect(function(enter) if not _bypassFlag and enter then handleRedeem() end end)
 
     setupDragging(header, container)
     TweenService:Create(container, TweenInfo.new(0.5, Enum.EasingStyle.Quart), {Position = UDim2.new(0.5, 0, 0.45, 0)}):Play()
