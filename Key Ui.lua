@@ -1,4 +1,4 @@
--- ||||||||||||||||||||||||
+-- [Modern Key System UI | Updated 2024-06-01 | By nexa | Verison 0.0.4]
 repeat task.wait() until game:IsLoaded()
 
 local cloneref = cloneref or function(obj) return obj end
@@ -86,7 +86,10 @@ end
 
 local function _antiBypass()
     local function safe(fn) return safeGet(fn) end
-    if getgenv().loadstring and getgenv().loadstring ~= _realLoadstring then _panic() end
+    local genv = safe(function()
+        return getgenv and getgenv()
+    end)
+    if genv and genv.loadstring and genv.loadstring ~= _realLoadstring then _panic() end
     if error ~= _realError or type ~= _realType or loadstring ~= _realLoadstring then _panic() end
     local hook = safe(function() return hookfunction end)
     local isc = safe(function() return iscclosure end)
