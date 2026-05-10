@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.4 | By nexahub
+-- Code Lama | Version 1.0.3 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -1186,6 +1186,25 @@ function Modern:_TrackConnection(conn)
         end
     end
     return conn
+end
+
+function Modern:SelectTab(tabSection)
+    if self.selectedTab == tabSection then return end
+
+    if self.selectedTab then
+        -- Hide previous tab content
+        self.selectedTab.container.Visible = false
+        tween_to(self.selectedTab.tabButton, {BackgroundColor3 = Color3.fromRGB(25, 25, 25)}, 0.15)
+    end
+
+    -- Show new tab content
+    tabSection.container.Visible = true
+    tween_to(tabSection.tabButton, {BackgroundColor3 = Color3.fromRGB(35, 35, 35)}, 0.15)
+    self.selectedTab = tabSection
+
+    -- Update tab info
+    self.tab_name_label.Text = tabSection.config.Name or "Tab"
+    self.tab_desc_label.Text = "Tab description"
 end
 
 function Modern:RegisterControl(flag, getter, setter)
@@ -4490,8 +4509,8 @@ function Modern:_ResizeLayout(newWidth, newHeight)
     local sidebar_h = newHeight - (75 * scale_factor) - (58 * scale_factor)
     local search_x = newWidth - search_w - search_right_pad
 
-    if self.section_scroll then
-        self.section_scroll.Size = UDim2.new(0, sidebar_w, 0, sidebar_h)
+    if self.tabs_frame then
+        self.tabs_frame.Size = UDim2.new(0, sidebarWidth, 1, -headerHeight - 20)
     end
 
     if self.content_holder then
@@ -4536,22 +4555,15 @@ end
 function Modern:BuildMainFrame()
     local frameWidth = 830 * scale_factor
     local frameHeight = 530 * scale_factor
-    local headerLeftPadding = 10 * scale_factor
-    local headerAvatarBaseX = 160 * scale_factor
-    local headerAvatarSize = 30 * scale_factor
-    local headerAvatarGap = 10 * scale_factor
-    local searchWidth = 214 * scale_factor
-    local searchRightPadding = 74 * scale_factor
-    local contentStartX = 198 * scale_factor
-    local contentRightPadding = 7 * scale_factor
-    local sectionScrollHeight = 441 * scale_factor
-    local contentHeight = 461 * scale_factor
+    local sidebarWidth = 200 * scale_factor  -- Lebar sidebar seperti Obsidian
+    local headerHeight = 48 * scale_factor   -- Tinggi header seperti Obsidian
+    local contentStartX = sidebarWidth + 1   -- Container mulai setelah sidebar
     self._mainFrameOpenPosition = UDim2.new(0.5, -frameWidth/2, 0.5, -frameHeight/2)
     self._mainFrameClosedPosition = UDim2.new(0.5, -frameWidth/2, 1.5, 0)
     
     self.main_frame = create("Frame", {
         Name = "MainFrameIsAwesome",
-        BackgroundColor3 = Color3.fromRGB(13, 13, 13),
+        BackgroundColor3 = Color3.fromRGB(15, 15, 15),  -- Background color seperti Obsidian
         BackgroundTransparency = self.config.Uitransparent or 0,
         Position = self._mainFrameOpenPosition,
         ClipsDescendants = true,
@@ -4559,18 +4571,20 @@ function Modern:BuildMainFrame()
         Size = UDim2.new(0, frameWidth, 0, frameHeight),
         Parent = self.screen_gui
     })
-    create("UICorner", {CornerRadius = UDim.new(0, 12), Parent = self.main_frame})
+    create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = self.main_frame})  -- Corner radius seperti Obsidian
     create("UIStroke", {
-        Color = Color3.fromRGB(28, 28, 28),
+        Color = Color3.fromRGB(40, 40, 40),  -- Outline color seperti Obsidian
         Thickness = 1,
         ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
         Parent = self.main_frame
     })
+    
+    -- Accent top line seperti Obsidian
     local accent_top_line = create("Frame", {
         BackgroundColor3 = self.config.AccentColor,
         BorderSizePixel = 0,
-        Position = UDim2.new(0.18, 0, 0, 0),
-        Size = UDim2.new(0.64, 0, 0, 1),
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 0, 1),
         ZIndex = 3,
         Parent = self.main_frame
     })
@@ -4587,7 +4601,7 @@ function Modern:BuildMainFrame()
 
     self.bg_effects_frame = create("Frame", {
         Name = "MainBackgroundEffects",
-        BackgroundColor3 = Color3.fromRGB(18, 18, 18),
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25),  -- Background color seperti Obsidian
         BackgroundTransparency = 0.45,
         Size = UDim2.new(1, 0, 1, 0),
         ClipsDescendants = true,
@@ -4596,9 +4610,9 @@ function Modern:BuildMainFrame()
     })
     self.bg_gradient = create("UIGradient", {
         Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(10, 10, 10)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(18, 18, 18)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 12, 12))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 15, 15)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(25, 25, 25)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
         }),
         Rotation = 210,
         Parent = self.bg_effects_frame
@@ -4616,9 +4630,12 @@ function Modern:BuildMainFrame()
         Parent = self.bg_effects_frame
     })
     
+    -- Drag bar untuk seluruh header
     self.drag_bar = create("Frame", {
-        BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(1, 0, 0, 65 * scale_factor), Parent = self.main_frame
+        BackgroundTransparency = 1, 
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 0, headerHeight), 
+        Parent = self.main_frame
     })
     
     make_draggable(self.main_frame, self.drag_bar, self)
@@ -4722,126 +4739,161 @@ function Modern:BuildMainFrame()
         end)
     end
 
-    local hubNameWidth = measure_text_width(self.config.Name, 17 * scale_factor, Enum.Font.GothamSemibold)
-    local searchX = frameWidth - searchWidth - searchRightPadding
-    local avatarX = math.min(
-        searchX - headerAvatarSize - 18 * scale_factor,
-        math.max(headerAvatarBaseX, headerLeftPadding + hubNameWidth + headerAvatarGap)
-    )
-    local headerNameMaxWidth = math.max(110 * scale_factor, avatarX - headerLeftPadding - headerAvatarGap)
-    local avatarRight = avatarX + headerAvatarSize
-    local tabHeaderX = math.max(201 * scale_factor, avatarRight + 18 * scale_factor)
-    local separatorWidth = math.max(156 * scale_factor, avatarRight - 19 * scale_factor)
-    local contentWidth = frameWidth - contentStartX - contentRightPadding
-    
+    -- Header dengan Title, Search, dan Close button
+    local titleHolder = create("Frame", {
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 12, 0, 8),
+        Size = UDim2.new(0, sidebarWidth - 24, 0, 32),
+        Parent = self.main_frame
+    })
+    create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Padding = UDim.new(0, 8),
+        Parent = titleHolder
+    })
+
+    -- Icon jika ada
+    if self.config.Image and self.config.Image ~= "" then
+        create("ImageLabel", {
+            Image = self.config.Image,
+            Size = UDim2.new(0, 24, 0, 24),
+            BackgroundTransparency = 1,
+            Parent = titleHolder
+        })
+    end
+
+    -- Title
     self.hub_name_label = create("TextLabel", {
-        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
-        TextColor3 = Color3.new(1, 1, 1), Text = self.config.Name, BackgroundTransparency = 1,
-        Position = UDim2.new(0, headerLeftPadding, 0, 13 * scale_factor), TextSize = 16 * scale_factor,
-        Size = UDim2.new(0, headerNameMaxWidth, 0, 20 * scale_factor),
-        TextTruncate = Enum.TextTruncate.AtEnd, TextXAlignment = Enum.TextXAlignment.Left, Parent = self.main_frame
+        FontFace = self._resolvedFont,
+        TextColor3 = Color3.new(1, 1, 1), 
+        Text = self.config.Name, 
+        BackgroundTransparency = 1,
+        TextSize = 18,
+        Size = UDim2.new(0, 120, 0, 24),
+        TextXAlignment = Enum.TextXAlignment.Left, 
+        Parent = titleHolder
     })
     table.insert(self._gradientLabels, self.hub_name_label)
-    
-    local playerName = local_player.Name
-    self.user_name_label = create("TextLabel", {
-        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular),
-        TextColor3 = Color3.fromRGB(52, 52, 52), Text = playerName, BackgroundTransparency = 1,
-        Position = UDim2.new(0, headerLeftPadding, 0, 32 * scale_factor), TextSize = 12 * scale_factor,
-        Size = UDim2.new(0, 120 * scale_factor, 0, 16 * scale_factor),
-        TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-        Parent = self.main_frame,
-        Visible = self.config.ShowUser ~= false
+
+    -- Right wrapper untuk search dan close
+    local rightWrapper = create("Frame", {
+        AnchorPoint = Vector2.new(1, 0),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -8, 0, 8),
+        Size = UDim2.new(0, frameWidth - sidebarWidth - 16, 0, 32),
+        Parent = self.main_frame
     })
-    self:_SetNameHidden(self._uiVisualSettings.HideName)
-    
-    self.avatar_image = create("ImageLabel", {
-        Image = get_player_avatar(local_player.UserId), BackgroundTransparency = 1,
-        Position = UDim2.new(0, avatarX, 0, 17 * scale_factor),
-        Size = UDim2.new(0, headerAvatarSize, 0, headerAvatarSize), Parent = self.main_frame,
-        Visible = self.config.ShowUser ~= false
+    create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        HorizontalAlignment = Enum.HorizontalAlignment.Right,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Padding = UDim.new(0, 8),
+        Parent = rightWrapper
     })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = self.avatar_image})
-    
-    self.separator_line = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-        BackgroundTransparency = 0.88,
-        Position = UDim2.new(0, 19, 0, 64 * scale_factor),
-        Size = UDim2.new(0, separatorWidth, 0, 1), Parent = self.main_frame
+
+    -- Current tab info
+    self.currentTabInfo = create("Frame", {
+        Size = UDim2.new(0.6, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Parent = rightWrapper
     })
-    create("UIGradient", {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.new(0, 0, 0)),
-            ColorSequenceKeypoint.new(0.1, Color3.new(1, 1, 1)),
-            ColorSequenceKeypoint.new(0.9, Color3.new(1, 1, 1)),
-            ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0))
-        }),
-        Parent = self.separator_line
+    create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Parent = self.currentTabInfo
     })
-    
+    create("UIPadding", {
+        PaddingLeft = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 8),
+        PaddingTop = UDim.new(0, 4),
+        PaddingBottom = UDim.new(0, 4),
+        Parent = self.currentTabInfo
+    })
+
     self.tab_name_label = create("TextLabel", {
-        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
-        TextColor3 = Color3.new(1, 1, 1), Text = "tab name", BackgroundTransparency = 1,
-        Position = UDim2.new(0, tabHeaderX, 0, 13 * scale_factor),
-        TextSize = 16 * scale_factor, Size = UDim2.new(0, 220, 0, 20 * scale_factor),
-        TextXAlignment = Enum.TextXAlignment.Left, Parent = self.main_frame
+        FontFace = self._resolvedFont,
+        TextColor3 = Color3.new(1, 1, 1), 
+        Text = "Tab Name", 
+        BackgroundTransparency = 1,
+        TextSize = 14,
+        Size = UDim2.new(1, 0, 0, 16),
+        TextXAlignment = Enum.TextXAlignment.Left, 
+        Parent = self.currentTabInfo
     })
     table.insert(self._gradientLabels, self.tab_name_label)
-    
+
     self.tab_desc_label = create("TextLabel", {
-        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular),
-        TextColor3 = Color3.fromRGB(52, 52, 52), Text = "tab description", BackgroundTransparency = 1,
-        Position = UDim2.new(0, tabHeaderX, 0, 32 * scale_factor),
-        TextSize = 12 * scale_factor, Size = UDim2.new(0, 260, 0, 16 * scale_factor),
-        TextXAlignment = Enum.TextXAlignment.Left, Parent = self.main_frame
+        FontFace = self._resolvedFont,
+        TextColor3 = Color3.fromRGB(124, 124, 124), 
+        Text = "Tab description", 
+        BackgroundTransparency = 1,
+        TextSize = 12,
+        Size = UDim2.new(1, 0, 0, 14),
+        TextXAlignment = Enum.TextXAlignment.Left, 
+        Parent = self.currentTabInfo
     })
 
-    self.minimize_btn = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(22, 22, 22), AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -42 * scale_factor, 0, 32 * scale_factor),
-        Size = UDim2.new(0, 20 * scale_factor, 0, 20 * scale_factor),
-        ZIndex = 3, Parent = self.main_frame
+    -- Search box
+    self.search_frame = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+        Size = UDim2.new(0, 180, 0, 28),
+        Parent = rightWrapper,
+        Visible = self.config.Search ~= false
     })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = self.minimize_btn})
-    create("UIStroke", {Color = Color3.fromRGB(38, 38, 38), Thickness = 1, Parent = self.minimize_btn})
-    create("TextLabel", {
-        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
-        Text = "-", TextColor3 = Color3.fromRGB(75, 75, 75),
-        BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0.8, 0, 0.8, 0),
-        TextSize = 16 * scale_factor, ZIndex = 4, Parent = self.minimize_btn
-    })
-    local minimize_click = create("TextButton", {
-        Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
-        ZIndex = 5, Parent = self.minimize_btn
-    })
-    minimize_click.MouseButton1Click:Connect(function() self:Toggle() end)
-    minimize_click.MouseEnter:Connect(function()
-        tween_to(self.minimize_btn, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.15)
-        tween_to(self.minimize_btn:FindFirstChildOfClass("TextLabel"), {TextColor3 = Color3.fromRGB(160, 60, 60)}, 0.15)
-    end)
-    minimize_click.MouseLeave:Connect(function()
-        tween_to(self.minimize_btn, {BackgroundColor3 = Color3.fromRGB(22, 22, 22)}, 0.15)
-        tween_to(self.minimize_btn:FindFirstChildOfClass("TextLabel"), {TextColor3 = Color3.fromRGB(75, 75, 75)}, 0.15)
-    end)
-
-    self.destroy_btn = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(22, 22, 22), AnchorPoint = Vector2.new(1, 0.5),
-        Position = UDim2.new(1, -12 * scale_factor, 0, 32 * scale_factor),
-        Size = UDim2.new(0, 20 * scale_factor, 0, 20 * scale_factor),
-        ZIndex = 3, Parent = self.main_frame
-    })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = self.destroy_btn})
-    create("UIStroke", {Color = Color3.fromRGB(38, 38, 38), Thickness = 1, Parent = self.destroy_btn})
+    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = self.search_frame})
+    create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Thickness = 1, Parent = self.search_frame})
+    
     create("ImageLabel", {
-        Image = default_icons.close, ImageColor3 = Color3.fromRGB(175, 70, 70),
-        BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0.55, 0, 0.55, 0),
-        ZIndex = 4, Parent = self.destroy_btn
+        Image = default_icons.search,
+        ImageColor3 = Color3.fromRGB(120, 120, 120),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 8, 0.5, -7),
+        Size = UDim2.new(0, 14, 0, 14),
+        Parent = self.search_frame
+    })
+    self.search_box = create("TextBox", {
+        FontFace = self._resolvedFont,
+        Text = "",
+        PlaceholderText = "Search",
+        PlaceholderColor3 = Color3.fromRGB(80, 80, 80),
+        TextColor3 = Color3.fromRGB(210, 210, 210),
+        TextSize = 13,
+        BackgroundTransparency = 1,
+        ClearTextOnFocus = false,
+        Position = UDim2.new(0, 28, 0, 0),
+        Size = UDim2.new(1, -34, 1, 0),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = self.search_frame
+    })
+    self:_TrackConnection(self.search_box:GetPropertyChangedSignal("Text"):Connect(function()
+        self:SetSearchFilter(self.search_box.Text)
+    end))
+
+    -- Close button
+    self.destroy_btn = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25), 
+        Size = UDim2.new(0, 32, 0, 28),
+        Parent = rightWrapper
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = self.destroy_btn})
+    create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Thickness = 1, Parent = self.destroy_btn})
+    create("ImageLabel", {
+        Image = default_icons.close, 
+        ImageColor3 = Color3.fromRGB(175, 70, 70),
+        BackgroundTransparency = 1, 
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0), 
+        Size = UDim2.new(0.6, 0, 0.6, 0),
+        Parent = self.destroy_btn
     })
     local destroy_click = create("TextButton", {
-        Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
-        ZIndex = 5, Parent = self.destroy_btn
+        Text = "", 
+        BackgroundTransparency = 1, 
+        Size = UDim2.new(1, 0, 1, 0),
+        Parent = self.destroy_btn
     })
     destroy_click.MouseButton1Click:Connect(function()
         self:Dialog({
@@ -4864,122 +4916,93 @@ function Modern:BuildMainFrame()
         tween_to(self.destroy_btn:FindFirstChildOfClass("ImageLabel"), {ImageColor3 = Color3.fromRGB(255, 100, 100)}, 0.15)
     end)
     destroy_click.MouseLeave:Connect(function()
-        tween_to(self.destroy_btn, {BackgroundColor3 = Color3.fromRGB(22, 22, 22)}, 0.15)
+        tween_to(self.destroy_btn, {BackgroundColor3 = Color3.fromRGB(25, 25, 25)}, 0.15)
         tween_to(self.destroy_btn:FindFirstChildOfClass("ImageLabel"), {ImageColor3 = Color3.fromRGB(175, 70, 70)}, 0.15)
     end)
 
-    self.search_frame = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(19, 19, 19),
-        Position = UDim2.new(0, searchX, 0, 16 * scale_factor),
-        Size = UDim2.new(0, searchWidth, 0, 28 * scale_factor),
-        Parent = self.main_frame,
-        Visible = self.config.Search ~= false
-    })
-    create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = self.search_frame})
-    create("UIStroke", {Color = Color3.fromRGB(33, 33, 33), Thickness = 1, Parent = self.search_frame})
-    create("ImageLabel", {
-        Image = default_icons.search,
-        ImageColor3 = Color3.fromRGB(120, 120, 120),
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 8, 0.5, -7 * scale_factor),
-        Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor),
-        Parent = self.search_frame
-    })
-    self.search_box = create("TextBox", {
-        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-        Text = "",
-        PlaceholderText = "Search tabs/groups...",
-        PlaceholderColor3 = Color3.fromRGB(80, 80, 80),
-        TextColor3 = Color3.fromRGB(210, 210, 210),
-        TextSize = 13 * scale_factor,
-        BackgroundTransparency = 1,
-        ClearTextOnFocus = false,
-        Position = UDim2.new(0, 28 * scale_factor, 0, 0),
-        Size = UDim2.new(1, -34 * scale_factor, 1, 0),
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = self.search_frame
-    })
-    self:_TrackConnection(self.search_box:GetPropertyChangedSignal("Text"):Connect(function()
-        self:SetSearchFilter(self.search_box.Text)
-    end))
-    
-    self.section_scroll = create("ScrollingFrame", {
-        BackgroundTransparency = 1, Position = UDim2.new(0, 4, 0, 75 * scale_factor),
-        Size = UDim2.new(0, 162 * scale_factor, 0, sectionScrollHeight),
-        ScrollBarThickness = 0, CanvasSize = UDim2.new(0, 0, 0, 0),
-        AutomaticCanvasSize = Enum.AutomaticSize.Y, ClipsDescendants = true, Parent = self.main_frame
-    })
-
-    local sidebar_divider = create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-        BackgroundTransparency = 0.9,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 187 * scale_factor, 0, 70 * scale_factor),
-        Size = UDim2.new(0, 1, 0, sectionScrollHeight + 10 * scale_factor),
-        ZIndex = -9999,
+    -- Sidebar divider
+    local dividerLine = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        Position = UDim2.new(0, sidebarWidth, 0, headerHeight),
+        Size = UDim2.new(0, 1, 1, -headerHeight - 20),
         Parent = self.main_frame
     })
-    create("UIGradient", {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.new(0, 0, 0)),
-            ColorSequenceKeypoint.new(0.08, Color3.new(1, 1, 1)),
-            ColorSequenceKeypoint.new(0.92, Color3.new(1, 1, 1)),
-            ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0))
-        }),
-        Rotation = 90,
-        Parent = sidebar_divider
-    })
 
-    attach_scrollbar(self, self.section_scroll, self.main_frame, {
-        TrackWidth = 5 * scale_factor,
-        ThumbWidth = 3 * scale_factor,
-        EdgeInset = 1 * scale_factor,
-        VerticalInset = 5 * scale_factor,
-        XOffset = 16 * scale_factor,
-        ZIndex = 6
-    })
-    
-    create("UIPadding", {PaddingLeft = UDim.new(0, 2), PaddingRight = UDim.new(0, 2), PaddingTop = UDim.new(0, 2), Parent = self.section_scroll})
-    self.section_layout = create("UIListLayout", {Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = self.section_scroll})
-    --self:SetSmoothScroll(self.section_scroll, 34)
-    
-    self.content_holder = create("Frame", {
-        BackgroundTransparency = 1, Position = UDim2.new(0, contentStartX, 0, 62 * scale_factor),
-        Size = UDim2.new(0, contentWidth, 0, contentHeight),
-        ClipsDescendants = true, Parent = self.main_frame
-    })
-
-    local settingsPanelWidth = 185 * scale_factor
-    local settingsPanelHeight = 292 * scale_factor
-    self.settings_open = false
-
-    self.settings_btn_frame = create("Frame", {
+    -- Sidebar tabs
+    self.tabs_frame = create("ScrollingFrame", {
         BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-        Position = UDim2.new(0, 10, 1, -31 * scale_factor),
-        Size = UDim2.new(0, 116 * scale_factor, 0, 22 * scale_factor),
-        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, headerHeight),
+        Size = UDim2.new(0, sidebarWidth, 1, -headerHeight - 20),
+        ScrollBarThickness = 0,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ClipsDescendants = true,
         Parent = self.main_frame
     })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = self.settings_btn_frame})
-    self.settings_btn_stroke = create("UIStroke", {Color = Color3.fromRGB(45, 45, 45), Parent = self.settings_btn_frame})
+    create("UIListLayout", {
+        Padding = UDim.new(0, 4),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = self.tabs_frame
+    })
+    create("UIPadding", {
+        PaddingTop = UDim.new(0, 8),
+        PaddingBottom = UDim.new(0, 8),
+        PaddingLeft = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 8),
+        Parent = self.tabs_frame
+    })
 
+    -- Container untuk konten tab
+    self.content_holder = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+        Position = UDim2.new(0, sidebarWidth + 1, 0, headerHeight),
+        Size = UDim2.new(1, -sidebarWidth - 1, 1, -headerHeight - 20),
+        ClipsDescendants = true,
+        Parent = self.main_frame
+    })
+    create("UIPadding", {
+        PaddingTop = UDim.new(0, 8),
+        PaddingBottom = UDim.new(0, 8),
+        PaddingLeft = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 8),
+        Parent = self.content_holder
+    })
+
+    -- Bottom bar
+    local bottomBar = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(15, 15, 15),
+        Position = UDim2.new(0, 0, 1, -20),
+        Size = UDim2.new(1, 0, 0, 20),
+        Parent = self.main_frame
+    })
+    create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Thickness = 1, Parent = bottomBar})
+
+    -- Settings button di bottom bar
+    self.settings_btn_frame = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+        Position = UDim2.new(0, 8, 0, 2),
+        Size = UDim2.new(0, 120, 0, 16),
+        Parent = bottomBar
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = self.settings_btn_frame})
+    create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Thickness = 1, Parent = self.settings_btn_frame})
     create("ImageLabel", {
         Image = default_icons.settings,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 7, 0.5, -6 * scale_factor),
-        Size = UDim2.new(0, 12 * scale_factor, 0, 12 * scale_factor),
+        Position = UDim2.new(0, 4, 0.5, -6),
+        Size = UDim2.new(0, 12, 0, 12),
         ImageColor3 = Color3.fromRGB(165, 165, 165),
         Parent = self.settings_btn_frame
     })
     create("TextLabel", {
-        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+        FontFace = self._resolvedFont,
         Text = "UI Settings",
         TextColor3 = Color3.fromRGB(185, 185, 185),
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 24 * scale_factor, 0, 0),
-        Size = UDim2.new(1, -28 * scale_factor, 1, 0),
+        Position = UDim2.new(0, 20, 0, 0),
+        Size = UDim2.new(1, -24, 1, 0),
         TextXAlignment = Enum.TextXAlignment.Left,
-        TextSize = 12 * scale_factor,
+        TextSize = 12,
         Parent = self.settings_btn_frame
     })
     local settingsToggleButton = create("TextButton", {
@@ -4989,15 +5012,19 @@ function Modern:BuildMainFrame()
         Parent = self.settings_btn_frame
     })
 
+    -- Settings panel
     self.settings_panel = create("Frame", {
         BackgroundColor3 = Color3.fromRGB(15, 15, 15),
-        BackgroundTransparency = self.config.Uitransparent or 0,
         AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.new(0, 10, 1, -36 * scale_factor),
-        Size = UDim2.new(0, settingsPanelWidth, 0, 0),
+        Position = UDim2.new(0, 8, 1, -24),
+        Size = UDim2.new(0, 300, 0, 0),
         ClipsDescendants = true,
         Visible = false,
         ZIndex = 10,
+        Parent = self.main_frame
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = self.settings_panel})
+    create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Thickness = 1, Parent = self.settings_panel})
         Parent = self.main_frame
     })
     create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = self.settings_panel})
@@ -5676,59 +5703,104 @@ function Modern:AddSection(config)
     config.Name = config.Name or "Section"
     config.Icon = get_icon(config.Icon, default_icons.section)
     config.Open = config.Open ~= false -- Default to true if not specified
-    
+
     local sectionObj = {}
     sectionObj.tabs = {}
     sectionObj.isExpanded = config.Open
     sectionObj.Library = self
-    
+
+    -- Tab button untuk sidebar
+    sectionObj.tabButton = create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+        Size = UDim2.new(1, -16, 0, 32),
+        Parent = self.tabs_frame
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = sectionObj.tabButton})
+    create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Thickness = 1, Parent = sectionObj.tabButton})
+
+    -- Icon dan nama tab
+    local tabContent = create("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Parent = sectionObj.tabButton
+    })
+    create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Padding = UDim.new(0, 8),
+        Parent = tabContent
+    })
+
+    create("ImageLabel", {
+        Image = config.Icon,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 16, 0, 16),
+        Parent = tabContent
+    })
+
+    create("TextLabel", {
+        FontFace = self._resolvedFont,
+        TextColor3 = Color3.new(1, 1, 1),
+        Text = config.Name,
+        BackgroundTransparency = 1,
+        TextSize = 13,
+        Size = UDim2.new(1, -24, 0, 16),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = tabContent
+    })
+
+    -- Container untuk konten tab
     sectionObj.container = create("Frame", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(0, 160 * scale_factor, 0, isSectionless and 0 or 34 * scale_factor),
+        Size = UDim2.new(1, 0, 1, 0),
         ClipsDescendants = true,
-        Parent = self.section_scroll
+        Parent = self.content_holder
     })
-    
-    if not isSectionless then
-        sectionObj.mainFrame = create("Frame", {
-            BackgroundColor3 = Color3.fromRGB(16, 16, 16), Position = UDim2.new(0, 1, 0, 2),
-            Size = UDim2.new(0, 158 * scale_factor, 0, 30 * scale_factor), Parent = sectionObj.container
-        })
-        create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = sectionObj.mainFrame})
 
-        create("ImageLabel", {
-            Image = config.Icon, BackgroundTransparency = 1,
-            Position = UDim2.new(0, 10, 0.5, -7.5 * scale_factor),
-            Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = sectionObj.mainFrame
-        })
-        
-        create("TextLabel", {
-            FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-            TextColor3 = Color3.new(1, 1, 1), Text = config.Name, BackgroundTransparency = 1,
-            Position = UDim2.new(0, 33, 0.5, -9 * scale_factor), TextSize = 15.5 * scale_factor,
-            Size = UDim2.new(0, 84, 0, 18 * scale_factor), TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = sectionObj.mainFrame
-        })
-        
-        local expandButtonImg
-        if not noCollapse then
-            expandButtonImg = create("ImageButton", {
-                Image = default_icons.expand, BackgroundTransparency = 1,
-                Position = UDim2.new(1, -24, 0.5, -8.5 * scale_factor),
-                Size = UDim2.new(0, 17 * scale_factor, 0, 17 * scale_factor), Parent = sectionObj.mainFrame
-            })
-            -- Set initial rotation based on Open state
-            expandButtonImg.Rotation = config.Open and 0 or -90
-        end
-    end
-    
-    sectionObj.tab_holder = create("Frame", {
+    -- Scroll frame untuk konten tab
+    sectionObj.scrollFrame = create("ScrollingFrame", {
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 10, 0, isSectionless and 0 or 40 * scale_factor),
-        Size = UDim2.new(0, 148 * scale_factor, 0, 0), ClipsDescendants = true, Parent = sectionObj.container
+        Size = UDim2.new(1, 0, 1, 0),
+        ScrollBarThickness = 4,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ClipsDescendants = true,
+        Parent = sectionObj.container
     })
-    
-    sectionObj.tab_layout = create("UIListLayout", {Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder, Parent = sectionObj.tab_holder})
+    create("UIListLayout", {
+        Padding = UDim.new(0, 8),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = sectionObj.scrollFrame
+    })
+    create("UIPadding", {
+        PaddingTop = UDim.new(0, 8),
+        PaddingBottom = UDim.new(0, 8),
+        PaddingLeft = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 8),
+        Parent = sectionObj.scrollFrame
+    })
+
+    -- Tab button click handler
+    local tabButtonClick = create("TextButton", {
+        Text = "",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Parent = sectionObj.tabButton
+    })
+    tabButtonClick.MouseButton1Click:Connect(function()
+        self:SelectTab(sectionObj)
+    end)
+
+    -- Hover effects
+    tabButtonClick.MouseEnter:Connect(function()
+        tween_to(sectionObj.tabButton, {BackgroundColor3 = Color3.fromRGB(35, 35, 35)}, 0.15)
+    end)
+    tabButtonClick.MouseLeave:Connect(function()
+        if self.selectedTab ~= sectionObj then
+            tween_to(sectionObj.tabButton, {BackgroundColor3 = Color3.fromRGB(25, 25, 25)}, 0.15)
+        end
+    end)
     
     local function update_container_size()
         local tabsHeight = sectionObj.tab_layout.AbsoluteContentSize.Y
@@ -5766,36 +5838,75 @@ function Modern:AddSection(config)
         tabConfig.Name = tabConfig.Name or "Tab"
         tabConfig.Description = tabConfig.Description or "Tab description"
         tabConfig.Icon = get_icon(tabConfig.Icon, default_icons.tab)
-        
+
         local tabObj = {}
         tabObj.tab_name = tabConfig.Name
+        tabObj.tab_description = tabConfig.Description
         tabObj.searchTerms = {tabConfig.Name, tabConfig.Description}
         tabObj.groups = {}
         tabObj.group_offsets = {Left = 0, Right = 0}
         tabObj.isActive = false
         tabObj.Library = sectionObj.Library
-        tabObj.defaultButtonSize = UDim2.new(0, 140 * scale_factor, 0, 31 * scale_factor)
-        
-        tabObj.button_frame = create("Frame", {
-            BackgroundColor3 = sectionObj.Library.config.AccentColor, BackgroundTransparency = 1,
-            Size = tabObj.defaultButtonSize, ClipsDescendants = true, Parent = sectionObj.tab_holder
+
+        -- Container untuk tab content
+        tabObj.container = create("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Visible = false,
+            Parent = sectionObj.scrollFrame
         })
-        create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = tabObj.button_frame})
-        
-        tabObj.iconImg = create("ImageLabel", {
-            ImageColor3 = Color3.fromRGB(89, 89, 89), Image = tabConfig.Icon, BackgroundTransparency = 1,
-            Position = UDim2.new(0, 10, 0.5, -7.5 * scale_factor),
-            Size = UDim2.new(0, 15 * scale_factor, 0, 15 * scale_factor), Parent = tabObj.button_frame
+
+        -- Scroll frame untuk elements
+        tabObj.scrollFrame = create("ScrollingFrame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            ScrollBarThickness = 4,
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            ClipsDescendants = true,
+            Parent = tabObj.container
         })
-        
-        tabObj.nameLabel = create("TextLabel", {
-            FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-            TextColor3 = Color3.fromRGB(89, 89, 89), Text = tabConfig.Name, BackgroundTransparency = 1,
-            Position = UDim2.new(0, 30, 0.5, -8.5 * scale_factor), TextSize = 13.8 * scale_factor,
-            Size = UDim2.new(0, 108 * scale_factor, 0, 17 * scale_factor),
-            TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
-            ClipsDescendants = true, Parent = tabObj.button_frame
+        create("UIListLayout", {
+            Padding = UDim.new(0, 8),
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Parent = tabObj.scrollFrame
         })
+        create("UIPadding", {
+            PaddingTop = UDim.new(0, 8),
+            PaddingBottom = UDim.new(0, 8),
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            Parent = tabObj.scrollFrame
+        })
+
+        -- Update tab info saat tab dipilih
+        function tabObj:UpdateTabInfo()
+            if self.Library.selectedTab == sectionObj then
+                self.Library.tab_name_label.Text = self.tab_name
+                self.Library.tab_desc_label.Text = self.tab_description
+            end
+        end
+
+        -- Select tab function
+        function tabObj:Select()
+            if self.Library.selectedTab then
+                -- Hide previous tab
+                for _, tab in ipairs(self.Library.selectedTab.tabs) do
+                    tab.container.Visible = false
+                end
+                -- Reset previous tab button color
+                tween_to(self.Library.selectedTab.tabButton, {BackgroundColor3 = Color3.fromRGB(25, 25, 25)}, 0.15)
+            end
+
+            -- Show current tab
+            self.container.Visible = true
+            tween_to(sectionObj.tabButton, {BackgroundColor3 = Color3.fromRGB(35, 35, 35)}, 0.15)
+            self.Library.selectedTab = sectionObj
+            self:UpdateTabInfo()
+        end
+
+        table.insert(sectionObj.tabs, tabObj)
+        return tabObj
         
         local tabClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = tabObj.button_frame})
         
