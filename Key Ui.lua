@@ -1,4 +1,4 @@
--- [Modern Key System UI | Updated 2024-06-01 | By nexa | Verison 0.0.5]
+-- [Modern Key System UI | Updated 2026-05-10 | By nexa | Verison 0.0.6]
 repeat task.wait() until game:IsLoaded()
 
 local cloneref = cloneref or function(obj) return obj end
@@ -145,13 +145,17 @@ function SafeHttpGet(url)
     return ok and result or nil
 end
 
--- Optional: Key validation
+-- Optional: Forward loader-provided key to Modern
 local KEY = (getgenv and getgenv().script_key) or
             (typeof(script_key) == "string" and script_key ~= "" and script_key) or
             ""
 
-if KEY == "" then
-    return
+if KEY ~= "" then
+    if getgenv then
+        getgenv().SCRIPT_KEY = KEY
+    else
+        script_key = KEY
+    end
 end
 
 local hui = gethui()
