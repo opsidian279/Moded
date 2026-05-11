@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.5 | By nexahub
+-- Code Lama | Version 1.0.4 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -4514,7 +4514,7 @@ function Modern:_ResizeLayout(newWidth, newHeight)
                 end
                 if tab.right_column then
                     tab.right_column.Position = UDim2.new(0, col_w + col_gap, 0, 0)
-                    tab.right_column.Size = UDim2.new(0, col_w, 1, 0)
+                    tab.right_column.Size = UDim2.new(0, col_w, 0, tab.right_column.Size.Y.Offset)
                 end
                 if tab.content_scroll then
                     tab.content_scroll.CanvasSize = UDim2.new(0, canvas_w, 0, tab.content_scroll.CanvasSize.Y.Offset)
@@ -5817,20 +5817,7 @@ function Modern:AddSection(config)
         --sectionObj.Library:SetSmoothScroll(tabObj.content_scroll, 38)
         
         tabObj.left_column = create("Frame", {BackgroundTransparency = 1, Size = UDim2.new(0, 262 * scale_factor, 0, 1000), Parent = tabObj.content_scroll})
-        tabObj.right_column = create("ScrollingFrame", {
-            BackgroundTransparency = 1, Position = UDim2.new(0, 272 * scale_factor, 0, 0),
-            Size = UDim2.new(0, 262 * scale_factor, 1, 0), ScrollBarThickness = 0,
-            CanvasSize = UDim2.new(0, 262 * scale_factor, 0, 0), Parent = tabObj.content_scroll
-        })
-        attach_scrollbar(sectionObj.Library, tabObj.right_column, tabObj.content_scroll, {
-            TrackWidth = 7 * scale_factor,
-            ThumbWidth = 3 * scale_factor,
-            EdgeInset = 2 * scale_factor,
-            VerticalInset = 4 * scale_factor,
-            IdleThumbHeight = 46 * scale_factor,
-            AlwaysShowTrack = true,
-            ZIndex = 6
-        })
+        tabObj.right_column = create("Frame", {BackgroundTransparency = 1, Position = UDim2.new(0, 272 * scale_factor, 0, 0), Size = UDim2.new(0, 262 * scale_factor, 0, 1000), Parent = tabObj.content_scroll})
         
         local groupSpacingY = 15 * scale_factor
         local function relayout_groups()
@@ -5845,9 +5832,8 @@ function Modern:AddSection(config)
             end
             tabObj.group_offsets.Left = sideOffsets.Left
             tabObj.group_offsets.Right = sideOffsets.Right
-            local maxHeightLeft = sideOffsets.Left
-            tabObj.content_scroll.CanvasSize = UDim2.new(0, tabObj.content_scroll.AbsoluteSize.X, 0, maxHeightLeft)
-            tabObj.right_column.CanvasSize = UDim2.new(0, tabObj.right_column.AbsoluteSize.X, 0, sideOffsets.Right)
+            local maxHeight = math.max(sideOffsets.Left, sideOffsets.Right)
+            tabObj.content_scroll.CanvasSize = UDim2.new(0, tabObj.content_scroll.AbsoluteSize.X, 0, maxHeight)
         end
         
         function tabObj:Activate()
