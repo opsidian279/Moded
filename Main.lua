@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.8 | By nexahub
+-- Code Lama | Version 1.0.7 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -4235,7 +4235,7 @@ function Modern:BuildToggleButton()
 
     self.toggle_frame = create("Frame", {
         Name = "ToggleButton",
-        BackgroundColor3 = Color3.new(1, 1, 1),
+        BackgroundColor3 = Color3.fromRGB(170, 0, 255),
         AnchorPoint = Vector2.new(0, 0.5),
         Position = UDim2.new(0, 8, 0.5, 0),
         BorderSizePixel = 0,
@@ -4243,26 +4243,9 @@ function Modern:BuildToggleButton()
         Parent = self.screen_gui
     })
 
-    create("UIGradient", {
-        Rotation = 50,
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0,        Color3.fromRGB(0, 133, 255)),
-            ColorSequenceKeypoint.new(0.515913, Color3.fromRGB(15, 15, 15)),
-            ColorSequenceKeypoint.new(1,        Color3.fromRGB(0, 133, 255)),
-        }),
-        Parent = self.toggle_frame
-    })
     create("UICorner", {CornerRadius = UDim.new(0, 15), Parent = self.toggle_frame})
 
-    local toggle_stroke = create("UIStroke", {Color = Color3.new(1, 1, 1), Thickness = 2, Parent = self.toggle_frame})
-    create("UIGradient", {
-        Rotation = 90,
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 133, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25)),
-        }),
-        Parent = toggle_stroke
-    })
+    local toggle_stroke = create("UIStroke", {Color = Color3.fromRGB(0, 0, 0), Thickness = 2, Parent = self.toggle_frame})
 
     self.toggle_icon = create("ImageLabel", {
         Name = "ToggleIcon",
