@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.4 | By nexahub
+-- Code Lama | Version 1.0.5 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -1961,6 +1961,25 @@ function Modern:SetFontPreset(index)
     end
 end
 
+function Modern:_UpdateToggleGradient()
+    if not self.toggle_gradient or not self.toggle_stroke_gradient then
+        return
+    end
+
+    local accent = self.config.AccentColor or Color3.fromRGB(0, 200, 255)
+    self.toggle_gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, accent),
+        ColorSequenceKeypoint.new(0.28, accent:Lerp(Color3.fromRGB(12, 12, 12), 0.9)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 10, 10)),
+        ColorSequenceKeypoint.new(0.72, accent:Lerp(Color3.fromRGB(12, 12, 12), 0.9)),
+        ColorSequenceKeypoint.new(1, accent),
+    })
+    self.toggle_stroke_gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, accent),
+        ColorSequenceKeypoint.new(1, accent:Lerp(Color3.fromRGB(18, 18, 18), 0.9)),
+    })
+end
+
 function Modern:_RefreshAccentCore()
     local accent = self.config.AccentColor
     if self._accentTopLine then
@@ -1981,6 +2000,7 @@ function Modern:_RefreshAccentCore()
     if self.active_tab and self.active_tab.button_frame then
         self.active_tab.button_frame.BackgroundColor3 = accent
     end
+    self:_UpdateToggleGradient()
     if self._scrollbarRefreshers then
         for index = #self._scrollbarRefreshers, 1, -1 do
             local refresher = self._scrollbarRefreshers[index]
@@ -4243,23 +4263,26 @@ function Modern:BuildToggleButton()
         Parent = self.screen_gui
     })
 
-    create("UIGradient", {
+    local accent = self.config.AccentColor or Color3.fromRGB(0, 200, 255)
+    self.toggle_gradient = create("UIGradient", {
         Rotation = 50,
         Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0,        Color3.fromRGB(0, 133, 255)),
-            ColorSequenceKeypoint.new(0.515913, Color3.fromRGB(15, 15, 15)),
-            ColorSequenceKeypoint.new(1,        Color3.fromRGB(0, 133, 255)),
+            ColorSequenceKeypoint.new(0, accent),
+            ColorSequenceKeypoint.new(0.28, accent:Lerp(Color3.fromRGB(12, 12, 12), 0.9)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 10, 10)),
+            ColorSequenceKeypoint.new(0.72, accent:Lerp(Color3.fromRGB(12, 12, 12), 0.9)),
+            ColorSequenceKeypoint.new(1, accent),
         }),
         Parent = self.toggle_frame
     })
     create("UICorner", {CornerRadius = UDim.new(0, 15), Parent = self.toggle_frame})
 
-    local toggle_stroke = create("UIStroke", {Color = Color3.new(1, 1, 1), Thickness = 2, Parent = self.toggle_frame})
-    create("UIGradient", {
+    local toggle_stroke = create("UIStroke", {Color = accent, Thickness = 2, Parent = self.toggle_frame})
+    self.toggle_stroke_gradient = create("UIGradient", {
         Rotation = 90,
         Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 133, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25)),
+            ColorSequenceKeypoint.new(0, accent),
+            ColorSequenceKeypoint.new(1, accent:Lerp(Color3.fromRGB(18, 18, 18), 0.9)),
         }),
         Parent = toggle_stroke
     })
