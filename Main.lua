@@ -1,4 +1,4 @@
--- Code Lama | Version 1.0.4 | By nexahub
+-- Code Lama | Version 1.0.8 | By nexahub
 
 --#region ══╗ Services ╔═════════════════════════════════════════════════════════
 
@@ -1018,7 +1018,7 @@ function Modern:Window(config)
     
     -- New Window API mapping
     self.config.Name = config.Title or config.Name or "Modern"
-    self.config.AccentColor = config.Color or config.AccentColor or Color3.fromRGB(0, 200, 255)
+    self.config.AccentColor = config.Color or config.AccentColor or Color3.fromRGB(170, 0, 255)
     self.config.BackgroundColor = config.BackgroundColor or Color3.fromRGB(16, 16, 16)
     self.config.SecondaryColor = config.SecondaryColor or Color3.fromRGB(18, 18, 18)
     self.config.TextColor = config.TextColor or Color3.fromRGB(255, 255, 255)
@@ -1258,7 +1258,7 @@ function Modern:AddTweaksToggle(config)
         })
         
         local switchFrame = create("Frame", {
-            BackgroundColor3 = config.Default and self.config.AccentColor or Color3.fromRGB(33, 33, 33),
+            BackgroundColor3 = config.Default and self.config.AccentColor or Color3.fromRGB(0, 0, 0),
             Position = UDim2.new(1, -34 * scale_factor, 0.5, -8 * scale_factor),
             Size = UDim2.new(0, 34 * scale_factor, 0, 16 * scale_factor),
             Parent = rowFrame
@@ -1276,7 +1276,7 @@ function Modern:AddTweaksToggle(config)
         local state = config.Default
         local function setState(nextState)
             state = nextState == true
-            tween_to(switchFrame, {BackgroundColor3 = state and self.config.AccentColor or Color3.fromRGB(33, 33, 33)}, 0.16)
+            tween_to(switchFrame, {BackgroundColor3 = state and self.config.AccentColor or Color3.fromRGB(0, 0, 0)}, 0.16)
             tween_to(knob, {
                 Position = state and UDim2.new(0.5, 0, 0.5, -6 * scale_factor) or UDim2.new(0, 2 * scale_factor, 0.5, -6 * scale_factor),
                 BackgroundColor3 = state and Color3.new(1, 1, 1) or Color3.fromRGB(95, 95, 95)
@@ -5043,7 +5043,7 @@ function Modern:BuildMainFrame()
             Parent = rowFrame
         })
         local switchFrame = create("Frame", {
-            BackgroundColor3 = initial and self.config.AccentColor or Color3.fromRGB(33, 33, 33),
+            BackgroundColor3 = initial and self.config.AccentColor or Color3.fromRGB(0, 0, 0),
             Position = UDim2.new(1, -34 * scale_factor, 0.5, -8 * scale_factor),
             Size = UDim2.new(0, 34 * scale_factor, 0, 16 * scale_factor),
             Parent = rowFrame
@@ -5060,7 +5060,7 @@ function Modern:BuildMainFrame()
         local state = initial == true
         local function setState(nextState, skipCallback)
             state = nextState == true
-            tween_to(switchFrame, {BackgroundColor3 = state and self.config.AccentColor or Color3.fromRGB(33, 33, 33)}, 0.16)
+            tween_to(switchFrame, {BackgroundColor3 = state and self.config.AccentColor or Color3.fromRGB(0, 0, 0)}, 0.16)
             tween_to(knob, {
                 Position = state and UDim2.new(0.5, 0, 0.5, -6 * scale_factor) or UDim2.new(0, 2 * scale_factor, 0.5, -6 * scale_factor),
                 BackgroundColor3 = state and Color3.new(1, 1, 1) or Color3.fromRGB(95, 95, 95)
@@ -6065,7 +6065,7 @@ groupObj.groupTitle = create("TextLabel", {
                     toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.checkboxFrame})
                 else
                     toggleObj.switchFrame = create("Frame", {
-                        BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32),
+                        BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(0, 0, 0),
                         Position = UDim2.new(1, -44 * scale_factor, 0, yPosition),
                         Size = UDim2.new(0, 36 * scale_factor, 0, 22 * scale_factor), Parent = groupObj.mainFrame
                     })
@@ -6100,7 +6100,7 @@ groupObj.groupTitle = create("TextLabel", {
                             tween_to(toggleObj.switchFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
                             tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.462, 0, 0.143, 0), BackgroundColor3 = Color3.new(1, 1, 1)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
                         else
-                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(0, 0, 0)}, 0.2)
                             tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.0104, 0, 0.143, 0), BackgroundColor3 = Color3.fromRGB(75, 75, 75)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
                         end
                     end
@@ -6162,9 +6162,9 @@ groupObj.groupTitle = create("TextLabel", {
                         end
                     else
                         if toggleObj.isLocked then
-                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
+                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(0, 0, 0)}, 0.2)
                         else
-                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(32, 32, 32)}, 0.2)
+                            tween_to(toggleObj.switchFrame, {BackgroundColor3 = toggleObj.value and groupObj.Library.config.AccentColor or Color3.fromRGB(0, 0, 0)}, 0.2)
                         end
                     end
                 end
