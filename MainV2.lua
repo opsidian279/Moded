@@ -1,4 +1,11 @@
--- |||||||||
+--[[
+    This is early release source
+                          Neverlose.cc UI Library
+    Author: 4lpaca
+	License: MIT
+    Discord: https://arceney.win/discord
+    Other-Projects: https://4lpaca.win
+]]
 
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
@@ -143,12 +150,12 @@ listfiles = listfiles or getgenv().listfiles;
 isfolder = isfolder or getgenv().isfolder;
 isfile = isfile or getgenv().isfile;
 
-local ModernV2 = {};
+local NeverLose = {};
 
-ModernV2.BuiltInRegular = Font.new('rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json',Enum.FontWeight.Regular,Enum.FontStyle.Normal);
-ModernV2.BuiltInBold = Font.new('rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json',Enum.FontWeight.Bold,Enum.FontStyle.Normal);
-ModernV2.GlobalSignals = {};
-ModernV2.UnloadEnabled = false;
+NeverLose.BuiltInRegular = Font.new('rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json',Enum.FontWeight.Regular,Enum.FontStyle.Normal);
+NeverLose.BuiltInBold = Font.new('rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json',Enum.FontWeight.Bold,Enum.FontStyle.Normal);
+NeverLose.GlobalSignals = {};
+NeverLose.UnloadEnabled = false;
 
 local cloneref: cloneref = cloneref or function(f) return f end;
 local TweenService: TweenService = cloneref(game:GetService('TweenService'));
@@ -169,63 +176,63 @@ local FastTween = TweenInfo.new(0.05);
 local VSlowTween = TweenInfo.new(0.5,Enum.EasingStyle.Quint);
 local Encryption = {};
 
-ModernV2.UserProfile = Players:GetUserThumbnailAsync(LocalPlayer.UserId , Enum.ThumbnailType.HeadShot , Enum.ThumbnailSize.Size150x150)
-ModernV2.RandomString = LPH_NO_VIRTUALIZE(function()
+NeverLose.UserProfile = Players:GetUserThumbnailAsync(LocalPlayer.UserId , Enum.ThumbnailType.HeadShot , Enum.ThumbnailSize.Size150x150)
+NeverLose.RandomString = LPH_NO_VIRTUALIZE(function()
 	return string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4))..string.rep(string.char(math.random(1,7)),math.random(1,4));
 end);
 
 ProtectGui(GlobalWindow);
 
-GlobalWindow.Name = ModernV2.RandomString();
+GlobalWindow.Name = NeverLose.RandomString();
 GlobalWindow.IgnoreGuiInset = true;
 GlobalWindow.ZIndexBehavior = Enum.ZIndexBehavior.Global;
 GlobalWindow.ResetOnSpawn = false;
 GlobalWindow.Parent = CoreGui;
 
-ModernV2.Scales = {
+NeverLose.Scales = {
 	Small = UDim2.fromOffset(540,380),
 	Mobile = UDim2.fromOffset(640,385),
 	Default = UDim2.fromOffset(640 , 480),
 	Large = UDim2.fromOffset(800 , 600)
 };
 
-ModernV2.IconColor = Color3.fromRGB(255, 255, 255);
-ModernV2.ScreenGui = GlobalWindow;
-ModernV2.Flags = {};
-ModernV2.AccentColor = Color3.fromRGB(78, 127, 252);
-ModernV2.MainColor = Color3.fromRGB(8, 8, 13);
-ModernV2.RegisiteryColor = {};
-ModernV2.NameRegisitry = {};
-ModernV2.IsMosueOverOtherFrame = false;
-ModernV2.GlobalLogo = "rbxassetid://120358385035996";
-ModernV2.ImageColorMapping = "rbxassetid://4155801252";
+NeverLose.IconColor = Color3.fromRGB(255, 255, 255);
+NeverLose.ScreenGui = GlobalWindow;
+NeverLose.Flags = {};
+NeverLose.AccentColor = Color3.fromRGB(78, 127, 252);
+NeverLose.MainColor = Color3.fromRGB(8, 8, 13);
+NeverLose.RegisiteryColor = {};
+NeverLose.NameRegisitry = {};
+NeverLose.IsMosueOverOtherFrame = false;
+NeverLose.GlobalLogo = "rbxassetid://120358385035996";
+NeverLose.ImageColorMapping = "rbxassetid://4155801252";
 
 -- ┌─────────────────────────────────────────────────────────────────┐
 -- │                   THEME SYSTEM (AddTheme)                       │
 -- └─────────────────────────────────────────────────────────────────┘
 
-ModernV2.Themes = {};
-ModernV2.ThemeCallbacks = {};   -- list of callbacks to update live UI
+NeverLose.Themes = {};
+NeverLose.ThemeCallbacks = {};   -- list of callbacks to update live UI
 
 -- Register a theme update listener (internal use)
-function ModernV2:OnThemeChanged(fn)
-	table.insert(ModernV2.ThemeCallbacks, fn);
+function NeverLose:OnThemeChanged(fn)
+	table.insert(NeverLose.ThemeCallbacks, fn);
 end;
 
 -- Apply all registered theme callbacks
 local function _ApplyTheme(theme)
-	ModernV2.AccentColor  = theme.Accent      or ModernV2.AccentColor;
-	ModernV2.MainColor    = theme.Background  or ModernV2.MainColor;
-	ModernV2.IconColor    = theme.Icon        or ModernV2.IconColor;
+	NeverLose.AccentColor  = theme.Accent      or NeverLose.AccentColor;
+	NeverLose.MainColor    = theme.Background  or NeverLose.MainColor;
+	NeverLose.IconColor    = theme.Icon        or NeverLose.IconColor;
 
 	-- fire every live-update listener
-	for _, fn in next, ModernV2.ThemeCallbacks do
+	for _, fn in next, NeverLose.ThemeCallbacks do
 		pcall(fn, theme);
 	end;
 end;
 
 --[[
-	ModernV2:AddTheme({
+	NeverLose:AddTheme({
 		Name        = "Lumi Sakura",
 		Accent      = Color3.fromRGB(255,120,180),
 		Background  = Color3.fromRGB(35,20,30),
@@ -237,24 +244,24 @@ end;
 		Icon        = Color3.fromRGB(255,180,210),
 	})
 ]]
-function ModernV2:AddTheme(Config)
+function NeverLose:AddTheme(Config)
 	Config = Config or {};
 	Config.Name = Config.Name or "Custom Theme";
 
 	-- defaults fall back to current values
 	local theme = {
 		Name        = Config.Name,
-		Accent      = Config.Accent      or ModernV2.AccentColor,
-		Background  = Config.Background  or ModernV2.MainColor,
+		Accent      = Config.Accent      or NeverLose.AccentColor,
+		Background  = Config.Background  or NeverLose.MainColor,
 		Surface     = Config.Surface     or Color3.fromRGB(20,22,27),
 		Outline     = Config.Outline     or Color3.fromRGB(45,48,58),
 		Text        = Config.Text        or Color3.fromRGB(255,255,255),
 		Placeholder = Config.Placeholder or Color3.fromRGB(140,140,155),
-		Button      = Config.Button      or ModernV2.AccentColor,
-		Icon        = Config.Icon        or ModernV2.IconColor,
+		Button      = Config.Button      or NeverLose.AccentColor,
+		Icon        = Config.Icon        or NeverLose.IconColor,
 	};
 
-	table.insert(ModernV2.Themes, theme);
+	table.insert(NeverLose.Themes, theme);
 	_ApplyTheme(theme);
 
 	return theme;
@@ -271,7 +278,7 @@ end;
 -- │  • Cannot be dragged off screen (optional drag entirely)        │
 -- └─────────────────────────────────────────────────────────────────┘
 
-function ModernV2:CreateMenuIcon(Config)
+function NeverLose:CreateMenuIcon(Config)
 	Config = Config or {};
 
 	-- ── Defaults ──────────────────────────────────────────────────
@@ -279,15 +286,15 @@ function ModernV2:CreateMenuIcon(Config)
 	local iconImage      = Config.Image        or "";          -- rbxassetid:// OR lucide name OR URL
 	local iconColor      = Config.IconColor    or Color3.fromRGB(255,255,255);
 	local bgColor        = Config.BGColor      or Color3.fromRGB(20,22,27);
-	local strokeColor    = Config.StrokeColor  or ModernV2.AccentColor;
+	local strokeColor    = Config.StrokeColor  or NeverLose.AccentColor;
 	local strokeThick    = Config.StrokeThick  or 1.5;
 	local draggable      = (Config.Draggable ~= false);       -- default true, but clamped
 	local cornerRadius   = UDim.new(0, math.floor(iconSize * 0.28)); -- ~28 % → round-square
 
 	-- ── Container ─────────────────────────────────────────────────
 	local IconRoot = Instance.new("Frame");
-	IconRoot.Name             = ModernV2.RandomString();
-	IconRoot.Parent           = ModernV2.ScreenGui;
+	IconRoot.Name             = NeverLose.RandomString();
+	IconRoot.Parent           = NeverLose.ScreenGui;
 	-- center-left: X = 15px from left, Y = 50 % of screen
 	IconRoot.AnchorPoint      = Vector2.new(0, 0.5);
 	IconRoot.BackgroundColor3 = bgColor;
@@ -312,7 +319,7 @@ function ModernV2:CreateMenuIcon(Config)
 	-- ── Icon display (TextLabel for built-in / ImageLabel for image) ──
 	-- We keep both and show the relevant one.
 	local IconLabel = Instance.new("TextLabel");
-	IconLabel.Name                = ModernV2.RandomString();
+	IconLabel.Name                = NeverLose.RandomString();
 	IconLabel.Parent              = IconRoot;
 	IconLabel.AnchorPoint         = Vector2.new(0.5, 0.5);
 	IconLabel.BackgroundTransparency = 1;
@@ -320,7 +327,7 @@ function ModernV2:CreateMenuIcon(Config)
 	IconLabel.Position            = UDim2.fromScale(0.5, 0.5);
 	IconLabel.Size                = UDim2.fromScale(0.65, 0.65);
 	IconLabel.ZIndex              = 21;
-	IconLabel.FontFace            = ModernV2.BuiltInBold;
+	IconLabel.FontFace            = NeverLose.BuiltInBold;
 	IconLabel.Text                = "";
 	IconLabel.TextColor3          = iconColor;
 	IconLabel.TextScaled          = true;
@@ -328,7 +335,7 @@ function ModernV2:CreateMenuIcon(Config)
 	IconLabel.TextWrapped         = true;
 
 	local IconImage = Instance.new("ImageLabel");
-	IconImage.Name                = ModernV2.RandomString();
+	IconImage.Name                = NeverLose.RandomString();
 	IconImage.Parent              = IconRoot;
 	IconImage.AnchorPoint         = Vector2.new(0.5, 0.5);
 	IconImage.BackgroundTransparency = 1;
@@ -345,7 +352,7 @@ function ModernV2:CreateMenuIcon(Config)
 	UICornerImg.Parent       = IconImage;
 
 	-- Shadow behind icon
-	local IconShadow = ModernV2:CreateShadow(IconRoot, true);
+	local IconShadow = NeverLose:CreateShadow(IconRoot, true);
 
 	-- ── Internal state ────────────────────────────────────────────
 	local MenuIconLib = {
@@ -380,7 +387,7 @@ function ModernV2:CreateMenuIcon(Config)
 			IconLabel.Visible    = false;
 		else
 			-- treat as built-in icon name (Lucide / builder-icons)
-			ModernV2:SetIconMode(IconLabel, src);
+			NeverLose:SetIconMode(IconLabel, src);
 			IconLabel.Visible    = true;
 			IconImage.Visible    = false;
 		end;
@@ -395,33 +402,33 @@ function ModernV2:CreateMenuIcon(Config)
 		if val then
 			-- Bounce-in from left
 			IconRoot.Position = UDim2.new(0, -iconSize, 0.5, 0);
-			ModernV2.PlayAnimate(IconRoot, VSlowTween, {
+			NeverLose.PlayAnimate(IconRoot, VSlowTween, {
 				BackgroundTransparency = 0,
 				Position = UDim2.new(0, 15, 0.5, 0),
 			});
-			ModernV2.PlayAnimate(UIStrokeIcon, SlowyTween, {
+			NeverLose.PlayAnimate(UIStrokeIcon, SlowyTween, {
 				Transparency = 0.25,
 			});
-			ModernV2.PlayAnimate(IconLabel, VSlowTween, {
+			NeverLose.PlayAnimate(IconLabel, VSlowTween, {
 				TextTransparency = 0,
 			});
-			ModernV2.PlayAnimate(IconImage, VSlowTween, {
+			NeverLose.PlayAnimate(IconImage, VSlowTween, {
 				ImageTransparency = 0,
 			});
 			IconShadow:Render(true);
 		else
 			-- Slide out to the left
-			ModernV2.PlayAnimate(IconRoot, VSlowTween, {
+			NeverLose.PlayAnimate(IconRoot, VSlowTween, {
 				BackgroundTransparency = 1,
 				Position = UDim2.new(0, -iconSize - 10, 0.5, 0),
 			});
-			ModernV2.PlayAnimate(UIStrokeIcon, SlowyTween, {
+			NeverLose.PlayAnimate(UIStrokeIcon, SlowyTween, {
 				Transparency = 1,
 			});
-			ModernV2.PlayAnimate(IconLabel, SlowyTween, {
+			NeverLose.PlayAnimate(IconLabel, SlowyTween, {
 				TextTransparency = 1,
 			});
-			ModernV2.PlayAnimate(IconImage, SlowyTween, {
+			NeverLose.PlayAnimate(IconImage, SlowyTween, {
 				ImageTransparency = 1,
 			});
 			IconShadow:Render(false);
@@ -483,21 +490,21 @@ function ModernV2:CreateMenuIcon(Config)
 		local sz = MenuIconLib._size;
 		if windowVisible then
 			-- shrink slightly
-			ModernV2.PlayAnimate(IconRoot, TweenInfo.new(0.1), {
+			NeverLose.PlayAnimate(IconRoot, TweenInfo.new(0.1), {
 				Size = UDim2.fromOffset(sz * 0.85, sz * 0.85),
 			});
 			task.delay(0.12, function()
-				ModernV2.PlayAnimate(IconRoot, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				NeverLose.PlayAnimate(IconRoot, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 					Size = UDim2.fromOffset(sz, sz),
 				});
 			end);
 		else
 			-- expand slightly
-			ModernV2.PlayAnimate(IconRoot, TweenInfo.new(0.1), {
+			NeverLose.PlayAnimate(IconRoot, TweenInfo.new(0.1), {
 				Size = UDim2.fromOffset(sz * 1.15, sz * 1.15),
 			});
 			task.delay(0.12, function()
-				ModernV2.PlayAnimate(IconRoot, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				NeverLose.PlayAnimate(IconRoot, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 					Size = UDim2.fromOffset(sz, sz),
 				});
 			end);
@@ -510,7 +517,7 @@ function ModernV2:CreateMenuIcon(Config)
 		local dragStart, startPos;
 
 		local function clampPosition(pos)
-			local screenSize = ModernV2.ScreenGui.AbsoluteSize;
+			local screenSize = NeverLose.ScreenGui.AbsoluteSize;
 			local sz2 = MenuIconLib._size;
 			local nx = math.clamp(pos.X.Offset, 0, screenSize.X - sz2);
 			local ny = math.clamp(pos.Y.Scale * screenSize.Y + pos.Y.Offset, sz2/2, screenSize.Y - sz2/2);
@@ -523,7 +530,7 @@ function ModernV2:CreateMenuIcon(Config)
 			local dragStart, startPos;
 			local DRAG_THRESHOLD = 6; -- pixels of movement before it counts as a drag
 
-			ModernV2:AddSignal(IconRoot.InputBegan:Connect(function(input)
+			NeverLose:AddSignal(IconRoot.InputBegan:Connect(function(input)
 				if input.UserInputType ~= Enum.UserInputType.MouseButton1
 				and input.UserInputType ~= Enum.UserInputType.Touch then
 					return;
@@ -560,14 +567,14 @@ function ModernV2:CreateMenuIcon(Config)
 
 					-- Pure tap (no drag movement) → fire the real-time keybind
 					if not moved then
-						ModernV2:FireKeybind();
+						NeverLose:FireKeybind();
 					end;
 				end);
 			end));
 		end;
 
 	-- ── Theme live-update ─────────────────────────────────────────
-	ModernV2:OnThemeChanged(function(theme)
+	NeverLose:OnThemeChanged(function(theme)
 		if theme.Icon then
 			MenuIconLib:SetIconColor(theme.Icon);
 		end;
@@ -587,7 +594,7 @@ function ModernV2:CreateMenuIcon(Config)
 end;
 
 if getcustomasset then
-	local link = "https://github.com/4lpaca-pin/ModernV2/blob/main/assets/%s?raw=true";
+	local link = "https://github.com/4lpaca-pin/NeverLose/blob/main/assets/%s?raw=true";
 	local dir = 'NLAssets';
 
 	if not isfolder(dir) then
@@ -603,7 +610,7 @@ if getcustomasset then
 		end;
 
 		if isfile(dir..'/'..'logo.png') then
-			ModernV2.GlobalLogo = getcustomasset(dir..'/'..'logo.png')
+			NeverLose.GlobalLogo = getcustomasset(dir..'/'..'logo.png')
 		end;
 	end);
 
@@ -616,21 +623,21 @@ if getcustomasset then
 		end;
 
 		if isfile(dir..'/'..'saturation_value_gradient.png') then
-			ModernV2.ImageColorMapping = getcustomasset(dir..'/'..'saturation_value_gradient.png')
+			NeverLose.ImageColorMapping = getcustomasset(dir..'/'..'saturation_value_gradient.png')
 		end;
 	end);
 end;
 
-function ModernV2:AddSignal(RBXSignal)
-	if ModernV2.UnloadEnabled then
-		table.insert(ModernV2.GlobalSignals,RBXSignal);
+function NeverLose:AddSignal(RBXSignal)
+	if NeverLose.UnloadEnabled then
+		table.insert(NeverLose.GlobalSignals,RBXSignal);
 	end;
 
 	return RBXSignal;
 end;
 
-function ModernV2:AddQuery(ItemRoot: Frame , Name : string)
-	table.insert(ModernV2.NameRegisitry , {
+function NeverLose:AddQuery(ItemRoot: Frame , Name : string)
+	table.insert(NeverLose.NameRegisitry , {
 		Root = ItemRoot,
 		Idx = Name,
 	});
@@ -676,7 +683,7 @@ end;
 do
 	local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
-	ModernV2.Base64Encode = LPH_NO_VIRTUALIZE(function(data)
+	NeverLose.Base64Encode = LPH_NO_VIRTUALIZE(function(data)
 		return ((data:gsub('.', function(x) 
 			local r,b='',x:byte()
 			for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
@@ -689,7 +696,7 @@ do
 		end)..({ '', '==', '=' })[#data%3+1])
 	end);
 
-	ModernV2.Base64Decode = LPH_NO_VIRTUALIZE(function(data)
+	NeverLose.Base64Decode = LPH_NO_VIRTUALIZE(function(data)
 		data = string.gsub(data, '[^'..b..'=]', '')
 		return (data:gsub('.', function(x)
 			if (x == '=') then return '' end
@@ -710,14 +717,14 @@ end;
 -- Reads Window.Keybind at call time, so it always matches whatever
 -- the user has set — even if they changed it via the keybind picker.
 -- Called by Watermark bindable blocks and the MenuIcon click.
-function ModernV2:FireKeybind()
-	if ModernV2.ActiveWindow then
-		ModernV2.ActiveWindow:ToggleInterface();
+function NeverLose:FireKeybind()
+	if NeverLose.ActiveWindow then
+		NeverLose.ActiveWindow:ToggleInterface();
 	end;
 end;
 
-ModernV2.LoadIcon = LPH_NO_VIRTUALIZE(function()
-	ModernV2.RobloxIcon = {
+NeverLose.LoadIcon = LPH_NO_VIRTUALIZE(function()
+	NeverLose.RobloxIcon = {
 		["3d-cube-arrow-left"] = "3d-cube-arrow-left",
 		["amazon"] = "amazon",
 		["arm-left"] = "arm-left",
@@ -1212,12 +1219,12 @@ ModernV2.LoadIcon = LPH_NO_VIRTUALIZE(function()
 	};
 end);
 
-ModernV2.IsMouseOverFrame = LPH_NO_VIRTUALIZE(function(self , Frame)
+NeverLose.IsMouseOverFrame = LPH_NO_VIRTUALIZE(function(self , Frame)
 	if not Frame then
 		return;
 	end;
 
-	if ModernV2.Global3DRenderMode then
+	if NeverLose.Global3DRenderMode then
 		if Frame.GuiState == Enum.GuiState.Hover or Frame.GuiState == Enum.GuiState.Press then
 			return true;
 		end;
@@ -1232,7 +1239,7 @@ ModernV2.IsMouseOverFrame = LPH_NO_VIRTUALIZE(function(self , Frame)
 	end;
 end);
 
-ModernV2.CreateSignal = LPH_NO_VIRTUALIZE(function(self , DefaultValue)
+NeverLose.CreateSignal = LPH_NO_VIRTUALIZE(function(self , DefaultValue)
 	local __cache = Instance.new('BindableEvent');
 	local bind = {
 		Value = DefaultValue,
@@ -1252,7 +1259,7 @@ ModernV2.CreateSignal = LPH_NO_VIRTUALIZE(function(self , DefaultValue)
 	function bind:Connect(f)
 		local signal = __cache.Event:Connect(f);
 
-		ModernV2:AddSignal(signal);
+		NeverLose:AddSignal(signal);
 
 		return signal;
 	end;
@@ -1260,36 +1267,36 @@ ModernV2.CreateSignal = LPH_NO_VIRTUALIZE(function(self , DefaultValue)
 	return bind;
 end);
 
-ModernV2.SetIconMode = LPH_NO_VIRTUALIZE(function(self , Label: TextLabel , Icon: string)
+NeverLose.SetIconMode = LPH_NO_VIRTUALIZE(function(self , Label: TextLabel , Icon: string)
 	local useBold = string.lower(string.sub(Icon , -5)) == '-bold';
 
 	if useBold then
 		Label.Text = Icon:sub(1,-6);
-		Label.FontFace = ModernV2.BuiltInBold;
+		Label.FontFace = NeverLose.BuiltInBold;
 	else
 		Label.Text = Icon;
-		Label.FontFace = ModernV2.BuiltInRegular;
+		Label.FontFace = NeverLose.BuiltInRegular;
 	end;
 end);
 
-function ModernV2:GetIconFont(icon: string)
+function NeverLose:GetIconFont(icon: string)
 	local useBold = string.lower(string.sub(icon , -5)) == '-bold';
 
 	if useBold then
-		return ModernV2.BuiltInBold;
+		return NeverLose.BuiltInBold;
 	end;
 
-	return ModernV2.BuiltInRegular;
+	return NeverLose.BuiltInRegular;
 end;
 
-function ModernV2:MoreThanHalfY(Value: number)
-	return (ModernV2.ScreenGui.AbsoluteSize.Y / 2) < Value
+function NeverLose:MoreThanHalfY(Value: number)
+	return (NeverLose.ScreenGui.AbsoluteSize.Y / 2) < Value
 end;
 
-ModernV2.IsStudio = RunService:IsStudio();
-ModernV2.IsMobile = UserInputService.TouchEnabled;
+NeverLose.IsStudio = RunService:IsStudio();
+NeverLose.IsMobile = UserInputService.TouchEnabled;
 
-ModernV2.CreateInput = LPH_NO_VIRTUALIZE(function(self , Frame , Callback)
+NeverLose.CreateInput = LPH_NO_VIRTUALIZE(function(self , Frame , Callback)
 	local Button = Instance.new('ImageButton',Frame);
 
 	Button.ZIndex = Frame.ZIndex + 10;
@@ -1307,7 +1314,7 @@ ModernV2.CreateInput = LPH_NO_VIRTUALIZE(function(self , Frame , Callback)
 	return Button;
 end);
 
-ModernV2.PlayAnimate = LPH_NO_VIRTUALIZE(function(Self , Info , Property)
+NeverLose.PlayAnimate = LPH_NO_VIRTUALIZE(function(Self , Info , Property)
 	local Tween = TweenService:Create(Self , Info or TweenInfo.new(0.25) , Property);
 
 	Tween:Play();
@@ -1315,7 +1322,7 @@ ModernV2.PlayAnimate = LPH_NO_VIRTUALIZE(function(Self , Info , Property)
 	return Tween;
 end);
 
-ModernV2.Drag = LPH_NO_VIRTUALIZE(function(InputFrame: Frame, MoveFrame: Frame, Speed : number)
+NeverLose.Drag = LPH_NO_VIRTUALIZE(function(InputFrame: Frame, MoveFrame: Frame, Speed : number)
 	local dragToggle: boolean = false;
 	local dragStart: Vector3 = nil;
 	local startPos: UDim2 = nil;
@@ -1326,18 +1333,18 @@ ModernV2.Drag = LPH_NO_VIRTUALIZE(function(InputFrame: Frame, MoveFrame: Frame, 
 		local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
 			startPos.Y.Scale, startPos.Y.Offset + delta.Y);
 
-		if ModernV2.Global3DRenderMode then
-			ModernV2.PlayAnimate(MoveFrame,Tween,{
+		if NeverLose.Global3DRenderMode then
+			NeverLose.PlayAnimate(MoveFrame,Tween,{
 				Position = UDim2.fromScale(0.5,0.5)
 			});
 		else
-			ModernV2.PlayAnimate(MoveFrame,Tween,{
+			NeverLose.PlayAnimate(MoveFrame,Tween,{
 				Position = position
 			});
 		end;
 	end;
 
-	ModernV2:AddSignal(InputFrame.InputBegan:Connect(function(input)
+	NeverLose:AddSignal(InputFrame.InputBegan:Connect(function(input)
 		if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then 
 			dragToggle = true;
 			dragStart = input.Position;
@@ -1354,7 +1361,7 @@ ModernV2.Drag = LPH_NO_VIRTUALIZE(function(InputFrame: Frame, MoveFrame: Frame, 
 		end
 	end));
 
-	ModernV2:AddSignal(UserInputService.InputChanged:Connect(function(input)
+	NeverLose:AddSignal(UserInputService.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 			if dragToggle then
 				updateInput(input)
@@ -1363,12 +1370,12 @@ ModernV2.Drag = LPH_NO_VIRTUALIZE(function(InputFrame: Frame, MoveFrame: Frame, 
 	end));
 end);
 
-ModernV2.Rounding = LPH_NO_VIRTUALIZE(function(num, numDecimalPlaces)
+NeverLose.Rounding = LPH_NO_VIRTUALIZE(function(num, numDecimalPlaces)
 	local mult = 10 ^ (numDecimalPlaces or 0);
 	return math.floor(num * mult + 0.5) / mult;
 end);
 
-ModernV2.ProcessParams = LPH_NO_VIRTUALIZE(function(self , Params , Fixed)
+NeverLose.ProcessParams = LPH_NO_VIRTUALIZE(function(self , Params , Fixed)
 	Params = Params or {};
 
 	local k = Params or {};
@@ -1382,10 +1389,10 @@ ModernV2.ProcessParams = LPH_NO_VIRTUALIZE(function(self , Params , Fixed)
 	return k;
 end);
 
-ModernV2.EnabledBlur = true;
-ModernV2.BlurModuleParent = workspace.CurrentCamera;
+NeverLose.EnabledBlur = true;
+NeverLose.BlurModuleParent = workspace.CurrentCamera;
 
-ModernV2.GetCalculatePosition = LPH_NO_VIRTUALIZE(function(planePos, planeNormal, rayOrigin, rayDirection)
+NeverLose.GetCalculatePosition = LPH_NO_VIRTUALIZE(function(planePos, planeNormal, rayOrigin, rayDirection)
 	local n = planeNormal;
 	local d = rayDirection;
 	local v = rayOrigin - planePos;
@@ -1397,12 +1404,12 @@ ModernV2.GetCalculatePosition = LPH_NO_VIRTUALIZE(function(planePos, planeNormal
 	return rayOrigin + (a * rayDirection);
 end);
 
-ModernV2.CreateBlurModule = LPH_NO_VIRTUALIZE(function(self , Frame , Signal)
-	if not ModernV2.EnabledBlur then
-		return ModernV2:AddSignal(Instance.new('BindableEvent').Event:Connect(function() return "nl"; end));	
+NeverLose.CreateBlurModule = LPH_NO_VIRTUALIZE(function(self , Frame , Signal)
+	if not NeverLose.EnabledBlur then
+		return NeverLose:AddSignal(Instance.new('BindableEvent').Event:Connect(function() return "nl"; end));	
 	end;
 
-	local Part = Instance.new('Part',ModernV2.BlurModuleParent);
+	local Part = Instance.new('Part',NeverLose.BlurModuleParent);
 	local DepthOfField = Instance.new('DepthOfFieldEffect',cloneref(game:GetService('Lighting')));
 	local BlockMesh = Instance.new("BlockMesh");
 
@@ -1415,7 +1422,7 @@ ModernV2.CreateBlurModule = LPH_NO_VIRTUALIZE(function(self , Frame , Signal)
 	Part.Anchored = true;
 	Part.CanCollide = false;
 	Part.CanQuery = false;
-	Part.CollisionGroup = ModernV2.RandomString();
+	Part.CollisionGroup = NeverLose.RandomString();
 	Part.Size = Vector3.new(1, 1, 1) * 0.01;
 	Part.Color = Color3.fromRGB(0,0,0);
 
@@ -1424,33 +1431,33 @@ ModernV2.CreateBlurModule = LPH_NO_VIRTUALIZE(function(self , Frame , Signal)
 	DepthOfField.FocusDistance = 0;
 	DepthOfField.InFocusRadius = 1000;
 	DepthOfField.NearIntensity = 1;
-	DepthOfField.Name = ModernV2.RandomString();
+	DepthOfField.Name = NeverLose.RandomString();
 
-	Part.Name = ModernV2.RandomString();
+	Part.Name = NeverLose.RandomString();
 
 	local disconnect;
 
 	local UpdateFunction = function()
 		local IsWindowActive = Signal:GetValue();
 
-		if IsWindowActive and not ModernV2.Global3DRenderMode then
+		if IsWindowActive and not NeverLose.Global3DRenderMode then
 
-			ModernV2.PlayAnimate(DepthOfField,TweenInfo.new(0.1),{
+			NeverLose.PlayAnimate(DepthOfField,TweenInfo.new(0.1),{
 				NearIntensity = 1
 			})
 
-			ModernV2.PlayAnimate(Part,TweenInfo.new(0.1),{
+			NeverLose.PlayAnimate(Part,TweenInfo.new(0.1),{
 				Transparency = 0.97,
 				Size = Vector3.new(1, 1, 1) * 0.01;
 			})
 
-			Part.Parent = ModernV2.BlurModuleParent;
+			Part.Parent = NeverLose.BlurModuleParent;
 		else
-			ModernV2.PlayAnimate(DepthOfField,TweenInfo.new(0.1),{
+			NeverLose.PlayAnimate(DepthOfField,TweenInfo.new(0.1),{
 				NearIntensity = 0
 			})
 
-			ModernV2.PlayAnimate(Part,TweenInfo.new(0.1),{
+			NeverLose.PlayAnimate(Part,TweenInfo.new(0.1),{
 				Size = Vector3.zero,
 				Transparency = 1.5,
 			})
@@ -1471,8 +1478,8 @@ ModernV2.CreateBlurModule = LPH_NO_VIRTUALIZE(function(self , Frame , Signal)
 
 			local planeNormal = CurrentCamera.CFrame.LookVector;
 
-			local pos0 = ModernV2.GetCalculatePosition(planeOrigin, planeNormal, ray0.Origin, ray0.Direction);
-			local pos1 = ModernV2.GetCalculatePosition(planeOrigin, planeNormal, ray1.Origin, ray1.Direction);
+			local pos0 = NeverLose.GetCalculatePosition(planeOrigin, planeNormal, ray0.Origin, ray0.Direction);
+			local pos1 = NeverLose.GetCalculatePosition(planeOrigin, planeNormal, ray1.Origin, ray1.Direction);
 
 			pos0 = CurrentCamera.CFrame:PointToObjectSpace(pos0);
 			pos1 = CurrentCamera.CFrame:PointToObjectSpace(pos1);
@@ -1486,8 +1493,8 @@ ModernV2.CreateBlurModule = LPH_NO_VIRTUALIZE(function(self , Frame , Signal)
 		end;
 	end;
 
-	local rbxsignal = ModernV2:AddSignal(CurrentCamera:GetPropertyChangedSignal('CFrame'):Connect(UpdateFunction))
-	local loopThread = ModernV2:AddSignal(UserInputService.InputChanged:Connect(function(Input)
+	local rbxsignal = NeverLose:AddSignal(CurrentCamera:GetPropertyChangedSignal('CFrame'):Connect(UpdateFunction))
+	local loopThread = NeverLose:AddSignal(UserInputService.InputChanged:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
 			pcall(UpdateFunction);
 		end;
@@ -1537,7 +1544,7 @@ local function CaseInsensitive(t)
 	});
 end;
 
-function ModernV2:RollingEffect(parent)
+function NeverLose:RollingEffect(parent)
 	local UIGradient = Instance.new("UIGradient")
 
 	UIGradient.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0.00, 0.4), NumberSequenceKeypoint.new(1.00, 0.00)}
@@ -1546,7 +1553,7 @@ function ModernV2:RollingEffect(parent)
 	return UIGradient;
 end;
 
-function ModernV2:CreateShadow(parent , RollingEffect)
+function NeverLose:CreateShadow(parent , RollingEffect)
 	local Shadow = {};
 
 	local UIShadowSafe85 = Instance.new("UIStroke")
@@ -1574,10 +1581,10 @@ function ModernV2:CreateShadow(parent , RollingEffect)
 	local r1,r2,r3,r4;
 
 	if RollingEffect then
-		r1 = ModernV2:RollingEffect(UIShadowSafe85);
-		r2 = ModernV2:RollingEffect(UIShadowSafe65);
-		r3 = ModernV2:RollingEffect(UIShadowSafe50);
-		r4 = ModernV2:RollingEffect(UIShadowSafe45);
+		r1 = NeverLose:RollingEffect(UIShadowSafe85);
+		r2 = NeverLose:RollingEffect(UIShadowSafe65);
+		r3 = NeverLose:RollingEffect(UIShadowSafe50);
+		r4 = NeverLose:RollingEffect(UIShadowSafe45);
 	end;
 
 	Shadow.Render = LPH_NO_VIRTUALIZE(function(self , value)
@@ -1587,19 +1594,19 @@ function ModernV2:CreateShadow(parent , RollingEffect)
 		end;
 
 		if value then
-			ModernV2.PlayAnimate(UIShadowSafe85 , SlowyTween , {
+			NeverLose.PlayAnimate(UIShadowSafe85 , SlowyTween , {
 				Transparency = 0.900
 			})
 
-			ModernV2.PlayAnimate(UIShadowSafe65 , SlowyTween , {
+			NeverLose.PlayAnimate(UIShadowSafe65 , SlowyTween , {
 				Transparency = 0.900
 			})
 
-			ModernV2.PlayAnimate(UIShadowSafe50 , SlowyTween , {
+			NeverLose.PlayAnimate(UIShadowSafe50 , SlowyTween , {
 				Transparency = 0.900
 			})
 
-			ModernV2.PlayAnimate(UIShadowSafe45 , SlowyTween , {
+			NeverLose.PlayAnimate(UIShadowSafe45 , SlowyTween , {
 				Transparency = 0.900
 			})
 
@@ -1607,38 +1614,38 @@ function ModernV2:CreateShadow(parent , RollingEffect)
 				RollingEffectThread = task.spawn(function()
 					local level = 20;
 					while true do task.wait(0.025)
-						ModernV2.PlayAnimate(r1 , SlowyTween , {
+						NeverLose.PlayAnimate(r1 , SlowyTween , {
 							Rotation = r1.Rotation + level
 						});
 
-						ModernV2.PlayAnimate(r2 , SlowyTween , {
+						NeverLose.PlayAnimate(r2 , SlowyTween , {
 							Rotation = r2.Rotation + level
 						});
 
-						ModernV2.PlayAnimate(r3 , SlowyTween , {
+						NeverLose.PlayAnimate(r3 , SlowyTween , {
 							Rotation = r3.Rotation + level
 						});
 
-						ModernV2.PlayAnimate(r4 , SlowyTween , {
+						NeverLose.PlayAnimate(r4 , SlowyTween , {
 							Rotation = r4.Rotation + level
 						});
 					end;
 				end);
 			end;
 		else
-			ModernV2.PlayAnimate(UIShadowSafe85 , SlowyTween , {
+			NeverLose.PlayAnimate(UIShadowSafe85 , SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIShadowSafe65 , SlowyTween , {
+			NeverLose.PlayAnimate(UIShadowSafe65 , SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIShadowSafe50 , SlowyTween , {
+			NeverLose.PlayAnimate(UIShadowSafe50 , SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIShadowSafe45 , SlowyTween , {
+			NeverLose.PlayAnimate(UIShadowSafe45 , SlowyTween , {
 				Transparency = 1
 			})
 		end;
@@ -1647,21 +1654,21 @@ function ModernV2:CreateShadow(parent , RollingEffect)
 	return Shadow;
 end;
 
-function ModernV2:CreateOptionWindow(Frame: Frame , Zindex)
+function NeverLose:CreateOptionWindow(Frame: Frame , Zindex)
 	Zindex = Zindex or 9;
 
 	local Window = {
-		Signal = ModernV2:CreateSignal(false),
+		Signal = NeverLose:CreateSignal(false),
 	};
 
 	local OptionHandler = Instance.new("Frame")
 	local UICorner = Instance.new("UICorner")
 	local UIListLayout = Instance.new("UIListLayout")
 	local UIStroke = Instance.new("UIStroke")
-	local shadow = ModernV2:CreateShadow(OptionHandler);
+	local shadow = NeverLose:CreateShadow(OptionHandler);
 
-	OptionHandler.Name = ModernV2.RandomString();
-	OptionHandler.Parent = ModernV2.ScreenGui
+	OptionHandler.Name = NeverLose.RandomString();
+	OptionHandler.Parent = NeverLose.ScreenGui
 	OptionHandler.AnchorPoint = Vector2.new(0, 0)
 	OptionHandler.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
 	OptionHandler.BackgroundTransparency = 0.035
@@ -1683,13 +1690,13 @@ function ModernV2:CreateOptionWindow(Frame: Frame , Zindex)
 	UIStroke.Color = Color3.fromRGB(45, 48, 58)
 	UIStroke.Parent = OptionHandler
 
-	ModernV2:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
-		ModernV2.PlayAnimate(OptionHandler , SlowyTween , {
+	NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose.PlayAnimate(OptionHandler , SlowyTween , {
 			Size = UDim2.new(0, 220, 0, UIListLayout.AbsoluteContentSize.Y - 1)
 		})
 	end)));
 
-	ModernV2:AddSignal(OptionHandler:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+	NeverLose:AddSignal(OptionHandler:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
 		if OptionHandler.BackgroundTransparency > 0.9 then
 			OptionHandler.Visible = false;
 			UIListLayout.Parent = nil;
@@ -1698,17 +1705,17 @@ function ModernV2:CreateOptionWindow(Frame: Frame , Zindex)
 			OptionHandler.Visible = true;
 			UIListLayout.Parent = OptionHandler
 
-			if ModernV2.Global3DRenderMode then
-				OptionHandler.Parent = ModernV2.GlobalSurfaceGui;
+			if NeverLose.Global3DRenderMode then
+				OptionHandler.Parent = NeverLose.GlobalSurfaceGui;
 			else
-				OptionHandler.Parent = ModernV2.ScreenGui;
+				OptionHandler.Parent = NeverLose.ScreenGui;
 			end;
 		end
 	end)));
 
 	local FollowingThread;
 	local SetPosition = LPH_NO_VIRTUALIZE(function()
-		if ModernV2:MoreThanHalfY(Frame.AbsolutePosition.Y + 65) then
+		if NeverLose:MoreThanHalfY(Frame.AbsolutePosition.Y + 65) then
 			OptionHandler.AnchorPoint = Vector2.new(0,1)
 		else
 			OptionHandler.AnchorPoint = Vector2.new(0,0)
@@ -1726,20 +1733,20 @@ function ModernV2:CreateOptionWindow(Frame: Frame , Zindex)
 		if value then
 			SetPosition();
 
-			ModernV2.PlayAnimate(OptionHandler , SlowyTween , {
+			NeverLose.PlayAnimate(OptionHandler , SlowyTween , {
 				BackgroundTransparency = 0.035
 			})
 
-			ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 				Transparency = 0.650
 			})
 
 			shadow:Render(true);
 
-			if ModernV2.Global3DRenderMode then
-				OptionHandler.Parent = ModernV2.GlobalSurfaceGui;
+			if NeverLose.Global3DRenderMode then
+				OptionHandler.Parent = NeverLose.GlobalSurfaceGui;
 			else
-				OptionHandler.Parent = ModernV2.ScreenGui;
+				OptionHandler.Parent = NeverLose.ScreenGui;
 			end;
 
 			FollowingThread = task.spawn(function()
@@ -1748,11 +1755,11 @@ function ModernV2:CreateOptionWindow(Frame: Frame , Zindex)
 				end
 			end)
 		else
-			ModernV2.PlayAnimate(OptionHandler , SlowyTween , {
+			NeverLose.PlayAnimate(OptionHandler , SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 				Transparency = 1
 			})
 
@@ -1763,7 +1770,7 @@ function ModernV2:CreateOptionWindow(Frame: Frame , Zindex)
 	Window.SetRender(false);
 	Window.Signal:Connect(Window.SetRender)
 
-	local Payback = ModernV2:RegisiterItem(OptionHandler , Window.Signal);
+	local Payback = NeverLose:RegisiterItem(OptionHandler , Window.Signal);
 
 	Payback.Winbdow = Window;
 	Payback.Root = OptionHandler;
@@ -1772,7 +1779,7 @@ function ModernV2:CreateOptionWindow(Frame: Frame , Zindex)
 	return Payback;
 end;
 
-function ModernV2:CreateColorPicker(HandleFrame: Frame)
+function NeverLose:CreateColorPicker(HandleFrame: Frame)
 	local ZIndex = HandleFrame.ZIndex;
 
 	local ColorPickerLib = {};
@@ -1793,10 +1800,10 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 	local UICorner_5 = Instance.new("UICorner")
 	local RGBLabel = Instance.new("TextLabel")
 	local UICorner_6 = Instance.new("UICorner")
-	local Shadow = ModernV2:CreateShadow(ColorPickerHandler);
+	local Shadow = NeverLose:CreateShadow(ColorPickerHandler);
 
-	ColorPickerHandler.Name = ModernV2.RandomString();
-	ColorPickerHandler.Parent = ModernV2.ScreenGui
+	ColorPickerHandler.Name = NeverLose.RandomString();
+	ColorPickerHandler.Parent = NeverLose.ScreenGui
 	ColorPickerHandler.AnchorPoint = Vector2.new(0, 0)
 	ColorPickerHandler.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
 	ColorPickerHandler.BackgroundTransparency = 0.035
@@ -1807,17 +1814,17 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 	ColorPickerHandler.Size = UDim2.new(0, 200, 0, 240)
 	ColorPickerHandler.ZIndex = ZIndex + 125
 
-	ModernV2:AddSignal(ColorPickerHandler:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+	NeverLose:AddSignal(ColorPickerHandler:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
 		if ColorPickerHandler.BackgroundTransparency > 0.9 then
 			ColorPickerHandler.Visible = false;
 			ColorPickerHandler.Parent = nil
 		else
 			ColorPickerHandler.Visible = true;
 
-			if ModernV2.Global3DRenderMode then
-				ColorPickerHandler.Parent = ModernV2.GlobalSurfaceGui;
+			if NeverLose.Global3DRenderMode then
+				ColorPickerHandler.Parent = NeverLose.GlobalSurfaceGui;
 			else
-				ColorPickerHandler.Parent = ModernV2.ScreenGui;
+				ColorPickerHandler.Parent = NeverLose.ScreenGui;
 			end;
 		end;
 	end)));
@@ -1829,7 +1836,7 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 	UIStroke.Color = Color3.fromRGB(45, 48, 58)
 	UIStroke.Parent = ColorPickerHandler
 
-	SaViMap.Name = ModernV2.RandomString();
+	SaViMap.Name = NeverLose.RandomString();
 	SaViMap.Parent = ColorPickerHandler
 	SaViMap.AnchorPoint = Vector2.new(0.5, 0)
 	SaViMap.BackgroundColor3 = Color3.fromRGB(255, 0, 4)
@@ -1838,12 +1845,12 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 	SaViMap.Position = UDim2.new(0.5, 0, 0, 5)
 	SaViMap.Size = UDim2.new(0, 185, 0, 185)
 	SaViMap.ZIndex = ZIndex + 126
-	SaViMap.Image = ModernV2.ImageColorMapping -- UNSAFE IMAGE
+	SaViMap.Image = NeverLose.ImageColorMapping -- UNSAFE IMAGE
 
 	UICorner_2.CornerRadius = UDim.new(0, 5)
 	UICorner_2.Parent = SaViMap
 
-	ColorZoneSelection.Name = ModernV2.RandomString();
+	ColorZoneSelection.Name = NeverLose.RandomString();
 	ColorZoneSelection.Parent = SaViMap
 	ColorZoneSelection.AnchorPoint = Vector2.new(0.5, 0.5)
 	ColorZoneSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -1860,7 +1867,7 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 	UIStroke_2.Color = Color3.fromRGB(255, 255, 255)
 	UIStroke_2.Parent = ColorZoneSelection
 
-	ColorMap.Name = ModernV2.RandomString();
+	ColorMap.Name = NeverLose.RandomString();
 	ColorMap.Parent = ColorPickerHandler
 	ColorMap.AnchorPoint = Vector2.new(0.5, 0)
 	ColorMap.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -1876,7 +1883,7 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 	UICorner_4.CornerRadius = UDim.new(0, 3)
 	UICorner_4.Parent = ColorMap
 
-	ColorMapSelection.Name = ModernV2.RandomString();
+	ColorMapSelection.Name = NeverLose.RandomString();
 	ColorMapSelection.Parent = ColorMap
 	ColorMapSelection.AnchorPoint = Vector2.new(0.5, 0.5)
 	ColorMapSelection.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -1894,7 +1901,7 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 	UICorner_5.CornerRadius = UDim.new(0, 3)
 	UICorner_5.Parent = ColorMapSelection
 
-	RGBLabel.Name = ModernV2.RandomString();
+	RGBLabel.Name = NeverLose.RandomString();
 	RGBLabel.Parent = ColorPickerHandler
 	RGBLabel.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 	RGBLabel.BackgroundTransparency = 0.750
@@ -1917,64 +1924,64 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 		if value then
 			ColorPickerHandler.Position = UDim2.new(0,HandleFrame.AbsolutePosition.X + 20 , 0 ,HandleFrame.AbsolutePosition.Y + 75);
 
-			ModernV2.PlayAnimate(ColorPickerHandler,SlowyTween , {
+			NeverLose.PlayAnimate(ColorPickerHandler,SlowyTween , {
 				BackgroundTransparency = 0.035
 			})
 
-			ModernV2.PlayAnimate(UIStroke,SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke,SlowyTween , {
 				Transparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(SaViMap,SlowyTween , {
+			NeverLose.PlayAnimate(SaViMap,SlowyTween , {
 				BackgroundTransparency = 0,
 				ImageTransparency = 0
 			})
 
-			ModernV2.PlayAnimate(UIStroke_2,SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke_2,SlowyTween , {
 				Transparency = 0
 			})
 
-			ModernV2.PlayAnimate(ColorMap,SlowyTween , {
+			NeverLose.PlayAnimate(ColorMap,SlowyTween , {
 				BackgroundTransparency = 0
 			})
 
-			ModernV2.PlayAnimate(UIStroke_3,SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke_3,SlowyTween , {
 				Transparency = 0
 			})
 
-			ModernV2.PlayAnimate(RGBLabel,SlowyTween , {
+			NeverLose.PlayAnimate(RGBLabel,SlowyTween , {
 				BackgroundTransparency = 0.750,
 				TextTransparency = 0.400
 			})
 
 			Shadow:Render(true)
 		else
-			ModernV2.PlayAnimate(ColorPickerHandler,SlowyTween , {
+			NeverLose.PlayAnimate(ColorPickerHandler,SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIStroke,SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke,SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(SaViMap,SlowyTween , {
+			NeverLose.PlayAnimate(SaViMap,SlowyTween , {
 				BackgroundTransparency = 1,
 				ImageTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIStroke_2,SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke_2,SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(ColorMap,SlowyTween , {
+			NeverLose.PlayAnimate(ColorMap,SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIStroke_3,SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke_3,SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(RGBLabel,SlowyTween , {
+			NeverLose.PlayAnimate(RGBLabel,SlowyTween , {
 				BackgroundTransparency = 1,
 				TextTransparency = 1
 			})
@@ -1993,15 +2000,15 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 	function ColorPickerLib:Update()
 		local RealColor = Color3.fromHSV(ColorPickerLib.H , ColorPickerLib.S , ColorPickerLib.V);
 
-		ModernV2.PlayAnimate(ColorZoneSelection,ManualTween,{
+		NeverLose.PlayAnimate(ColorZoneSelection,ManualTween,{
 			Position = UDim2.fromScale(ColorPickerLib.S , 1 - ColorPickerLib.V)
 		});
 
-		ModernV2.PlayAnimate(SaViMap,ManualTween,{
+		NeverLose.PlayAnimate(SaViMap,ManualTween,{
 			BackgroundColor3 = Color3.fromHSV(ColorPickerLib.H , 1 , 1)
 		});
 
-		ModernV2.PlayAnimate(ColorMapSelection,ManualTween,{
+		NeverLose.PlayAnimate(ColorMapSelection,ManualTween,{
 			Position = UDim2.fromScale(ColorPickerLib.H,0.5)
 		});
 
@@ -2026,19 +2033,19 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 
 	ColorPickerLib.IsHold = false;
 
-	ModernV2:AddSignal(ColorPickerHandler.InputBegan:Connect(function(Input)
+	NeverLose:AddSignal(ColorPickerHandler.InputBegan:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			ColorPickerLib.IsHold = true;
 		end;
 	end));
 
-	ModernV2:AddSignal(ColorPickerHandler.InputEnded:Connect(function(Input)
+	NeverLose:AddSignal(ColorPickerHandler.InputEnded:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			ColorPickerLib.IsHold = false;
 		end;
 	end));
 
-	ModernV2:AddSignal(ColorMap.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(Input)
+	NeverLose:AddSignal(ColorMap.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			ColorPickerLib.IsHold = true;
 
@@ -2054,7 +2061,7 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 		end;
 	end)));
 
-	ModernV2:AddSignal(SaViMap.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(Input)
+	NeverLose:AddSignal(SaViMap.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(Input)
 		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 			ColorPickerLib.IsHold = true;
 
@@ -2075,7 +2082,7 @@ function ModernV2:CreateColorPicker(HandleFrame: Frame)
 	return ColorPickerLib;
 end;
 
-ModernV2.KeyEnum = {
+NeverLose.KeyEnum = {
 	One = '1',
 	Two = '2',
 	Three = '3',
@@ -2110,177 +2117,63 @@ ModernV2.KeyEnum = {
 	Escape = "Esc",
 };
 
-ModernV2.EnumReverse = {};
+NeverLose.EnumReverse = {};
 
-for i,v in next , ModernV2.KeyEnum do
-	ModernV2.EnumReverse[v] = i;
+for i,v in next , NeverLose.KeyEnum do
+	NeverLose.EnumReverse[v] = i;
 end;
 
-function ModernV2:KeyCodeToStr(K: Enum.KeyCode)
+function NeverLose:KeyCodeToStr(K: Enum.KeyCode)
 	if typeof(K) == 'string' then
-		if ModernV2.KeyEnum[K] then
-			return ModernV2.KeyEnum[K];
+		if NeverLose.KeyEnum[K] then
+			return NeverLose.KeyEnum[K];
 		end;
 
 		return K;
 	end;
 
-	return (ModernV2.KeyEnum[K.Name] or K.Name);
+	return (NeverLose.KeyEnum[K.Name] or K.Name);
 end;
 
-function ModernV2:StrToKeyCode(str: string)
-	if ModernV2.EnumReverse[str] then
-		return Enum.KeyCode[ModernV2.EnumReverse[str]];
+function NeverLose:StrToKeyCode(str: string)
+	if NeverLose.EnumReverse[str] then
+		return Enum.KeyCode[NeverLose.EnumReverse[str]];
 	end;
 
 	return Enum.KeyCode[str];
 end;
 
-function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
+function NeverLose:RegisiterHandler(Handler: Frame , Signal)
 	local handle = {};
 	local ZINdex = Handler.ZIndex;
-	local Frame = ParentFrame or Handler.Parent;
 
 	function handle:AddToggle(Config)
-		local NameParam = Config.Name or Config.Title or nil;
-
-		Config = ModernV2:ProcessParams(Config , {
+		Config = NeverLose:ProcessParams(Config , {
+			Name = nil,
 			Default = false,
 			Flag = nil,
-			Name = nil,
-			Title = nil,
 			Callback = EmptyFunction,
 		});
-
-		local ToggleContainer = Handler;
-		local DisplayFrame = nil;
-
-		-- If Name or Title is provided, create a standalone label frame container
-		if NameParam then
-			local BasedFrame = Instance.new("Frame");
-			local BasedLabel = Instance.new("TextLabel");
-			local LineFrame = Instance.new("Frame");
-			local BasedHandler = Instance.new("Frame");
-			local UIListLayout = Instance.new("UIListLayout");
-			local UICorner_Label = Instance.new("UICorner");
-
-			BasedFrame.Name = ModernV2.RandomString();
-			BasedFrame.Parent = Frame;  -- Parent to main Frame, not Handler
-			BasedFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33);
-			BasedFrame.BackgroundTransparency = 1.000;
-			BasedFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedFrame.BorderSizePixel = 0;
-			BasedFrame.Size = UDim2.new(1, 0, 0, 30);
-			BasedFrame.ZIndex = ZINdex + 8;
-
-			ModernV2:AddQuery(BasedFrame , NameParam);
-
-			BasedLabel.Name = ModernV2.RandomString();
-			BasedLabel.Parent = BasedFrame;
-			BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.BackgroundTransparency = 1.000;
-			BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedLabel.BorderSizePixel = 0;
-			BasedLabel.Position = UDim2.new(0, 11, 0, 6);
-			BasedLabel.Size = UDim2.new(0, 1, 0, 15);
-			BasedLabel.ZIndex = ZINdex + 9;
-			BasedLabel.Font = Enum.Font.GothamMedium;
-			BasedLabel.Text = NameParam;
-			BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.TextSize = 13.000;
-			BasedLabel.TextTransparency = 0.35;
-			BasedLabel.TextXAlignment = Enum.TextXAlignment.Left;
-
-			LineFrame.Name = ModernV2.RandomString();
-			LineFrame.Parent = BasedFrame;
-			LineFrame.AnchorPoint = Vector2.new(0.5, 1);
-			LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58);
-			LineFrame.BackgroundTransparency = 0.650;
-			LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			LineFrame.BorderSizePixel = 0;
-			LineFrame.Position = UDim2.new(0.5, 0, 1, 0);
-			LineFrame.Size = UDim2.new(1, -20, 0, 1);
-			LineFrame.ZIndex = ZINdex + 11;
-
-			BasedHandler.Name = ModernV2.RandomString();
-			BasedHandler.Parent = BasedFrame;
-			BasedHandler.AnchorPoint = Vector2.new(1, 0);
-			BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedHandler.BackgroundTransparency = 1.000;
-			BasedHandler.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedHandler.BorderSizePixel = 0;
-			BasedHandler.Position = UDim2.new(1, -11, 0, 2);
-			BasedHandler.Size = UDim2.new(1, -20, 0, 25);
-			BasedHandler.ZIndex = ZINdex + 12;
-
-			UIListLayout.Parent = BasedHandler;
-			UIListLayout.FillDirection = Enum.FillDirection.Horizontal;
-			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right;
-			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
-			UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
-			UIListLayout.Padding = UDim.new(0, 5);
-
-			UICorner_Label.CornerRadius = UDim.new(0, 10);
-			UICorner_Label.Parent = BasedFrame;
-
-			ToggleContainer = BasedHandler;
-			DisplayFrame = BasedFrame;
-
-			-- Add visibility handling for the standalone frame
-			local sectionSignal = Signal;
-			local frameSignal = ModernV2:CreateSignal(sectionSignal:GetValue());
-
-			local SetRender = LPH_NO_VIRTUALIZE(function(value)
-				if value then
-					ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
-						BackgroundTransparency = 1
-					});
-
-					ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
-						TextTransparency = 0.35
-					});
-
-					ModernV2.PlayAnimate(LineFrame , SlowyTween , {
-						BackgroundTransparency = 0.650
-					});
-				else
-					ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
-						BackgroundTransparency = 1
-					});
-
-					ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
-						TextTransparency = 1
-					});
-
-					ModernV2.PlayAnimate(LineFrame , SlowyTween , {
-						BackgroundTransparency = 1
-					});
-				end;
-			end);
-
-			SetRender(sectionSignal:GetValue());
-			ModernV2:AddSignal(sectionSignal:Connect(SetRender));
-		end;
 
 		local Toggle = Instance.new("Frame")
 		local UICorner = Instance.new("UICorner")
 		local Circle = Instance.new("Frame")
 		local UICorner_2 = Instance.new("UICorner")
 
-		Toggle.Name = ModernV2.RandomString();
-		Toggle.Parent = ToggleContainer
+		Toggle.Name = NeverLose.RandomString();
+		Toggle.Parent = Handler
 		Toggle.BackgroundColor3 = Color3.fromRGB(10, 13, 21)
 		Toggle.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Toggle.BorderSizePixel = 0
 		Toggle.ClipsDescendants = true
 		Toggle.Size = UDim2.new(0, 30, 0, 18)
 		Toggle.ZIndex = ZINdex + 13
-		Toggle.LayoutOrder = -(#ToggleContainer:GetChildren() + 5);
+		Toggle.LayoutOrder = -(#Handler:GetChildren() + 5);
 
 		UICorner.CornerRadius = UDim.new(1, 0)
 		UICorner.Parent = Toggle
 
-		Circle.Name = ModernV2.RandomString();
+		Circle.Name = NeverLose.RandomString();
 		Circle.Parent = Toggle
 		Circle.AnchorPoint = Vector2.new(0.5, 0.5)
 		Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -2295,28 +2188,28 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		UICorner_2.Parent = Circle
 
 		local ToggleLib = {
-			Root = DisplayFrame or Toggle	
+			Root = Toggle	
 		};
 
 		ToggleLib.SetUI = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(Toggle,SlowyTween,{
+				NeverLose.PlayAnimate(Toggle,SlowyTween,{
 					BackgroundTransparency = 0,
-					BackgroundColor3 = ModernV2.AccentColor
+					BackgroundColor3 = NeverLose.AccentColor
 				})
 
-				ModernV2.PlayAnimate(Circle,SlowyTween,{
+				NeverLose.PlayAnimate(Circle,SlowyTween,{
 					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 					BackgroundTransparency = 0,
 					Position = UDim2.new(0.7, 0, 0.5, 0)
 				})
 			else
-				ModernV2.PlayAnimate(Toggle,SlowyTween,{
+				NeverLose.PlayAnimate(Toggle,SlowyTween,{
 					BackgroundTransparency = 0,
 					BackgroundColor3 = Color3.fromRGB(10, 13, 21)
 				})
 
-				ModernV2.PlayAnimate(Circle,SlowyTween,{
+				NeverLose.PlayAnimate(Circle,SlowyTween,{
 					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 					BackgroundTransparency = 0.500,
 					Position = UDim2.new(0.300000012, 0, 0.5, 0)
@@ -2328,12 +2221,12 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			if value then
 				ToggleLib.SetUI(Config.Default);
 			else
-				ModernV2.PlayAnimate(Toggle,SlowyTween,{
+				NeverLose.PlayAnimate(Toggle,SlowyTween,{
 					BackgroundTransparency = 1,
 					BackgroundColor3 = Color3.fromRGB(10, 13, 21)
 				})
 
-				ModernV2.PlayAnimate(Circle,SlowyTween,{
+				NeverLose.PlayAnimate(Circle,SlowyTween,{
 					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 					BackgroundTransparency = 1,
 					Position = UDim2.new(0.300000012, 0, 0.5, 0)
@@ -2342,9 +2235,9 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		end);
 
 		ToggleLib.SetUI(Config.Default);
-		ToggleLib.SetVisible(NameParam and frameSignal:GetValue() or Signal:GetValue());
+		ToggleLib.SetVisible(Signal:GetValue());
 
-		ModernV2:CreateInput(Toggle , LPH_NO_VIRTUALIZE(function()
+		NeverLose:CreateInput(Toggle , LPH_NO_VIRTUALIZE(function()
 			Config.Default = not Config.Default;
 
 			ToggleLib.SetUI(Config.Default);
@@ -2352,7 +2245,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			Config.Callback(Config.Default)
 		end))
 
-		ToggleLib.Signal = (NameParam and frameSignal or Signal):Connect(ToggleLib.SetVisible);
+		ToggleLib.Signal = Signal:Connect(ToggleLib.SetVisible);
 
 		function ToggleLib:GetValue()
 			return Config.Default;
@@ -2361,8 +2254,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		function ToggleLib:SetValue(v)
 			Config.Default = v;
 
-			local currentSignal = NameParam and frameSignal or Signal;
-			if currentSignal:GetValue() then
+			if Signal:GetValue() then
 				ToggleLib.SetUI(Config.Default);
 			end;
 
@@ -2370,14 +2262,15 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		end;
 
 		if Config.Flag then
-			ModernV2.Flags[Config.Flag] = ToggleLib;
+			NeverLose.Flags[Config.Flag] = ToggleLib;
 		end;
 
 		return CaseInsensitive(ToggleLib);
 	end;
 
 	function handle:AddSlider(Config)
-		Config = ModernV2:ProcessParams(Config , {
+		Config = NeverLose:ProcessParams(Config , {
+			Name = nil,
 			Default = 50,
 			Min = 0,
 			Max = 10,
@@ -2430,7 +2323,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		local UICorner_5 = Instance.new("UICorner")
 		local boxSize = 2;
 
-		Slider.Name = ModernV2.RandomString();
+		Slider.Name = NeverLose.RandomString();
 		Slider.Parent = Handler
 		Slider.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 		Slider.BackgroundTransparency = 1.000
@@ -2444,7 +2337,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		UICorner.CornerRadius = UDim.new(0, 4)
 		UICorner.Parent = Slider
 
-		ValueFrame.Name = ModernV2.RandomString();
+		ValueFrame.Name = NeverLose.RandomString();
 		ValueFrame.Parent = Slider
 		ValueFrame.AnchorPoint = Vector2.new(1, 0)
 		ValueFrame.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
@@ -2462,7 +2355,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		UIStroke.Color = Color3.fromRGB(45, 48, 58)
 		UIStroke.Parent = ValueFrame
 
-		ValueLabel.Name = ModernV2.RandomString();
+		ValueLabel.Name = NeverLose.RandomString();
 		ValueLabel.Parent = ValueFrame
 		ValueLabel.AnchorPoint = Vector2.new(0.5, 0.5)
 		ValueLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -2479,7 +2372,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		ValueLabel.ClearTextOnFocus = false;
 		ValueLabel.TextTransparency = 0.350
 
-		SlideMain.Name = ModernV2.RandomString();
+		SlideMain.Name = NeverLose.RandomString();
 		SlideMain.Parent = Slider
 		SlideMain.AnchorPoint = Vector2.new(0, 0.5)
 		SlideMain.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -2490,7 +2383,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		SlideMain.Size = UDim2.new(1, -((SliderLib.MaximumSize + 11)), 0, 18)
 		SlideMain.ZIndex = ZINdex + 13
 
-		SlideFrame.Name = ModernV2.RandomString();
+		SlideFrame.Name = NeverLose.RandomString();
 		SlideFrame.Parent = SlideMain
 		SlideFrame.AnchorPoint = Vector2.new(0, 0.5)
 		SlideFrame.BackgroundColor3 = Color3.fromRGB(30, 29, 36)
@@ -2503,9 +2396,9 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		UICorner_3.CornerRadius = UDim.new(1, 0)
 		UICorner_3.Parent = SlideFrame
 
-		SlideMoving.Name = ModernV2.RandomString();
+		SlideMoving.Name = NeverLose.RandomString();
 		SlideMoving.Parent = SlideFrame
-		SlideMoving.BackgroundColor3 = ModernV2.AccentColor
+		SlideMoving.BackgroundColor3 = NeverLose.AccentColor
 		SlideMoving.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		SlideMoving.BorderSizePixel = 0
 		SlideMoving.Size = UDim2.new(SliderLib.GetSize(), 0, 1, 0)
@@ -2537,10 +2430,10 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		end);
 
 		ValueLabel.FocusLost:Connect(LPH_NO_VIRTUALIZE(function()
-			local OutVal = ModernV2:ParseInput(ValueLabel.Text , true);
+			local OutVal = NeverLose:ParseInput(ValueLabel.Text , true);
 			if OutVal then
 				local rx = math.clamp(OutVal , Config.Min , Config.Max);
-				local Value = ModernV2.Rounding(rx,Config.Rounding);
+				local Value = NeverLose.Rounding(rx,Config.Rounding);
 
 				if Value then
 					Config.Default = Value;
@@ -2563,54 +2456,54 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 
 		SliderLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(ValueFrame,SlowyTween,{
+				NeverLose.PlayAnimate(ValueFrame,SlowyTween,{
 					BackgroundTransparency = 0,
 					Size = UDim2.new(0, SliderLib.MaximumSize + boxSize, 0, 18)
 				});
 
-				ModernV2.PlayAnimate(UIStroke,SlowyTween,{
+				NeverLose.PlayAnimate(UIStroke,SlowyTween,{
 					Transparency = 0.650
 				});
 
-				ModernV2.PlayAnimate(ValueLabel,SlowyTween,{
+				NeverLose.PlayAnimate(ValueLabel,SlowyTween,{
 					TextTransparency = 0.350
 				});
 
-				ModernV2.PlayAnimate(SlideFrame,SlowyTween,{
+				NeverLose.PlayAnimate(SlideFrame,SlowyTween,{
 					BackgroundTransparency = 0
 				});
 
-				ModernV2.PlayAnimate(SlideMoving,SlowyTween,{
+				NeverLose.PlayAnimate(SlideMoving,SlowyTween,{
 					BackgroundTransparency = 0,
 					Size = UDim2.new(SliderLib.GetSize(), 0, 1, 0)
 				});
 
-				ModernV2.PlayAnimate(Frame,SlowyTween,{
+				NeverLose.PlayAnimate(Frame,SlowyTween,{
 					BackgroundTransparency = 0
 				});
 			else
-				ModernV2.PlayAnimate(ValueFrame,SlowyTween,{
+				NeverLose.PlayAnimate(ValueFrame,SlowyTween,{
 					BackgroundTransparency = 1,
 				});
 
-				ModernV2.PlayAnimate(UIStroke,SlowyTween,{
+				NeverLose.PlayAnimate(UIStroke,SlowyTween,{
 					Transparency = 1
 				});
 
-				ModernV2.PlayAnimate(ValueLabel,SlowyTween,{
+				NeverLose.PlayAnimate(ValueLabel,SlowyTween,{
 					TextTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(SlideFrame,SlowyTween,{
+				NeverLose.PlayAnimate(SlideFrame,SlowyTween,{
 					BackgroundTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(SlideMoving,SlowyTween,{
+				NeverLose.PlayAnimate(SlideMoving,SlowyTween,{
 					BackgroundTransparency = 1,
 					Size = UDim2.new(0, 0, 1, 0)
 				});
 
-				ModernV2.PlayAnimate(Frame,SlowyTween,{
+				NeverLose.PlayAnimate(Frame,SlowyTween,{
 					BackgroundTransparency = 1
 				});
 			end;
@@ -2622,7 +2515,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		local Update = function(Input)
 			local SizeScale = math.clamp((((Input.Position.X) - SlideMain.AbsolutePosition.X) / SlideMain.AbsoluteSize.X), 0, 1);
 			local Main = ((Config.Max - Config.Min) * SizeScale) + Config.Min;
-			local Value = ModernV2.Rounding(Main,Config.Rounding);
+			local Value = NeverLose.Rounding(Main,Config.Rounding);
 			local PositionX = UDim2.fromScale(SizeScale, 1);
 			local Size = ((Value - Config.Min) / (Config.Max - Config.Min)) + 0.02;
 
@@ -2651,7 +2544,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			SlideMain.InputEnded:Connect(LPH_NO_VIRTUALIZE(function(Input)
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 					if UserInputService.TouchEnabled then
-						if not ModernV2:IsMouseOverFrame(SlideMain) then
+						if not NeverLose:IsMouseOverFrame(SlideMain) then
 							IsHold = false
 						end;
 					else
@@ -2664,7 +2557,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 				if IsHold then
 					if (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch)  then
 						if UserInputService.TouchEnabled then
-							if not ModernV2:IsMouseOverFrame(SlideMain) then
+							if not NeverLose:IsMouseOverFrame(SlideMain) then
 								IsHold = false
 							else
 								Update(Input)
@@ -2685,7 +2578,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			Config.Default = v;
 
 			if Signal:GetValue() then
-				ModernV2.PlayAnimate(SlideMoving,SlowyTween,{
+				NeverLose.PlayAnimate(SlideMoving,SlowyTween,{
 					BackgroundTransparency = 0,
 					Size = UDim2.new(SliderLib.GetSize(), 0, 1, 0)
 				});
@@ -2697,7 +2590,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		end;
 
 		if Config.Flag then
-			ModernV2.Flags[Config.Flag] = SliderLib;
+			NeverLose.Flags[Config.Flag] = SliderLib;
 		end;
 
 		return CaseInsensitive(SliderLib);
@@ -2708,7 +2601,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		local Icon = Instance.new("TextLabel")
 		local UICorner = Instance.new("UICorner")
 
-		Option.Name = ModernV2.RandomString();
+		Option.Name = NeverLose.RandomString();
 		Option.Parent = Handler
 		Option.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
 		Option.BackgroundTransparency = 1.000
@@ -2719,7 +2612,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		Option.ZIndex = ZINdex + 13
 		Option.LayoutOrder = -(#Handler:GetChildren() + 5);
 
-		Icon.Name = ModernV2.RandomString();
+		Icon.Name = NeverLose.RandomString();
 		Icon.Parent = Option
 		Icon.AnchorPoint = Vector2.new(0.5, 0.5)
 		Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -2729,7 +2622,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
 		Icon.Size = UDim2.new(1, 0, 1, 0)
 		Icon.ZIndex = ZINdex + 14
-		Icon.FontFace = ModernV2.BuiltInBold
+		Icon.FontFace = NeverLose.BuiltInBold
 		Icon.Text = (GearIcon == 1 and 'gear') or (GearIcon == 2 and 'chevron-large-right') or "three-dots-horizontal";
 		Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
 		Icon.TextSize = 16.000
@@ -2739,16 +2632,16 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		UICorner.CornerRadius = UDim.new(0, 4)
 		UICorner.Parent = Option
 
-		local Window = ModernV2:CreateOptionWindow(Option , ZINdex + 13);
+		local Window = NeverLose:CreateOptionWindow(Option , ZINdex + 13);
 		local reciveSignal;
 
 		Window.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(Icon , SlowyTween , {
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
 					TextTransparency = 0.400
 				})
 			else
-				ModernV2.PlayAnimate(Icon , SlowyTween , {
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
 					TextTransparency = 1
 				})
 			end;
@@ -2757,7 +2650,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		Window.SetRender(Signal:GetValue());
 		Signal:Connect(Window.SetRender);
 
-		local bthg = ModernV2:CreateInput(Option , LPH_NO_VIRTUALIZE(function()
+		local bthg = NeverLose:CreateInput(Option , LPH_NO_VIRTUALIZE(function()
 			if reciveSignal then
 				reciveSignal:Disconnect();
 				reciveSignal = nil;	
@@ -2767,7 +2660,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 
 			reciveSignal = UserInputService.InputBegan:Connect(function(Input)
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-					if not ModernV2:IsMouseOverFrame(Window.Root) and not ModernV2:IsMouseOverFrame(Option) then
+					if not NeverLose:IsMouseOverFrame(Window.Root) and not NeverLose:IsMouseOverFrame(Option) then
 						if reciveSignal then
 							reciveSignal:Disconnect();
 							reciveSignal = nil;	
@@ -2779,22 +2672,22 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			end)
 		end));
 
-		ModernV2:AddSignal(bthg.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(Option , SlowyTween , {
+		NeverLose:AddSignal(bthg.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(Option , SlowyTween , {
 				BackgroundTransparency = 0.5
 			})
 
-			ModernV2.PlayAnimate(Icon , SlowyTween , {
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
 				TextTransparency = 0.25
 			})
 		end)));
 
-		ModernV2:AddSignal(bthg.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(Option , SlowyTween , {
+		NeverLose:AddSignal(bthg.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(Option , SlowyTween , {
 				BackgroundTransparency = 1.000
 			})
 
-			ModernV2.PlayAnimate(Icon , SlowyTween , {
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
 				TextTransparency = 0.400
 			})
 		end)));
@@ -2803,8 +2696,10 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 	end;
 
 	function handle:AddColorPicker(Config)
-		Config = ModernV2:ProcessParams(Config , {
+		Config = NeverLose:ProcessParams(Config , {
+			Name = nil,
 			Default = Color3.fromRGB(255, 255, 255),
+			Flag = nil,
 			Callback  = EmptyFunction,
 		});
 
@@ -2819,7 +2714,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		local ImageLabel = Instance.new("ImageLabel")
 		local UICorner_2 = Instance.new("UICorner")
 
-		ColorPicker.Name = ModernV2.RandomString();
+		ColorPicker.Name = NeverLose.RandomString();
 		ColorPicker.Parent = Handler
 		ColorPicker.BackgroundColor3 = Config.Default;
 		ColorPicker.BackgroundTransparency = 0
@@ -2850,7 +2745,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		UICorner_2.CornerRadius = UDim.new(0, 4)
 		UICorner_2.Parent = ImageLabel
 
-		local BackendM = ModernV2:CreateColorPicker(ColorPicker);
+		local BackendM = NeverLose:CreateColorPicker(ColorPicker);
 
 		BackendM:SetValue(Config.Default)
 		BackendM.Callback = function(color)
@@ -2860,7 +2755,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		end;
 
 		local signal;
-		ModernV2:CreateInput(ColorPicker , LPH_NO_VIRTUALIZE(function()
+		NeverLose:CreateInput(ColorPicker , LPH_NO_VIRTUALIZE(function()
 			if signal then
 				signal:Disconnect();
 				signal = nil;
@@ -2870,7 +2765,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 
 			signal = UserInputService.InputBegan:Connect(function(Input)
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-					if not ModernV2:IsMouseOverFrame(ColorPicker) and not ModernV2:IsMouseOverFrame(BackendM.Root) then
+					if not NeverLose:IsMouseOverFrame(ColorPicker) and not NeverLose:IsMouseOverFrame(BackendM.Root) then
 						if signal then
 							signal:Disconnect();
 							signal = nil;
@@ -2884,27 +2779,27 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 
 		ColorPickerLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(ColorPicker , SlowyTween , {
+				NeverLose.PlayAnimate(ColorPicker , SlowyTween , {
 					BackgroundTransparency = 0
 				})
 
-				ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 					Transparency = 0.650
 				})
 
-				ModernV2.PlayAnimate(ImageLabel , SlowyTween , {
+				NeverLose.PlayAnimate(ImageLabel , SlowyTween , {
 					ImageTransparency = 0.9
 				})
 			else
-				ModernV2.PlayAnimate(ColorPicker , SlowyTween , {
+				NeverLose.PlayAnimate(ColorPicker , SlowyTween , {
 					BackgroundTransparency = 1
 				})
 
-				ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 					Transparency = 1
 				})
 
-				ModernV2.PlayAnimate(ImageLabel , SlowyTween , {
+				NeverLose.PlayAnimate(ImageLabel , SlowyTween , {
 					ImageTransparency = 1
 				})
 			end;
@@ -2923,14 +2818,15 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		end;
 
 		if Config.Flag then
-			ModernV2.Flags[Config.Flag] = ColorPickerLib;
+			NeverLose.Flags[Config.Flag] = ColorPickerLib;
 		end;
 
 		return CaseInsensitive(ColorPickerLib);
 	end;
 
 	function handle:AddKeybind(Config)
-		Config = ModernV2:ProcessParams(Config,{
+		Config = NeverLose:ProcessParams(Config,{
+			Name = nil,
 			Default = nil,
 			Blacklist = {},
 			Callback = EmptyFunction,
@@ -2944,7 +2840,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		local UIStroke = Instance.new("UIStroke")
 		local ValueLabel = Instance.new("TextLabel")
 
-		Keybind.Name = ModernV2.RandomString();
+		Keybind.Name = NeverLose.RandomString();
 		Keybind.Parent = Handler
 		Keybind.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 		Keybind.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -2960,7 +2856,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		UIStroke.Color = Color3.fromRGB(45, 48, 58)
 		UIStroke.Parent = Keybind
 
-		ValueLabel.Name = ModernV2.RandomString();
+		ValueLabel.Name = NeverLose.RandomString();
 		ValueLabel.Parent = Keybind
 		ValueLabel.AnchorPoint = Vector2.new(0.5, 0.5)
 		ValueLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -2972,34 +2868,34 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		ValueLabel.Size = UDim2.new(1, 0, 1, 0)
 		ValueLabel.ZIndex = ZINdex + 14
 		ValueLabel.Font = Enum.Font.GothamMedium
-		ValueLabel.Text = ModernV2:KeyCodeToStr(Config.Default or "None")
+		ValueLabel.Text = NeverLose:KeyCodeToStr(Config.Default or "None")
 		ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 		ValueLabel.TextSize = 10.000
 		ValueLabel.TextTransparency = 0.500
 
 		KeybindLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(Keybind,SlowyTween, {
+				NeverLose.PlayAnimate(Keybind,SlowyTween, {
 					BackgroundTransparency = 0
 				})
 
-				ModernV2.PlayAnimate(UIStroke,SlowyTween, {
+				NeverLose.PlayAnimate(UIStroke,SlowyTween, {
 					Transparency = 0.650
 				})
 
-				ModernV2.PlayAnimate(ValueLabel,SlowyTween, {
+				NeverLose.PlayAnimate(ValueLabel,SlowyTween, {
 					TextTransparency = 0.500
 				})
 			else
-				ModernV2.PlayAnimate(Keybind,SlowyTween, {
+				NeverLose.PlayAnimate(Keybind,SlowyTween, {
 					BackgroundTransparency = 1
 				})
 
-				ModernV2.PlayAnimate(UIStroke,SlowyTween, {
+				NeverLose.PlayAnimate(UIStroke,SlowyTween, {
 					Transparency = 1
 				})
 
-				ModernV2.PlayAnimate(ValueLabel,SlowyTween, {
+				NeverLose.PlayAnimate(ValueLabel,SlowyTween, {
 					TextTransparency = 1
 				})
 			end;
@@ -3008,7 +2904,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		function KeybindLib:Update()
 			local size = TextService:GetTextSize(ValueLabel.Text,ValueLabel.TextSize,ValueLabel.Font,Vector2.new(math.huge,math.huge));
 
-			ModernV2.PlayAnimate(Keybind , SlowyTween , {
+			NeverLose.PlayAnimate(Keybind , SlowyTween , {
 				Size = UDim2.new(0, size.X + 7, 0, 18)
 			})
 		end;
@@ -3023,7 +2919,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		Signal:Connect(KeybindLib.SetRender);
 
 		local IsBinding = false;
-		ModernV2:CreateInput(Keybind , function()
+		NeverLose:CreateInput(Keybind , function()
 			if IsBinding then
 				return;
 			end;
@@ -3056,7 +2952,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 
 			Config.Default = KeyName;
 
-			ValueLabel.Text = ModernV2:KeyCodeToStr(KeyName);
+			ValueLabel.Text = NeverLose:KeyCodeToStr(KeyName);
 
 			KeybindLib:Update();
 
@@ -3069,20 +2965,21 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 
 		function KeybindLib:SetValue(v)
 			Config.Default = v;
-			ValueLabel.Text = ModernV2:KeyCodeToStr(v);
+			ValueLabel.Text = NeverLose:KeyCodeToStr(v);
 			KeybindLib:Update();
 			Config.Callback(Config.Default);
 		end;
 
 		if Config.Flag then
-			ModernV2.Flags[Config.Flag] = KeybindLib;
+			NeverLose.Flags[Config.Flag] = KeybindLib;
 		end;
 
 		return CaseInsensitive(KeybindLib);
 	end;
 
 	function handle:AddTextInput(Config)
-		Config = ModernV2:ProcessParams(Config , {
+		Config = NeverLose:ProcessParams(Config , {
+			Name = nil,
 			Default = "",
 			Placeholder = "Placeholder",
 			Callback = print,
@@ -3098,7 +2995,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		local UIStroke = Instance.new("UIStroke")
 		local TextBox = Instance.new("TextBox")
 
-		TextInput.Name = ModernV2.RandomString();
+		TextInput.Name = NeverLose.RandomString();
 		TextInput.Parent = Handler
 		TextInput.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 		TextInput.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -3134,34 +3031,34 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 
 		TextBoxLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(TextInput , SlowyTween ,{
+				NeverLose.PlayAnimate(TextInput , SlowyTween ,{
 					BackgroundTransparency = 0
 				})	
 
-				ModernV2.PlayAnimate(UIStroke , SlowyTween ,{
+				NeverLose.PlayAnimate(UIStroke , SlowyTween ,{
 					Transparency = 0.650
 				})	
 
-				ModernV2.PlayAnimate(TextBox , SlowyTween ,{
+				NeverLose.PlayAnimate(TextBox , SlowyTween ,{
 					TextTransparency = 0.350
 				})	
 			else
-				ModernV2.PlayAnimate(TextInput , SlowyTween ,{
+				NeverLose.PlayAnimate(TextInput , SlowyTween ,{
 					BackgroundTransparency = 1
 				})	
 
-				ModernV2.PlayAnimate(UIStroke , SlowyTween ,{
+				NeverLose.PlayAnimate(UIStroke , SlowyTween ,{
 					Transparency = 1
 				})	
 
-				ModernV2.PlayAnimate(TextBox , SlowyTween ,{
+				NeverLose.PlayAnimate(TextBox , SlowyTween ,{
 					TextTransparency = 1
 				})
 			end;
 		end);
 
-		ModernV2:AddSignal(TextBox:GetPropertyChangedSignal('Text'):Connect(LPH_NO_VIRTUALIZE(function()
-			local valout = ModernV2:ParseInput(TextBox.Text , Config.Numeric);
+		NeverLose:AddSignal(TextBox:GetPropertyChangedSignal('Text'):Connect(LPH_NO_VIRTUALIZE(function()
+			local valout = NeverLose:ParseInput(TextBox.Text , Config.Numeric);
 
 			if Config.Numeric then
 				TextBox.Text = string.gsub(TextBox.Text , '[^0-9.]','')
@@ -3187,7 +3084,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		end;
 
 		if Config.Flag then
-			ModernV2.Flags[Config.Flag] = TextBoxLib;
+			NeverLose.Flags[Config.Flag] = TextBoxLib;
 		end;
 
 		return CaseInsensitive(TextBoxLib);
@@ -3197,7 +3094,8 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 	handle.AddInput = handle.AddTextInput;
 
 	function handle:AddDropdown(Config)
-		Config = ModernV2:ProcessParams(Config , {
+		Config = NeverLose:ProcessParams(Config , {
+			Name = nil,
 			Default = nil,
 			Values = {},
 			Multi = false,
@@ -3207,7 +3105,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			Size = 100
 		})
 
-		Config.Default = ModernV2.ProcessDropdown(Config.Default);
+		Config.Default = NeverLose.ProcessDropdown(Config.Default);
 
 		local Dropdown = Instance.new("Frame")
 		local DropdownIcon = Instance.new("TextLabel")
@@ -3215,7 +3113,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		local UIStroke = Instance.new("UIStroke")
 		local BasedLabel = Instance.new("TextLabel")
 
-		Dropdown.Name = ModernV2.RandomString();
+		Dropdown.Name = NeverLose.RandomString();
 		Dropdown.Parent = Handler
 		Dropdown.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 		Dropdown.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -3224,7 +3122,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		Dropdown.Size = UDim2.new(0, Config.Size, 0, 18)
 		Dropdown.ZIndex = ZINdex + 13
 
-		DropdownIcon.Name = ModernV2.RandomString();
+		DropdownIcon.Name = NeverLose.RandomString();
 		DropdownIcon.Parent = Dropdown
 		DropdownIcon.AnchorPoint = Vector2.new(1, 0.5)
 		DropdownIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -3234,7 +3132,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		DropdownIcon.Position = UDim2.new(1, -2, 0.5, 0)
 		DropdownIcon.Size = UDim2.new(0, 18, 0, 18)
 		DropdownIcon.ZIndex = ZINdex + 14
-		DropdownIcon.FontFace = ModernV2.BuiltInBold
+		DropdownIcon.FontFace = NeverLose.BuiltInBold
 		DropdownIcon.Text = "chevron-small-down"
 		DropdownIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
 		DropdownIcon.TextSize = 16.000
@@ -3248,7 +3146,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		UIStroke.Color = Color3.fromRGB(45, 48, 58)
 		UIStroke.Parent = Dropdown
 
-		BasedLabel.Name = ModernV2.RandomString();
+		BasedLabel.Name = NeverLose.RandomString();
 		BasedLabel.Parent = Dropdown
 		BasedLabel.AnchorPoint = Vector2.new(0, 0.5)
 		BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -3260,7 +3158,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		BasedLabel.Size = UDim2.new(1, -25, 0, 15)
 		BasedLabel.ZIndex = ZINdex + 14
 		BasedLabel.Font = Enum.Font.GothamMedium
-		BasedLabel.Text = ModernV2.ParseDropdown(Config.Default);
+		BasedLabel.Text = NeverLose.ParseDropdown(Config.Default);
 		BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 		BasedLabel.TextSize = 12.000
 		BasedLabel.TextTransparency = 0.5
@@ -3273,55 +3171,55 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			UIGradient.Parent = BasedLabel;
 		end;
 
-		ModernV2:AddSignal(Dropdown.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+		NeverLose:AddSignal(Dropdown.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 				TextTransparency = 0.200
 			})
 		end)));
 
-		ModernV2:AddSignal(Dropdown.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+		NeverLose:AddSignal(Dropdown.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 				TextTransparency = 0.5
 			})
 		end)));
 
 		local DropdownLib = {
-			OpenSignal = ModernV2:CreateSignal(false),
+			OpenSignal = NeverLose:CreateSignal(false),
 			Signals = {},
 			Refuse = {},
 		};
 
 		DropdownLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(Dropdown , SlowyTween , {
+				NeverLose.PlayAnimate(Dropdown , SlowyTween , {
 					BackgroundTransparency = 0
 				});
 
-				ModernV2.PlayAnimate(DropdownIcon , SlowyTween , {
+				NeverLose.PlayAnimate(DropdownIcon , SlowyTween , {
 					TextTransparency = 0.250
 				});
 
-				ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 					Transparency = 0.650
 				});
 
-				ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 					TextTransparency = 0.5
 				});
 			else
-				ModernV2.PlayAnimate(Dropdown , SlowyTween , {
+				NeverLose.PlayAnimate(Dropdown , SlowyTween , {
 					BackgroundTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(DropdownIcon , SlowyTween , {
+				NeverLose.PlayAnimate(DropdownIcon , SlowyTween , {
 					TextTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 					Transparency = 1
 				});
 
-				ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 					TextTransparency = 1
 				});
 			end
@@ -3337,10 +3235,10 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			local UIStroke = Instance.new("UIStroke")
 			local DropdownScrollFrame = Instance.new("ScrollingFrame")
 			local UIListLayout = Instance.new("UIListLayout")
-			local Shadow = ModernV2:CreateShadow(DropdownHandler);
+			local Shadow = NeverLose:CreateShadow(DropdownHandler);
 
-			DropdownHandler.Name = ModernV2.RandomString();
-			DropdownHandler.Parent = ModernV2.ScreenGui;
+			DropdownHandler.Name = NeverLose.RandomString();
+			DropdownHandler.Parent = NeverLose.ScreenGui;
 			DropdownHandler.AnchorPoint = Vector2.new(0.5, 0)
 			DropdownHandler.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
 			DropdownHandler.BackgroundTransparency = 0.5
@@ -3352,17 +3250,17 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			DropdownHandler.ZIndex = ZINdex + 125
 			DropdownLib.BlockRoot = DropdownHandler;
 
-			ModernV2:AddSignal(DropdownHandler:GetPropertyChangedSignal('BackgroundTransparency'):Connect(function()
+			NeverLose:AddSignal(DropdownHandler:GetPropertyChangedSignal('BackgroundTransparency'):Connect(function()
 				if DropdownHandler.BackgroundTransparency > 0.9 then
 					DropdownHandler.Visible = false;
 					DropdownHandler.Parent = nil;
 				else
 					DropdownHandler.Visible = true;
 
-					if ModernV2.Global3DRenderMode then
-						DropdownHandler.Parent = ModernV2.GlobalSurfaceGui;
+					if NeverLose.Global3DRenderMode then
+						DropdownHandler.Parent = NeverLose.GlobalSurfaceGui;
 					else
-						DropdownHandler.Parent = ModernV2.ScreenGui;
+						DropdownHandler.Parent = NeverLose.ScreenGui;
 					end;
 				end;
 			end));
@@ -3374,7 +3272,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			UIStroke.Color = Color3.fromRGB(45, 48, 58)
 			UIStroke.Parent = DropdownHandler
 
-			DropdownScrollFrame.Name = ModernV2.RandomString();
+			DropdownScrollFrame.Name = NeverLose.RandomString();
 			DropdownScrollFrame.Parent = DropdownHandler
 			DropdownScrollFrame.Active = true
 			DropdownScrollFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -3393,15 +3291,15 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-			ModernV2:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
 				DropdownScrollFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y)
-				ModernV2.PlayAnimate(DropdownHandler , SlowyTween , {
+				NeverLose.PlayAnimate(DropdownHandler , SlowyTween , {
 					Size = UDim2.new(0, (Dropdown.AbsoluteSize.X + 5) + DropdownLib.ExtentSize, 0, math.min(UIListLayout.AbsoluteContentSize.Y + 5, 250));
 				})
 			end)));
 
 			local SetPosition = LPH_NO_VIRTUALIZE(function()
-				if ModernV2:MoreThanHalfY(Dropdown.AbsolutePosition.Y + 85) then
+				if NeverLose:MoreThanHalfY(Dropdown.AbsolutePosition.Y + 85) then
 					DropdownHandler.AnchorPoint = Vector2.new(0.5,1)
 				else
 					DropdownHandler.AnchorPoint = Vector2.new(0.5,0)
@@ -3421,7 +3319,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 
 					SetPosition();
 
-					ModernV2.PlayAnimate(DropdownHandler , SlowyTween , {
+					NeverLose.PlayAnimate(DropdownHandler , SlowyTween , {
 						BackgroundTransparency = 0.035
 					})
 
@@ -3430,7 +3328,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 					end;
 				else
 
-					ModernV2.PlayAnimate(DropdownHandler , SlowyTween , {
+					NeverLose.PlayAnimate(DropdownHandler , SlowyTween , {
 						BackgroundTransparency = 1
 					})
 
@@ -3442,24 +3340,24 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		end;
 
 		local SecureSignal;
-		ModernV2:CreateInput(Dropdown , LPH_NO_VIRTUALIZE(function()
+		NeverLose:CreateInput(Dropdown , LPH_NO_VIRTUALIZE(function()
 			if SecureSignal then
 				SecureSignal:Disconnect();
 				SecureSignal = nil;
 			end;
 
 			DropdownLib.SetFrameRender(true);
-			ModernV2.IsMosueOverOtherFrame = true;
+			NeverLose.IsMosueOverOtherFrame = true;
 
 			SecureSignal = UserInputService.InputBegan:Connect(function(Input)
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-					if not ModernV2:IsMouseOverFrame(DropdownLib.BlockRoot) and not ModernV2:IsMouseOverFrame(Dropdown) then
+					if not NeverLose:IsMouseOverFrame(DropdownLib.BlockRoot) and not NeverLose:IsMouseOverFrame(Dropdown) then
 						if SecureSignal then
 							SecureSignal:Disconnect();
 							SecureSignal = nil;
 						end;
 
-						ModernV2.IsMosueOverOtherFrame = false;
+						NeverLose.IsMosueOverOtherFrame = false;
 						DropdownLib.SetFrameRender(false);
 					end;
 				end
@@ -3498,7 +3396,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 				local ItemLabel = Instance.new("TextLabel")
 				local UICorner = Instance.new("UICorner")
 
-				ItemFrame.Name = ModernV2.RandomString();
+				ItemFrame.Name = NeverLose.RandomString();
 				ItemFrame.Parent = DropdownLib.RootItem
 				ItemFrame.BackgroundColor3 = Color3.fromRGB(29, 31, 38)
 				ItemFrame.BackgroundTransparency = 1.000
@@ -3507,7 +3405,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 				ItemFrame.Size = UDim2.new(1, 0, 0, 25)
 				ItemFrame.ZIndex = ZINdex + 1258
 
-				ItemLabel.Name = ModernV2.RandomString();
+				ItemLabel.Name = NeverLose.RandomString();
 				ItemLabel.Parent = ItemFrame
 				ItemLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 				ItemLabel.BackgroundTransparency = 1.000
@@ -3543,7 +3441,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 					Icon.Position = UDim2.new(0, 5, 0.5, 0)
 					Icon.Size = UDim2.new(0, 20, 0, 20)
 					Icon.ZIndex = ZINdex + 1259
-					Icon.FontFace = ModernV2.BuiltInBold;
+					Icon.FontFace = NeverLose.BuiltInBold;
 					Icon.Text = "check"
 					Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
 					Icon.TextSize = 18.000
@@ -3552,23 +3450,23 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 
 					local VisiblewOfMult = LPH_NO_VIRTUALIZE(function()
 						if DropdownLib.IsMatch(Value) then
-							ModernV2.PlayAnimate(ItemLabel , VSlowTween , {
+							NeverLose.PlayAnimate(ItemLabel , VSlowTween , {
 								TextTransparency = 0.200,
 								Position = UDim2.new(0, 30, 0, 4)
 							})
 
-							ModernV2.PlayAnimate(Icon , vs , {
+							NeverLose.PlayAnimate(Icon , vs , {
 								TextTransparency = 0.250
 							})
 
 							Lastone = ItemLabel;
 						else
 
-							ModernV2.PlayAnimate(Icon , SlowyTween , {
+							NeverLose.PlayAnimate(Icon , SlowyTween , {
 								TextTransparency = 1
 							})
 
-							ModernV2.PlayAnimate(ItemLabel , VSlowTween , {
+							NeverLose.PlayAnimate(ItemLabel , VSlowTween , {
 								TextTransparency = 0.5,
 								Position = UDim2.new(0, 15, 0, 4)
 							})
@@ -3580,13 +3478,13 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 				else
 					local DefaultVisible = LPH_NO_VIRTUALIZE(function()
 						if DropdownLib.IsMatch(Value) then
-							ModernV2.PlayAnimate(ItemLabel , SlowyTween , {
+							NeverLose.PlayAnimate(ItemLabel , SlowyTween , {
 								TextTransparency = 0.200
 							})
 
 							Lastone = ItemLabel;
 						else
-							ModernV2.PlayAnimate(ItemLabel , SlowyTween , {
+							NeverLose.PlayAnimate(ItemLabel , SlowyTween , {
 								TextTransparency = 0.5
 							})
 						end;
@@ -3600,13 +3498,13 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 				table.insert(DropdownLib.Refuse , MarkItem)
 
 				table.insert(DropdownLib.Signals,ItemFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-					ModernV2.PlayAnimate(ItemFrame , SlowyTween , {
+					NeverLose.PlayAnimate(ItemFrame , SlowyTween , {
 						BackgroundTransparency = 0.1
 					})
 				end)));
 
 				table.insert(DropdownLib.Signals,ItemFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-					ModernV2.PlayAnimate(ItemFrame , SlowyTween , {
+					NeverLose.PlayAnimate(ItemFrame , SlowyTween , {
 						BackgroundTransparency = 1
 					})
 				end)));
@@ -3615,12 +3513,12 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 					if val then
 						MarkItem();
 					else
-						ModernV2.PlayAnimate(ItemLabel , SlowyTween , {
+						NeverLose.PlayAnimate(ItemLabel , SlowyTween , {
 							TextTransparency = 1
 						})
 
 						if MIcon then
-							ModernV2.PlayAnimate(MIcon , SlowyTween , {
+							NeverLose.PlayAnimate(MIcon , SlowyTween , {
 								TextTransparency = 1
 							})
 						end;
@@ -3628,26 +3526,26 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 				end)));
 
 				if Config.Multi then
-					local _,bth_signal = ModernV2:CreateInput(ItemFrame , LPH_NO_VIRTUALIZE(function()
+					local _,bth_signal = NeverLose:CreateInput(ItemFrame , LPH_NO_VIRTUALIZE(function()
 						Config.Default[Value] = not Config.Default[Value];
 
 						MarkItem();
 
-						BasedLabel.Text = ModernV2.ParseDropdown(Config.Default);
+						BasedLabel.Text = NeverLose.ParseDropdown(Config.Default);
 
 						Config.Callback(Config.Default);
 					end));
 
 					table.insert(DropdownLib.Signals , bth_signal);
 				else
-					local _,bth_signal = ModernV2:CreateInput(ItemFrame , LPH_NO_VIRTUALIZE(function()
+					local _,bth_signal = NeverLose:CreateInput(ItemFrame , LPH_NO_VIRTUALIZE(function()
 						Config.Default = Value;
 
 						for i,v in next , DropdownLib.Refuse do
 							task.spawn(v);
 						end;
 
-						BasedLabel.Text = ModernV2.ParseDropdown(Config.Default);
+						BasedLabel.Text = NeverLose.ParseDropdown(Config.Default);
 
 						Config.Callback(Config.Default);
 					end));
@@ -3666,7 +3564,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		function DropdownLib:SetValue(v)
 			Config.Default = v;
 
-			BasedLabel.Text = ModernV2.ParseDropdown(Config.Default);
+			BasedLabel.Text = NeverLose.ParseDropdown(Config.Default);
 
 			for i,v in next , DropdownLib.Refuse do
 				task.spawn(v);
@@ -3684,7 +3582,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 		end;
 
 		if Config.Flag then
-			ModernV2.Flags[Config.Flag] = DropdownLib;
+			NeverLose.Flags[Config.Flag] = DropdownLib;
 		end;
 
 		return CaseInsensitive(DropdownLib);
@@ -3693,7 +3591,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 	return CaseInsensitive(handle);
 end;
 
-ModernV2.ProcessDropdown = LPH_NO_VIRTUALIZE(function(value)
+NeverLose.ProcessDropdown = LPH_NO_VIRTUALIZE(function(value)
 	if typeof(value) == 'table' then
 		local data = {};
 
@@ -3711,7 +3609,7 @@ ModernV2.ProcessDropdown = LPH_NO_VIRTUALIZE(function(value)
 	end;
 end);
 
-ModernV2.ParseDropdown = LPH_NO_VIRTUALIZE(function(value)
+NeverLose.ParseDropdown = LPH_NO_VIRTUALIZE(function(value)
 	if not value then return 'Select'; end;
 
 	local Out;
@@ -3751,7 +3649,7 @@ ModernV2.ParseDropdown = LPH_NO_VIRTUALIZE(function(value)
 	return Out;
 end);
 
-function ModernV2:ParseInput(Value , Numeric)
+function NeverLose:ParseInput(Value , Numeric)
 	if not Value then
 		return (Numeric and nil) or "";	
 	end;
@@ -3769,15 +3667,15 @@ function ModernV2:ParseInput(Value , Numeric)
 	return Value;
 end;
 
-function ModernV2:CreateToolTips(Container: Frame , Name: string , Content: string)
+function NeverLose:CreateToolTips(Container: Frame , Name: string , Content: string)
 	local Tooltips = Instance.new("Frame")
 	local UICorner = Instance.new("UICorner")
 	local UIStroke = Instance.new("UIStroke")
 	local TooltipName = Instance.new("TextLabel")
 	local TooltipContent = Instance.new("TextLabel")
-	local Shadow = ModernV2:CreateShadow(Tooltips);
+	local Shadow = NeverLose:CreateShadow(Tooltips);
 
-	Tooltips.Name = ModernV2.RandomString();
+	Tooltips.Name = NeverLose.RandomString();
 	Tooltips.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
 	Tooltips.BackgroundTransparency = 0.075
 	Tooltips.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -3794,7 +3692,7 @@ function ModernV2:CreateToolTips(Container: Frame , Name: string , Content: stri
 	UIStroke.Color = Color3.fromRGB(45, 48, 58)
 	UIStroke.Parent = Tooltips
 
-	TooltipName.Name = ModernV2.RandomString();
+	TooltipName.Name = NeverLose.RandomString();
 	TooltipName.Parent = Tooltips
 	TooltipName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	TooltipName.BackgroundTransparency = 1.000
@@ -3809,7 +3707,7 @@ function ModernV2:CreateToolTips(Container: Frame , Name: string , Content: stri
 	TooltipName.TextSize = 15.000
 	TooltipName.TextXAlignment = Enum.TextXAlignment.Left
 
-	TooltipContent.Name = ModernV2.RandomString();
+	TooltipContent.Name = NeverLose.RandomString();
 	TooltipContent.Parent = Tooltips
 	TooltipContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	TooltipContent.BackgroundTransparency = 1.000
@@ -3835,22 +3733,22 @@ function ModernV2:CreateToolTips(Container: Frame , Name: string , Content: stri
 		local MaxX = math.max(SizeName.X , SizeContent.X) + 65;
 		local MaxY = SizeName.Y + SizeContent.Y + 30;
 
-		ModernV2.PlayAnimate(Tooltips,SlowyTween , {
+		NeverLose.PlayAnimate(Tooltips,SlowyTween , {
 			Size = UDim2.new(0,MaxX,0,MaxY)
 		})
 	end)
 
-	ModernV2:AddSignal(Tooltips:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+	NeverLose:AddSignal(Tooltips:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
 		if Tooltips.BackgroundTransparency > 0.9 then
 			Tooltips.Visible = false;
 			Tooltips.Parent = nil;
 		else
 			Tooltips.Visible = true;
 
-			if ModernV2.Global3DRenderMode then
-				Tooltips.Parent = ModernV2.GlobalSurfaceGui;
+			if NeverLose.Global3DRenderMode then
+				Tooltips.Parent = NeverLose.GlobalSurfaceGui;
 			else
-				Tooltips.Parent = ModernV2.ScreenGui;
+				Tooltips.Parent = NeverLose.ScreenGui;
 			end;
 		end
 	end)));
@@ -3859,38 +3757,38 @@ function ModernV2:CreateToolTips(Container: Frame , Name: string , Content: stri
 		if value then
 			Tooltips.Position = UDim2.fromOffset(Container.AbsolutePosition.X + Container.AbsoluteSize.X , Container.AbsolutePosition.Y + (Container.AbsoluteSize.Y + 25));
 
-			ModernV2.PlayAnimate(Tooltips , SlowyTween , {
+			NeverLose.PlayAnimate(Tooltips , SlowyTween , {
 				BackgroundTransparency = 0.075
 			})
 
-			ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 				Transparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(TooltipName , SlowyTween , {
+			NeverLose.PlayAnimate(TooltipName , SlowyTween , {
 				TextTransparency = 0
 			})
 
-			ModernV2.PlayAnimate(TooltipContent , SlowyTween , {
+			NeverLose.PlayAnimate(TooltipContent , SlowyTween , {
 				TextTransparency = 0.650
 			})
 
 			ToolTip.Update();
 			Shadow:Render(true);
 		else
-			ModernV2.PlayAnimate(Tooltips , SlowyTween , {
+			NeverLose.PlayAnimate(Tooltips , SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(TooltipName , SlowyTween , {
+			NeverLose.PlayAnimate(TooltipName , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(TooltipContent , SlowyTween , {
+			NeverLose.PlayAnimate(TooltipContent , SlowyTween , {
 				TextTransparency = 1
 			})
 
@@ -3902,7 +3800,7 @@ function ModernV2:CreateToolTips(Container: Frame , Name: string , Content: stri
 	ToolTip.Update();
 
 	local DelayThread;
-	ModernV2:AddSignal(Container.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+	NeverLose:AddSignal(Container.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
 		if DelayThread then
 			task.cancel(DelayThread);
 			DelayThread = nil;
@@ -3911,7 +3809,7 @@ function ModernV2:CreateToolTips(Container: Frame , Name: string , Content: stri
 		DelayThread = task.delay(1,ToolTip.SetRender,true);
 	end)));
 
-	ModernV2:AddSignal(Container.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+	NeverLose:AddSignal(Container.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
 		if DelayThread then
 			task.cancel(DelayThread);
 			DelayThread = nil;
@@ -3924,22 +3822,9 @@ function ModernV2:CreateToolTips(Container: Frame , Name: string , Content: stri
 	return ToolTip;
 end;
 
-function ModernV2:RegisiterItem(Frame: Frame , Signel)
+function NeverLose:RegisiterItem(Frame: Frame , Signel)
 	local idx = {};
 	local LayerIndex = Frame.ZIndex;
-	
-	-- Create internal handler for all component methods
-	local internalHandler = ModernV2:RegisiterHandler(Frame, Signel, Frame);
-	
-	-- Expose component methods from internal handler
-	idx.AddToggle = internalHandler.AddToggle;
-	idx.AddSlider = internalHandler.AddSlider;
-	idx.AddOption = internalHandler.AddOption;
-	idx.AddColorPicker = internalHandler.AddColorPicker;
-	idx.AddKeybind = internalHandler.AddKeybind;
-	idx.AddTextInput = internalHandler.AddTextInput;
-	idx.AddDropdown = internalHandler.AddDropdown;
-	idx.AddButton = internalHandler.AddButton;
 
 	function idx:AddLabel(Name: string,Warp: boolean)
 		local BasedFrame = Instance.new("Frame")
@@ -3949,7 +3834,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		local UIListLayout = Instance.new("UIListLayout")
 		local UICorner = Instance.new("UICorner")
 
-		BasedFrame.Name = ModernV2.RandomString();
+		BasedFrame.Name = NeverLose.RandomString();
 		BasedFrame.Parent = Frame
 		BasedFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
 		BasedFrame.BackgroundTransparency = 1.000
@@ -3958,9 +3843,9 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		BasedFrame.Size = UDim2.new(1, 0, 0, 30)
 		BasedFrame.ZIndex = LayerIndex + 8
 
-		ModernV2:AddQuery(BasedFrame , Name);
+		NeverLose:AddQuery(BasedFrame , Name);
 
-		BasedLabel.Name = ModernV2.RandomString();
+		BasedLabel.Name = NeverLose.RandomString();
 		BasedLabel.Parent = BasedFrame
 		BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		BasedLabel.BackgroundTransparency = 1.000
@@ -3976,7 +3861,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		BasedLabel.TextTransparency = 0.35
 		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-		LineFrame.Name = ModernV2.RandomString();
+		LineFrame.Name = NeverLose.RandomString();
 		LineFrame.Parent = BasedFrame
 		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
 		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
@@ -3987,7 +3872,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		LineFrame.Size = UDim2.new(1, -20, 0, 1)
 		LineFrame.ZIndex = LayerIndex + 11
 
-		BasedHandler.Name = ModernV2.RandomString();
+		BasedHandler.Name = NeverLose.RandomString();
 		BasedHandler.Parent = BasedFrame
 		BasedHandler.AnchorPoint = Vector2.new(1, 0)
 		BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -4010,7 +3895,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 
 		local UpdateWarp = LPH_NO_VIRTUALIZE(function()
 			local size = TextService:GetTextSize(BasedLabel.Text , BasedLabel.TextSize , BasedLabel.Font , Vector2.new(math.huge,math.huge));
-			ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
+			NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
 				Size = UDim2.new(1, 0, 0, size.Y + 13);
 			})
 
@@ -4022,33 +3907,33 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 			UpdateWarp();
 		end;
 
-		local handle = ModernV2:RegisiterHandler(BasedHandler , Signel, Frame);
+		local handle = NeverLose:RegisiterHandler(BasedHandler , Signel);
 
 		handle.Root = BasedFrame;
 
 		handle.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
+				NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
 					BackgroundTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 					TextTransparency = 0.35
 				})
 
-				ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
 					BackgroundTransparency = 0.650
 				})
 			else
-				ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
+				NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
 					BackgroundTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 					TextTransparency = 1
 				})
 
-				ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
 					BackgroundTransparency = 1
 				})
 			end;
@@ -4058,23 +3943,23 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 			BasedFrame.Visible = val;
 		end;
 
-		ModernV2:AddSignal(BasedFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
+		NeverLose:AddSignal(BasedFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
 				BackgroundTransparency = 0.35
 			});
 
-			ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+			NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 				TextTransparency = 0.25
 			})
 
 		end)))
 
-		ModernV2:AddSignal(BasedFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
+		NeverLose:AddSignal(BasedFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(BasedFrame , SlowyTween , {
 				BackgroundTransparency = 1
 			});
 
-			ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+			NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 				TextTransparency = 0.35
 			})
 		end)))
@@ -4090,7 +3975,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		end;
 
 		function handle:ToolTip(Content: string)
-			handle.ToolTip = ModernV2:CreateToolTips(BasedFrame , Name , Content);
+			handle.ToolTip = NeverLose:CreateToolTips(BasedFrame , Name , Content);
 
 			return handle;
 		end;
@@ -4102,7 +3987,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 	end;
 
 	function idx:AddButton(Config)
-		Config = ModernV2:ProcessParams(Config , {
+		Config = NeverLose:ProcessParams(Config , {
 			Icon = 'chevron-large-left',
 			Name = "Button",
 			Callback = EmptyFunction,
@@ -4116,9 +4001,9 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		local UICorner = Instance.new("UICorner")
 		local Icon = Instance.new("TextLabel")
 
-		ModernV2:AddQuery(ButtonFrame , Config.Name);
+		NeverLose:AddQuery(ButtonFrame , Config.Name);
 
-		ButtonFrame.Name = ModernV2.RandomString();
+		ButtonFrame.Name = NeverLose.RandomString();
 		ButtonFrame.Parent = Frame
 		ButtonFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
 		ButtonFrame.BackgroundTransparency = 1.000
@@ -4127,7 +4012,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		ButtonFrame.Size = UDim2.new(1, 0, 0, 30)
 		ButtonFrame.ZIndex = LayerIndex + 8
 
-		BasedLabel.Name = ModernV2.RandomString();
+		BasedLabel.Name = NeverLose.RandomString();
 		BasedLabel.Parent = ButtonFrame
 		BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		BasedLabel.BackgroundTransparency = 1.000
@@ -4143,7 +4028,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		BasedLabel.TextTransparency = 0.200
 		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-		LineFrame.Name = ModernV2.RandomString();
+		LineFrame.Name = NeverLose.RandomString();
 		LineFrame.Parent = ButtonFrame
 		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
 		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
@@ -4157,7 +4042,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		UICorner.CornerRadius = UDim.new(0, 10)
 		UICorner.Parent = ButtonFrame
 
-		Icon.Name = ModernV2.RandomString();
+		Icon.Name = NeverLose.RandomString();
 		Icon.Parent = ButtonFrame
 		Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		Icon.BackgroundTransparency = 1.000
@@ -4166,7 +4051,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		Icon.Position = UDim2.new(0, 11, 0, 5)
 		Icon.Size = UDim2.new(0, 18, 0, 18)
 		Icon.ZIndex = LayerIndex + 9
-		Icon.FontFace = ModernV2.BuiltInBold
+		Icon.FontFace = NeverLose.BuiltInBold
 		Icon.Text = Config.Icon
 		Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
 		Icon.TextSize = 16.000
@@ -4181,60 +4066,60 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 			Icon.Text = t
 		end;
 
-		local bth = ModernV2:CreateInput(ButtonFrame , LPH_NO_VIRTUALIZE(function()
+		local bth = NeverLose:CreateInput(ButtonFrame , LPH_NO_VIRTUALIZE(function()
 			Config.Callback();
 		end));
 
-		ModernV2:AddSignal(bth.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(ButtonFrame , SlowyTween , {
+		NeverLose:AddSignal(bth.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(ButtonFrame , SlowyTween , {
 				BackgroundTransparency = 0.35
 			});
 		end)))
 
-		ModernV2:AddSignal(bth.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(ButtonFrame , SlowyTween , {
+		NeverLose:AddSignal(bth.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(ButtonFrame , SlowyTween , {
 				BackgroundTransparency = 1
 			});
 		end)))
 
 		Button.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(ButtonFrame , SlowyTween , {
+				NeverLose.PlayAnimate(ButtonFrame , SlowyTween , {
 					BackgroundTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 					TextTransparency = 0.200
 				});
 
-				ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
 					BackgroundTransparency = 0.650
 				});
 
-				ModernV2.PlayAnimate(Icon , SlowyTween , {
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
 					TextTransparency = 0.250
 				});
 			else
-				ModernV2.PlayAnimate(ButtonFrame , SlowyTween , {
+				NeverLose.PlayAnimate(ButtonFrame , SlowyTween , {
 					BackgroundTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 					TextTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
 					BackgroundTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(Icon , SlowyTween , {
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
 					TextTransparency = 1
 				});
 			end;
 		end);
 
 		if Config.ToolTip then
-			Button.ToolTip = ModernV2:CreateToolTips(ButtonFrame , Config.Name , Config.ToolTip);
+			Button.ToolTip = NeverLose:CreateToolTips(ButtonFrame , Config.Name , Config.ToolTip);
 		end;
 
 		Button.SetRender(Signel:GetValue())
@@ -4252,7 +4137,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		local UICorner_2 = Instance.new("UICorner")
 		local UserStatusLabel = Instance.new("TextLabel")
 
-		UserFrame.Name = ModernV2.RandomString();
+		UserFrame.Name = NeverLose.RandomString();
 		UserFrame.Parent = Frame
 		UserFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
 		UserFrame.BackgroundTransparency = 1.000
@@ -4261,7 +4146,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		UserFrame.Size = UDim2.new(1, 0, 0, 60)
 		UserFrame.ZIndex = LayerIndex + 8
 
-		UserLabel.Name = ModernV2.RandomString();
+		UserLabel.Name = NeverLose.RandomString();
 		UserLabel.Parent = UserFrame
 		UserLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		UserLabel.BackgroundTransparency = 1.000
@@ -4277,7 +4162,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		UserLabel.TextTransparency = 0.200
 		UserLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-		LineFrame.Name = ModernV2.RandomString();
+		LineFrame.Name = NeverLose.RandomString();
 		LineFrame.Parent = UserFrame
 		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
 		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
@@ -4291,7 +4176,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		UICorner.CornerRadius = UDim.new(0, 10)
 		UICorner.Parent = UserFrame
 
-		LogoImage.Name = ModernV2.RandomString();
+		LogoImage.Name = NeverLose.RandomString();
 		LogoImage.Parent = UserFrame
 		LogoImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		LogoImage.BackgroundTransparency = 1.000
@@ -4305,7 +4190,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		UICorner_2.CornerRadius = UDim.new(1, 0)
 		UICorner_2.Parent = LogoImage
 
-		UserStatusLabel.Name = ModernV2.RandomString();
+		UserStatusLabel.Name = NeverLose.RandomString();
 		UserStatusLabel.Parent = UserFrame
 		UserStatusLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		UserStatusLabel.BackgroundTransparency = 1.000
@@ -4325,35 +4210,35 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 
 		UserFrameItem.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
-				ModernV2.PlayAnimate(UserLabel,SlowyTween,{
+				NeverLose.PlayAnimate(UserLabel,SlowyTween,{
 					TextTransparency = 0.200
 				})
 
-				ModernV2.PlayAnimate(LineFrame,SlowyTween,{
+				NeverLose.PlayAnimate(LineFrame,SlowyTween,{
 					BackgroundTransparency = 0.650
 				})
 
-				ModernV2.PlayAnimate(LogoImage,SlowyTween,{
+				NeverLose.PlayAnimate(LogoImage,SlowyTween,{
 					ImageTransparency = 0
 				})
 
-				ModernV2.PlayAnimate(UserStatusLabel,SlowyTween,{
+				NeverLose.PlayAnimate(UserStatusLabel,SlowyTween,{
 					TextTransparency = 0.200
 				})
 			else
-				ModernV2.PlayAnimate(UserLabel,SlowyTween,{
+				NeverLose.PlayAnimate(UserLabel,SlowyTween,{
 					TextTransparency = 1
 				})
 
-				ModernV2.PlayAnimate(LineFrame,SlowyTween,{
+				NeverLose.PlayAnimate(LineFrame,SlowyTween,{
 					BackgroundTransparency = 1
 				})
 
-				ModernV2.PlayAnimate(LogoImage,SlowyTween,{
+				NeverLose.PlayAnimate(LogoImage,SlowyTween,{
 					ImageTransparency = 1
 				})
 
-				ModernV2.PlayAnimate(UserStatusLabel,SlowyTween,{
+				NeverLose.PlayAnimate(UserStatusLabel,SlowyTween,{
 					TextTransparency = 1
 				})
 			end;
@@ -4377,16 +4262,64 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		return CaseInsensitive(UserFrameItem);
 	end;
 
+	function idx:AddToggle(Config)
+		if Config.Name then
+			return self:AddLabel(Config.Name):AddToggle(Config)
+		else
+			error("Name is required for AddToggle in sections")
+		end
+	end
+
+	function idx:AddSlider(Config)
+		if Config.Name then
+			return self:AddLabel(Config.Name):AddSlider(Config)
+		else
+			error("Name is required for AddSlider in sections")
+		end
+	end
+
+	function idx:AddDropdown(Config)
+		if Config.Name then
+			return self:AddLabel(Config.Name):AddDropdown(Config)
+		else
+			error("Name is required for AddDropdown in sections")
+		end
+	end
+
+	function idx:AddKeybind(Config)
+		if Config.Name then
+			return self:AddLabel(Config.Name):AddKeybind(Config)
+		else
+			error("Name is required for AddKeybind in sections")
+		end
+	end
+
+	function idx:AddColorPicker(Config)
+		if Config.Name then
+			return self:AddLabel(Config.Name):AddColorPicker(Config)
+		else
+			error("Name is required for AddColorPicker in sections")
+		end
+	end
+
+	function idx:AddTextInput(Config)
+		if Config.Name then
+			return self:AddLabel(Config.Name):AddTextInput(Config)
+		else
+			error("Name is required for AddTextInput in sections")
+		end
+	end
+
 	return CaseInsensitive(idx);
 end;
 
-function ModernV2:CreateWindow(Config)
-	Config = ModernV2:ProcessParams(Config , {
-		Logo = ModernV2.GlobalLogo,
+function NeverLose:CreateWindow(Config)
+	Config = NeverLose:ProcessParams(Config , {
+		Logo = NeverLose.GlobalLogo,
 		Name = "ModernV2",
 		Content = "Counter-Strike 2",
-		Size = UDim2.new(0, 640, 0, 480),
-		ConfigFolder = "ModernV2Configs",
+		Size = UDim2.new(0, 360, 0, 640),
+		ConfigFolder = "NeverLoseConfigs",
 		Enable3DRenderer = false,
 		Keybind = "RightControl"
 	});
@@ -4397,16 +4330,16 @@ function ModernV2:CreateWindow(Config)
 		Content = Config.Content,
 		Size = Config.Size,
 		ConfigFolder = Config.ConfigFolder,
-		Signal = ModernV2:CreateSignal(true),
+		Signal = NeverLose:CreateSignal(true),
 		Tabs = {},
 		CurrentTab = 1,
 		Keybind = Config.Keybind,
 		Enable3DRenderer = Config.Enable3DRenderer
 	};
 
-	ModernV2.GlobalLogo = Window.Logo;
+	NeverLose.GlobalLogo = Window.Logo;
 
-	local Logging = ModernV2:CreateLogger();
+	local Logging = NeverLose:CreateLogger();
 	if not isfolder(Window.ConfigFolder) then
 		makefolder(Window.ConfigFolder);
 	end;
@@ -4446,8 +4379,8 @@ function ModernV2:CreateWindow(Config)
 	local SearchBox = Instance.new("TextBox")
 	local TabContainer = Instance.new("Frame")
 
-	WindowFrame.Name = ModernV2.RandomString();
-	WindowFrame.Parent = ModernV2.ScreenGui;
+	WindowFrame.Name = NeverLose.RandomString();
+	WindowFrame.Parent = NeverLose.ScreenGui;
 	WindowFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 	WindowFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 13)
 	WindowFrame.BackgroundTransparency = 0.055
@@ -4458,7 +4391,7 @@ function ModernV2:CreateWindow(Config)
 	WindowFrame.Size = Window.Size
 	WindowFrame.Active = true;
 
-	if not ModernV2.EnabledBlur then
+	if not NeverLose.EnabledBlur then
 		WindowFrame.BackgroundTransparency = 0.0255
 	end;
 
@@ -4470,7 +4403,7 @@ function ModernV2:CreateWindow(Config)
 			else
 				WindowFrame.Visible = true;
 
-				ModernV2.PlayAnimate(WindowFrame,VSlowTween , {
+				NeverLose.PlayAnimate(WindowFrame,VSlowTween , {
 					Position = UDim2.fromScale(0.5,0.5);
 				});
 
@@ -4482,187 +4415,187 @@ function ModernV2:CreateWindow(Config)
 				WindowFrame.Parent = nil
 			else
 				WindowFrame.Visible = true;
-				WindowFrame.Parent = ModernV2.ScreenGui
+				WindowFrame.Parent = NeverLose.ScreenGui
 
 
 			end;
 		end;
 	end);
 
-	ModernV2:AddSignal(WindowFrame:GetPropertyChangedSignal('BackgroundTransparency'):Connect(renderParentWindow))
+	NeverLose:AddSignal(WindowFrame:GetPropertyChangedSignal('BackgroundTransparency'):Connect(renderParentWindow))
 
 	Window.SetRender = LPH_NO_VIRTUALIZE(function(self , value)
 		if value then
-			ModernV2.PlayAnimate(WindowFrame , SlowyTween , {
-				BackgroundTransparency = (ModernV2.EnabledBlur and 0.055) or 0.0255,
+			NeverLose.PlayAnimate(WindowFrame , SlowyTween , {
+				BackgroundTransparency = (NeverLose.EnabledBlur and 0.055) or 0.0255,
 				Size = Window.Size
 			})
 
-			ModernV2.PlayAnimate(LogoImage , SlowyTween , {
+			NeverLose.PlayAnimate(LogoImage , SlowyTween , {
 				ImageTransparency = 0
 			})
 
-			ModernV2.PlayAnimate(WindowName , SlowyTween , {
+			NeverLose.PlayAnimate(WindowName , SlowyTween , {
 				TextTransparency = 0
 			})
 
-			ModernV2.PlayAnimate(WindowContent , SlowyTween , {
+			NeverLose.PlayAnimate(WindowContent , SlowyTween , {
 				TextTransparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+			NeverLose.PlayAnimate(LineFrame , SlowyTween , {
 				BackgroundTransparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(AccountProfile , SlowyTween , {
+			NeverLose.PlayAnimate(AccountProfile , SlowyTween , {
 				ImageTransparency = 0
 			})
 
-			ModernV2.PlayAnimate(AccountName , SlowyTween , {
+			NeverLose.PlayAnimate(AccountName , SlowyTween , {
 				TextTransparency = 0
 			})
 
-			ModernV2.PlayAnimate(ExpireLabel , SlowyTween , {
+			NeverLose.PlayAnimate(ExpireLabel , SlowyTween , {
 				TextTransparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(LineFrame_2 , SlowyTween , {
+			NeverLose.PlayAnimate(LineFrame_2 , SlowyTween , {
 				BackgroundTransparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(UserSettingButton , SlowyTween , {
+			NeverLose.PlayAnimate(UserSettingButton , SlowyTween , {
 				TextTransparency = 0.5
 			})
 
-			ModernV2.PlayAnimate(RightMenuFrame , SlowyTween , {
+			NeverLose.PlayAnimate(RightMenuFrame , SlowyTween , {
 				BackgroundTransparency = 0.600
 			})
 
-			ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 				Transparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(LineFrame_3 , SlowyTween , {
+			NeverLose.PlayAnimate(LineFrame_3 , SlowyTween , {
 				BackgroundTransparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(ConfigFrame , SlowyTween , {
+			NeverLose.PlayAnimate(ConfigFrame , SlowyTween , {
 				BackgroundTransparency = 0.750
 			})
 
-			ModernV2.PlayAnimate(UIStroke_2 , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke_2 , SlowyTween , {
 				Transparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(ConfigIcon , SlowyTween , {
+			NeverLose.PlayAnimate(ConfigIcon , SlowyTween , {
 				TextTransparency = 0.250
 			})
 
-			ModernV2.PlayAnimate(LineFrame_4 , SlowyTween , {
+			NeverLose.PlayAnimate(LineFrame_4 , SlowyTween , {
 				BackgroundTransparency = 0.650
 			})
 
-			ModernV2.PlayAnimate(ConfigName , SlowyTween , {
+			NeverLose.PlayAnimate(ConfigName , SlowyTween , {
 				TextTransparency = 0.350
 			})
 
-			ModernV2.PlayAnimate(ConfigBthIcon , SlowyTween , {
+			NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
 				TextTransparency = 0.250
 			})
 
-			ModernV2.PlayAnimate(SearchIcon , SlowyTween , {
+			NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
 				TextTransparency = 0.250
 			})
 
-			ModernV2.PlayAnimate(SearchBox , SlowyTween , {
+			NeverLose.PlayAnimate(SearchBox , SlowyTween , {
 				TextTransparency = 0.350
 			})
 
 			Window.Shadow:Render(true);
 		else
 
-			ModernV2.PlayAnimate(WindowFrame , SlowyTween , {
+			NeverLose.PlayAnimate(WindowFrame , SlowyTween , {
 				BackgroundTransparency = 1,
 				Size = Window.Size + UDim2.fromOffset(-15,-15)
 			})
 
-			ModernV2.PlayAnimate(LogoImage , SlowyTween , {
+			NeverLose.PlayAnimate(LogoImage , SlowyTween , {
 				ImageTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(WindowName , SlowyTween , {
+			NeverLose.PlayAnimate(WindowName , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(WindowContent , SlowyTween , {
+			NeverLose.PlayAnimate(WindowContent , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+			NeverLose.PlayAnimate(LineFrame , SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(AccountProfile , SlowyTween , {
+			NeverLose.PlayAnimate(AccountProfile , SlowyTween , {
 				ImageTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(AccountName , SlowyTween , {
+			NeverLose.PlayAnimate(AccountName , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(ExpireLabel , SlowyTween , {
+			NeverLose.PlayAnimate(ExpireLabel , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(LineFrame_2 , SlowyTween , {
+			NeverLose.PlayAnimate(LineFrame_2 , SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(UserSettingButton , SlowyTween , {
+			NeverLose.PlayAnimate(UserSettingButton , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(RightMenuFrame , SlowyTween , {
+			NeverLose.PlayAnimate(RightMenuFrame , SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(LineFrame_3 , SlowyTween , {
+			NeverLose.PlayAnimate(LineFrame_3 , SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(ConfigFrame , SlowyTween , {
+			NeverLose.PlayAnimate(ConfigFrame , SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIStroke_2 , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke_2 , SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(ConfigIcon , SlowyTween , {
+			NeverLose.PlayAnimate(ConfigIcon , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(LineFrame_4 , SlowyTween , {
+			NeverLose.PlayAnimate(LineFrame_4 , SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(ConfigName , SlowyTween , {
+			NeverLose.PlayAnimate(ConfigName , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(ConfigBthIcon , SlowyTween , {
+			NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(SearchIcon , SlowyTween , {
+			NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(SearchBox , SlowyTween , {
+			NeverLose.PlayAnimate(SearchBox , SlowyTween , {
 				TextTransparency = 1
 			})
 
@@ -4670,19 +4603,19 @@ function ModernV2:CreateWindow(Config)
 		end;
 	end);
 
-	Window.Shadow = ModernV2:CreateShadow(WindowFrame);
+	Window.Shadow = NeverLose:CreateShadow(WindowFrame);
 	Window.Shadow:Render(false);
 
 	task.delay(0.25,function()
 		WindowFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 		Window:SetRender(true);
-		ModernV2:AddSignal(Window.Signal:Connect(LPH_NO_VIRTUALIZE(function(...)
+		NeverLose:AddSignal(Window.Signal:Connect(LPH_NO_VIRTUALIZE(function(...)
 			Window:SetRender(...);
 		end)))
 	end)
 
-	if ModernV2.EnabledBlur then
-		ModernV2:CreateBlurModule(WindowFrame,Window.Signal);
+	if NeverLose.EnabledBlur then
+		NeverLose:CreateBlurModule(WindowFrame,Window.Signal);
 	end;
 
 	do
@@ -4696,12 +4629,12 @@ function ModernV2:CreateWindow(Config)
 		Frame.ZIndex = 7
 		Frame.BackgroundTransparency = 1;
 
-		ModernV2.Drag(Frame , WindowFrame , 0.15)
+		NeverLose.Drag(Frame , WindowFrame , 0.15)
 	end
 
 	UICorner.Parent = WindowFrame
 
-	LeftMenuFrame.Name = ModernV2.RandomString();
+	LeftMenuFrame.Name = NeverLose.RandomString();
 	LeftMenuFrame.Parent = WindowFrame
 	LeftMenuFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	LeftMenuFrame.BackgroundTransparency = 1.000
@@ -4709,7 +4642,7 @@ function ModernV2:CreateWindow(Config)
 	LeftMenuFrame.BorderSizePixel = 0
 	LeftMenuFrame.Size = UDim2.new(0, 175, 1, 0)
 
-	HeadFrame.Name = ModernV2.RandomString();
+	HeadFrame.Name = NeverLose.RandomString();
 	HeadFrame.Parent = LeftMenuFrame
 	HeadFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	HeadFrame.BackgroundTransparency = 1.000
@@ -4718,7 +4651,7 @@ function ModernV2:CreateWindow(Config)
 	HeadFrame.Size = UDim2.new(1, 0, 0, 50)
 	HeadFrame.ZIndex = 7
 
-	LogoImage.Name = ModernV2.RandomString();
+	LogoImage.Name = NeverLose.RandomString();
 	LogoImage.Parent = HeadFrame
 	LogoImage.AnchorPoint = Vector2.new(0, 0.5)
 	LogoImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -4729,12 +4662,12 @@ function ModernV2:CreateWindow(Config)
 	LogoImage.Size = UDim2.new(0, 35, 0, 35)
 	LogoImage.ZIndex = 7
 	LogoImage.Image = Window.Logo
-	LogoImage.ImageColor3 = ModernV2.IconColor
+	LogoImage.ImageColor3 = NeverLose.IconColor
 
 	UICorner_2.CornerRadius = UDim.new(0, 7)
 	UICorner_2.Parent = LogoImage
 
-	WindowName.Name = ModernV2.RandomString();
+	WindowName.Name = NeverLose.RandomString();
 	WindowName.Parent = HeadFrame
 	WindowName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	WindowName.BackgroundTransparency = 1.000
@@ -4749,7 +4682,7 @@ function ModernV2:CreateWindow(Config)
 	WindowName.TextSize = 18.000
 	WindowName.TextXAlignment = Enum.TextXAlignment.Left
 
-	WindowContent.Name = ModernV2.RandomString();
+	WindowContent.Name = NeverLose.RandomString();
 	WindowContent.Parent = HeadFrame
 	WindowContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	WindowContent.BackgroundTransparency = 1.000
@@ -4765,7 +4698,7 @@ function ModernV2:CreateWindow(Config)
 	WindowContent.TextTransparency = 0.650
 	WindowContent.TextXAlignment = Enum.TextXAlignment.Left
 
-	LineFrame.Name = ModernV2.RandomString();
+	LineFrame.Name = NeverLose.RandomString();
 	LineFrame.Parent = HeadFrame
 	LineFrame.AnchorPoint = Vector2.new(0.5, 1)
 	LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
@@ -4776,7 +4709,7 @@ function ModernV2:CreateWindow(Config)
 	LineFrame.Size = UDim2.new(1, -10, 0, 1)
 	LineFrame.ZIndex = 5
 
-	LeftScrollingFrame.Name = ModernV2.RandomString();
+	LeftScrollingFrame.Name = NeverLose.RandomString();
 	LeftScrollingFrame.Parent = LeftMenuFrame
 	LeftScrollingFrame.Active = true
 	LeftScrollingFrame.AnchorPoint = Vector2.new(0.5, 0)
@@ -4794,11 +4727,11 @@ function ModernV2:CreateWindow(Config)
 	UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	UIListLayout.Padding = UDim.new(0, 5)
 
-	ModernV2:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+	NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
 		LeftScrollingFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y + 1)
 	end)))
 
-	BottomFrame.Name = ModernV2.RandomString();
+	BottomFrame.Name = NeverLose.RandomString();
 	BottomFrame.Parent = LeftMenuFrame
 	BottomFrame.AnchorPoint = Vector2.new(0, 1)
 	BottomFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -4809,7 +4742,7 @@ function ModernV2:CreateWindow(Config)
 	BottomFrame.Size = UDim2.new(1, 0, 0, 50)
 	BottomFrame.ZIndex = 7
 
-	AccountProfile.Name = ModernV2.RandomString();
+	AccountProfile.Name = NeverLose.RandomString();
 	AccountProfile.Parent = BottomFrame
 	AccountProfile.AnchorPoint = Vector2.new(0, 0.5)
 	AccountProfile.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -4819,12 +4752,12 @@ function ModernV2:CreateWindow(Config)
 	AccountProfile.Position = UDim2.new(0, 10, 0.5, 0)
 	AccountProfile.Size = UDim2.new(0, 35, 0, 35)
 	AccountProfile.ZIndex = 7
-	AccountProfile.Image = ModernV2.UserProfile or ""
+	AccountProfile.Image = NeverLose.UserProfile or ""
 
 	UICorner_3.CornerRadius = UDim.new(1, 0)
 	UICorner_3.Parent = AccountProfile
 
-	AccountName.Name = ModernV2.RandomString();
+	AccountName.Name = NeverLose.RandomString();
 	AccountName.Parent = BottomFrame
 	AccountName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	AccountName.BackgroundTransparency = 1.000
@@ -4840,7 +4773,7 @@ function ModernV2:CreateWindow(Config)
 	AccountName.TextXAlignment = Enum.TextXAlignment.Left
 	AccountName.TextTruncate = Enum.TextTruncate.SplitWord;
 
-	ExpireLabel.Name = ModernV2.RandomString();
+	ExpireLabel.Name = NeverLose.RandomString();
 	ExpireLabel.Parent = BottomFrame
 	ExpireLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	ExpireLabel.BackgroundTransparency = 1.000
@@ -4856,7 +4789,7 @@ function ModernV2:CreateWindow(Config)
 	ExpireLabel.TextTransparency = 0.650
 	ExpireLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-	LineFrame_2.Name = ModernV2.RandomString();
+	LineFrame_2.Name = NeverLose.RandomString();
 	LineFrame_2.Parent = BottomFrame
 	LineFrame_2.AnchorPoint = Vector2.new(0.5, 0)
 	LineFrame_2.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
@@ -4867,7 +4800,7 @@ function ModernV2:CreateWindow(Config)
 	LineFrame_2.Size = UDim2.new(1, -10, 0, 1)
 	LineFrame_2.ZIndex = 5
 
-	UserSettingButton.Name = ModernV2.RandomString();
+	UserSettingButton.Name = NeverLose.RandomString();
 	UserSettingButton.Parent = BottomFrame
 	UserSettingButton.AnchorPoint = Vector2.new(1, 0.5)
 	UserSettingButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -4877,25 +4810,25 @@ function ModernV2:CreateWindow(Config)
 	UserSettingButton.Position = UDim2.new(1, -7, 0.5, 0)
 	UserSettingButton.Size = UDim2.new(0, 25, 0, 25)
 	UserSettingButton.ZIndex = 7
-	UserSettingButton.FontFace = ModernV2.BuiltInBold
+	UserSettingButton.FontFace = NeverLose.BuiltInBold
 	UserSettingButton.Text = "chevron-large-right"
 	UserSettingButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	UserSettingButton.TextSize = 13.000
 	UserSettingButton.TextTransparency = 0.5
 
-	ModernV2:AddSignal(BottomFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-		ModernV2.PlayAnimate(UserSettingButton,SlowyTween , {
+	NeverLose:AddSignal(BottomFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose.PlayAnimate(UserSettingButton,SlowyTween , {
 			TextTransparency = 0.25
 		})		
 	end)))
 
-	ModernV2:AddSignal(BottomFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-		ModernV2.PlayAnimate(UserSettingButton,SlowyTween , {
+	NeverLose:AddSignal(BottomFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose.PlayAnimate(UserSettingButton,SlowyTween , {
 			TextTransparency = 0.5
 		})		
 	end)))
 
-	RightMenuFrame.Name = ModernV2.RandomString();
+	RightMenuFrame.Name = NeverLose.RandomString();
 	RightMenuFrame.Parent = WindowFrame
 	RightMenuFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 13)
 	RightMenuFrame.BackgroundTransparency = 0.600
@@ -4913,7 +4846,7 @@ function ModernV2:CreateWindow(Config)
 	UICorner_4.CornerRadius = UDim.new(0, 13)
 	UICorner_4.Parent = RightMenuFrame
 
-	RightHeader.Name = ModernV2.RandomString();
+	RightHeader.Name = NeverLose.RandomString();
 	RightHeader.Parent = RightMenuFrame
 	RightHeader.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	RightHeader.BackgroundTransparency = 1.000
@@ -4922,7 +4855,7 @@ function ModernV2:CreateWindow(Config)
 	RightHeader.Size = UDim2.new(1, 0, 0, 50)
 	RightHeader.ZIndex = 9
 
-	LineFrame_3.Name = ModernV2.RandomString();
+	LineFrame_3.Name = NeverLose.RandomString();
 	LineFrame_3.Parent = RightHeader
 	LineFrame_3.AnchorPoint = Vector2.new(0.5, 1)
 	LineFrame_3.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
@@ -4933,7 +4866,7 @@ function ModernV2:CreateWindow(Config)
 	LineFrame_3.Size = UDim2.new(1, -10, 0, 1)
 	LineFrame_3.ZIndex = 9
 
-	ConfigFrame.Name = ModernV2.RandomString();
+	ConfigFrame.Name = NeverLose.RandomString();
 	ConfigFrame.Parent = RightHeader
 	ConfigFrame.AnchorPoint = Vector2.new(0, 0.5)
 	ConfigFrame.BackgroundColor3 = Color3.fromRGB(13, 17, 22)
@@ -4951,7 +4884,7 @@ function ModernV2:CreateWindow(Config)
 	UICorner_5.CornerRadius = UDim.new(0, 4)
 	UICorner_5.Parent = ConfigFrame
 
-	ConfigIcon.Name = ModernV2.RandomString();
+	ConfigIcon.Name = NeverLose.RandomString();
 	ConfigIcon.Parent = ConfigFrame
 	ConfigIcon.AnchorPoint = Vector2.new(0, 0.5)
 	ConfigIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -4961,14 +4894,14 @@ function ModernV2:CreateWindow(Config)
 	ConfigIcon.Position = UDim2.new(0, 2, 0.5, 0)
 	ConfigIcon.Size = UDim2.new(0, 25, 0, 25)
 	ConfigIcon.ZIndex = 9
-	ConfigIcon.FontFace = ModernV2.BuiltInBold
+	ConfigIcon.FontFace = NeverLose.BuiltInBold
 	ConfigIcon.Text = "pencil-square"
 	ConfigIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
 	ConfigIcon.TextSize = 16.000
 	ConfigIcon.TextTransparency = 0.250
 	ConfigIcon.TextWrapped = true
 
-	LineFrame_4.Name = ModernV2.RandomString();
+	LineFrame_4.Name = NeverLose.RandomString();
 	LineFrame_4.Parent = ConfigFrame
 	LineFrame_4.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
 	LineFrame_4.BackgroundTransparency = 0.650
@@ -4977,7 +4910,7 @@ function ModernV2:CreateWindow(Config)
 	LineFrame_4.Position = UDim2.new(0, 30, 0, 0)
 	LineFrame_4.Size = UDim2.new(0, 1, 1, 0)
 
-	ConfigName.Name = ModernV2.RandomString();
+	ConfigName.Name = NeverLose.RandomString();
 	ConfigName.Parent = ConfigFrame
 	ConfigName.AnchorPoint = Vector2.new(0, 0.5)
 	ConfigName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -4994,7 +4927,7 @@ function ModernV2:CreateWindow(Config)
 	ConfigName.TextTransparency = 0.350
 	ConfigName.TextXAlignment = Enum.TextXAlignment.Left
 
-	ConfigBthIcon.Name = ModernV2.RandomString();
+	ConfigBthIcon.Name = NeverLose.RandomString();
 	ConfigBthIcon.Parent = ConfigFrame
 	ConfigBthIcon.AnchorPoint = Vector2.new(1, 0.5)
 	ConfigBthIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5004,14 +4937,14 @@ function ModernV2:CreateWindow(Config)
 	ConfigBthIcon.Position = UDim2.new(1, -2, 0.5, 0)
 	ConfigBthIcon.Size = UDim2.new(0, 25, 0, 25)
 	ConfigBthIcon.ZIndex = 9
-	ConfigBthIcon.FontFace = ModernV2.BuiltInBold
+	ConfigBthIcon.FontFace = NeverLose.BuiltInBold
 	ConfigBthIcon.Text = "chevron-small-down"
 	ConfigBthIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
 	ConfigBthIcon.TextSize = 16.000
 	ConfigBthIcon.TextTransparency = 0.250
 	ConfigBthIcon.TextWrapped = true
 
-	SearchFrame.Name = ModernV2.RandomString();
+	SearchFrame.Name = NeverLose.RandomString();
 	SearchFrame.Parent = RightHeader
 	SearchFrame.AnchorPoint = Vector2.new(1, 0.5)
 	SearchFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5023,7 +4956,7 @@ function ModernV2:CreateWindow(Config)
 	SearchFrame.Size = UDim2.new(0, 30, 0, 30)
 	SearchFrame.ZIndex = 12
 
-	SearchIcon.Name = ModernV2.RandomString();
+	SearchIcon.Name = NeverLose.RandomString();
 	SearchIcon.Parent = SearchFrame
 	SearchIcon.AnchorPoint = Vector2.new(0, 0.5)
 	SearchIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5033,14 +4966,14 @@ function ModernV2:CreateWindow(Config)
 	SearchIcon.Position = UDim2.new(0, 2, 0.5, 0)
 	SearchIcon.Size = UDim2.new(0, 25, 0, 25)
 	SearchIcon.ZIndex = 12
-	SearchIcon.FontFace = ModernV2.BuiltInBold
+	SearchIcon.FontFace = NeverLose.BuiltInBold
 	SearchIcon.Text = "magnifying-glass"
 	SearchIcon.TextColor3 = Color3.fromRGB(223, 223, 223)
 	SearchIcon.TextSize = 14.000
 	SearchIcon.TextTransparency = 0.45
 	SearchIcon.TextWrapped = true
 
-	SearchBox.Name = ModernV2.RandomString();
+	SearchBox.Name = NeverLose.RandomString();
 	SearchBox.Parent = SearchFrame
 	SearchBox.AnchorPoint = Vector2.new(0, 0.5)
 	SearchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5059,7 +4992,7 @@ function ModernV2:CreateWindow(Config)
 	SearchBox.TextTransparency = 1
 	SearchBox.TextXAlignment = Enum.TextXAlignment.Left
 
-	TabContainer.Name = ModernV2.RandomString();
+	TabContainer.Name = NeverLose.RandomString();
 	TabContainer.Parent = RightMenuFrame
 	TabContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	TabContainer.BackgroundTransparency = 1.000
@@ -5072,31 +5005,31 @@ function ModernV2:CreateWindow(Config)
 
 	do
 		Window.Searching = false;
-		local Input = ModernV2:CreateInput(SearchIcon , LPH_NO_VIRTUALIZE(function()
+		local Input = NeverLose:CreateInput(SearchIcon , LPH_NO_VIRTUALIZE(function()
 			Window.Searching = not Window.Searching;
 
 			if Window.Searching then
-				ModernV2.PlayAnimate(SearchFrame , VSlowTween , {
+				NeverLose.PlayAnimate(SearchFrame , VSlowTween , {
 					Size = UDim2.new(0, 220, 0, 30)
 				})
 
-				ModernV2.PlayAnimate(SearchIcon , SlowyTween , {
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
 					TextTransparency = 0.25
 				})
 
-				ModernV2.PlayAnimate(SearchBox , VSlowTween , {
+				NeverLose.PlayAnimate(SearchBox , VSlowTween , {
 					TextTransparency = 0.350
 				})
 			else
-				ModernV2.PlayAnimate(SearchFrame , VSlowTween , {
+				NeverLose.PlayAnimate(SearchFrame , VSlowTween , {
 					Size = UDim2.new(0, 30, 0, 30)
 				})
 
-				ModernV2.PlayAnimate(SearchIcon , SlowyTween , {
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
 					TextTransparency = 0.45
 				})
 
-				ModernV2.PlayAnimate(SearchBox , SlowyTween , {
+				NeverLose.PlayAnimate(SearchBox , SlowyTween , {
 					TextTransparency = 1
 				})
 
@@ -5108,9 +5041,9 @@ function ModernV2:CreateWindow(Config)
 		local last_thread;
 		local max_time = 0.2;
 
-		ModernV2:AddSignal(SearchBox:GetPropertyChangedSignal('Text'):Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose:AddSignal(SearchBox:GetPropertyChangedSignal('Text'):Connect(LPH_NO_VIRTUALIZE(function()
 			if not SearchBox.Text:byte() then
-				for i,v in next , ModernV2.NameRegisitry do
+				for i,v in next , NeverLose.NameRegisitry do
 					v.Root.Visible = true;
 				end;
 
@@ -5126,7 +5059,7 @@ function ModernV2:CreateWindow(Config)
 
 			last_thread = task.delay(max_time,function()
 				if SearchBox.Text:byte() and (tick() - wati_for_finish) > max_time then
-					for i,v in next , ModernV2.NameRegisitry do
+					for i,v in next , NeverLose.NameRegisitry do
 						if string.find(string.lower(v.Idx) , string.lower(SearchBox.Text), 1, true) then
 							v.Root.Visible = true;
 						else
@@ -5137,19 +5070,19 @@ function ModernV2:CreateWindow(Config)
 			end);
 		end)));
 
-		ModernV2:AddSignal(Input.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(SearchIcon , SlowyTween , {
+		NeverLose:AddSignal(Input.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
 				TextTransparency = 0.25
 			})
 		end)))
 
-		ModernV2:AddSignal(Input.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose:AddSignal(Input.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
 			if Window.Searching then
-				ModernV2.PlayAnimate(SearchIcon , SlowyTween , {
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
 					TextTransparency = 0.25
 				})
 			else
-				ModernV2.PlayAnimate(SearchIcon , SlowyTween , {
+				NeverLose.PlayAnimate(SearchIcon , SlowyTween , {
 					TextTransparency = 0.45
 				})
 			end;
@@ -5159,19 +5092,19 @@ function ModernV2:CreateWindow(Config)
 	if Window.Enable3DRenderer then
 		local Part = Instance.new('Part');
 
-		Part.Name = ModernV2.RandomString();
+		Part.Name = NeverLose.RandomString();
 		Part.Anchored = true;
 		Part.Transparency = 1;
 		Part.CanCollide = false;
 		Part.CanTouch = false;
 		Part.AudioCanCollide = false;
-		Part.CollisionGroup = ModernV2.RandomString();
+		Part.CollisionGroup = NeverLose.RandomString();
 		Part.CFrame = CFrame.new(0,0,0);
 		Part.Size = Vector3.zero;
 
 		local SurfaceGui = Instance.new("SurfaceGui")
 
-		SurfaceGui.Parent = ModernV2.ScreenGui;
+		SurfaceGui.Parent = NeverLose.ScreenGui;
 		SurfaceGui.Adornee = Part;
 		SurfaceGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 		SurfaceGui.AlwaysOnTop = true
@@ -5181,7 +5114,7 @@ function ModernV2:CreateWindow(Config)
 		SurfaceGui.PixelsPerStud = 40;
 
 		Window.SurfaceGui = SurfaceGui;
-		ModernV2.GlobalSurfaceGui = SurfaceGui;
+		NeverLose.GlobalSurfaceGui = SurfaceGui;
 
 		local PerfectScale = Vector2.new(1920 , 1080 + 300)
 
@@ -5190,7 +5123,7 @@ function ModernV2:CreateWindow(Config)
 				local _,OnScreen = CurrentCamera:WorldToViewportPoint(Part.Position);
 
 				if OnScreen then
-					ModernV2.PlayAnimate(Part,VSlowTween , {
+					NeverLose.PlayAnimate(Part,VSlowTween , {
 						CFrame = CurrentCamera.CFrame * CFrame.new(0,0,-15) * CFrame.Angles(0,math.rad(180),0);
 					});
 				end;
@@ -5204,9 +5137,9 @@ function ModernV2:CreateWindow(Config)
 			local PerfectDistance = XY_Incom.Magnitude;
 			local SizeIndicator = PerfectDistance / 1.35;
 
-			Part.Parent = ModernV2.BlurModuleParent or workspace;
+			Part.Parent = NeverLose.BlurModuleParent or workspace;
 
-			ModernV2.PlayAnimate(Part,VSlowTween , {
+			NeverLose.PlayAnimate(Part,VSlowTween , {
 				CFrame = (CurrentCamera.CFrame * CFrame.new(0,0,-25)) * CFrame.Angles(0,math.rad(180),0);
 			});
 
@@ -5215,7 +5148,7 @@ function ModernV2:CreateWindow(Config)
 
 		function Window:Set3DRender(val)
 			Window.__3DRender = val;
-			ModernV2.Global3DRenderMode = val;
+			NeverLose.Global3DRenderMode = val;
 
 			if val then
 				Window.Load3DBlock();
@@ -5232,7 +5165,7 @@ function ModernV2:CreateWindow(Config)
 	function Window:AddTabLabel(Name: string)
 		local TabLabel = Instance.new("TextLabel")
 
-		TabLabel.Name = ModernV2.RandomString()
+		TabLabel.Name = NeverLose.RandomString()
 		TabLabel.Parent = LeftScrollingFrame
 		TabLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		TabLabel.BackgroundTransparency = 1.000
@@ -5249,11 +5182,11 @@ function ModernV2:CreateWindow(Config)
 
 		local SetRender = LPH_NO_VIRTUALIZE(function(val)
 			if val then
-				ModernV2.PlayAnimate(TabLabel , SlowyTween,{
+				NeverLose.PlayAnimate(TabLabel , SlowyTween,{
 					TextTransparency = 0.500
 				})
 			else
-				ModernV2.PlayAnimate(TabLabel , SlowyTween,{
+				NeverLose.PlayAnimate(TabLabel , SlowyTween,{
 					TextTransparency = 1
 				})
 			end
@@ -5265,14 +5198,14 @@ function ModernV2:CreateWindow(Config)
 	end;
 
 	function Window:AddTab(Config)
-		Config = ModernV2:ProcessParams(Config , {
+		Config = NeverLose:ProcessParams(Config , {
 			Icon = "crosshairs",
 			Name = "Tab",
 			Type = "Double"
 		});
 
 		local Tab = {
-			Signal = ModernV2:CreateSignal(false);
+			Signal = NeverLose:CreateSignal(false);
 		};
 
 		local TabButton = Instance.new("Frame")
@@ -5282,7 +5215,7 @@ function ModernV2:CreateWindow(Config)
 
 		Tab.Idx = TabButton;
 
-		TabButton.Name = ModernV2.RandomString();
+		TabButton.Name = NeverLose.RandomString();
 		TabButton.Parent = LeftScrollingFrame
 		TabButton.BackgroundColor3 = Color3.fromRGB(41, 45, 49)
 		TabButton.BackgroundTransparency = 0.500
@@ -5294,7 +5227,7 @@ function ModernV2:CreateWindow(Config)
 		UICorner.CornerRadius = UDim.new(0, 6)
 		UICorner.Parent = TabButton
 
-		TabIcon.Name = ModernV2.RandomString();
+		TabIcon.Name = NeverLose.RandomString();
 		TabIcon.Parent = TabButton
 		TabIcon.AnchorPoint = Vector2.new(0, 0.5)
 		TabIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5304,13 +5237,13 @@ function ModernV2:CreateWindow(Config)
 		TabIcon.Position = UDim2.new(0, 2, 0.5, 0)
 		TabIcon.Size = UDim2.new(0, 25, 0, 25)
 		TabIcon.ZIndex = 9
-		TabIcon.FontFace = ModernV2.BuiltInBold
+		TabIcon.FontFace = NeverLose.BuiltInBold
 		TabIcon.Text = Config.Icon;
-		TabIcon.TextColor3 = ModernV2.AccentColor
+		TabIcon.TextColor3 = NeverLose.AccentColor
 		TabIcon.TextSize = 16.000
 		TabIcon.TextWrapped = true
 
-		TabContentLabel.Name = ModernV2.RandomString();
+		TabContentLabel.Name = NeverLose.RandomString();
 		TabContentLabel.Parent = TabButton
 		TabContentLabel.AnchorPoint = Vector2.new(0, 0.5)
 		TabContentLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5332,7 +5265,7 @@ function ModernV2:CreateWindow(Config)
 		local RightScroll = Instance.new("ScrollingFrame")
 		local UIListLayout_2 = Instance.new("UIListLayout")
 
-		TabFrame.Name = ModernV2.RandomString();
+		TabFrame.Name = NeverLose.RandomString();
 		TabFrame.Parent = TabContainer
 		TabFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 		TabFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5344,7 +5277,7 @@ function ModernV2:CreateWindow(Config)
 		TabFrame.Size = UDim2.new(1, 0, 1, 0)
 		TabFrame.Visible = true;
 
-		LeftScroll.Name = ModernV2.RandomString();
+		LeftScroll.Name = NeverLose.RandomString();
 		LeftScroll.Parent = TabFrame
 		LeftScroll.Active = true
 		LeftScroll.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -5362,11 +5295,11 @@ function ModernV2:CreateWindow(Config)
 		UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 		UIListLayout.Padding = UDim.new(0, 5)
 
-		ModernV2:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
 			LeftScroll.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y + 1)
 		end)))
 
-		RightScroll.Name = ModernV2.RandomString();
+		RightScroll.Name = NeverLose.RandomString();
 		RightScroll.Parent = TabFrame
 		RightScroll.Active = true
 		RightScroll.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -5391,12 +5324,12 @@ function ModernV2:CreateWindow(Config)
 			LeftScroll.Size = UDim2.new(1, 0, 1, -5);
 			LeftScroll.Position = UDim2.new(0.5, 0, 0.5, 0)
 		else
-			ModernV2:AddSignal(UIListLayout_2:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose:AddSignal(UIListLayout_2:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
 				RightScroll.CanvasSize = UDim2.fromOffset(0,UIListLayout_2.AbsoluteContentSize.Y + 1)
 			end)))
 		end;
 
-		ModernV2:AddSignal(TabIcon:GetPropertyChangedSignal('TextTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose:AddSignal(TabIcon:GetPropertyChangedSignal('TextTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
 			if TabIcon.TextTransparency > 0.4 then
 				UIListLayout.Parent = nil;
 				UIListLayout_2.Parent = nil;
@@ -5414,29 +5347,29 @@ function ModernV2:CreateWindow(Config)
 			Tab.Signal:SetValue(value);
 
 			if value then
-				ModernV2.PlayAnimate(TabButton , SlowyTween , {
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
 					BackgroundTransparency = 0.500
 				})
 
-				ModernV2.PlayAnimate(TabIcon , SlowyTween , {
+				NeverLose.PlayAnimate(TabIcon , SlowyTween , {
 					TextTransparency = 0,
-					TextColor3 = ModernV2.AccentColor
+					TextColor3 = NeverLose.AccentColor
 				})
 
-				ModernV2.PlayAnimate(TabContentLabel , SlowyTween , {
+				NeverLose.PlayAnimate(TabContentLabel , SlowyTween , {
 					TextTransparency = 0
 				})
 			else
-				ModernV2.PlayAnimate(TabButton , SlowyTween , {
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
 					BackgroundTransparency = 1
 				})
 
-				ModernV2.PlayAnimate(TabIcon , SlowyTween , {
+				NeverLose.PlayAnimate(TabIcon , SlowyTween , {
 					TextTransparency = 0.5,
 					TextColor3 = Color3.fromRGB(252, 252, 252)
 				})
 
-				ModernV2.PlayAnimate(TabContentLabel , SlowyTween , {
+				NeverLose.PlayAnimate(TabContentLabel , SlowyTween , {
 					TextTransparency = 0.5
 				})
 			end;
@@ -5450,7 +5383,7 @@ function ModernV2:CreateWindow(Config)
 			Tab.SetValue(false);
 		end;
 
-		local over = ModernV2:CreateInput(TabButton,LPH_NO_VIRTUALIZE(function()
+		local over = NeverLose:CreateInput(TabButton,LPH_NO_VIRTUALIZE(function()
 			for i,v in next , Window.Tabs do
 				if v.Idx == TabButton then
 					v.SetValue(true);
@@ -5461,25 +5394,25 @@ function ModernV2:CreateWindow(Config)
 			end;
 		end));
 
-		ModernV2:AddSignal(over.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose:AddSignal(over.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
 			if Window.Tabs[Window.CurrentTab] == Tab then
-				ModernV2.PlayAnimate(TabButton , SlowyTween , {
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
 					BackgroundTransparency = 0.500
 				})
 			else
-				ModernV2.PlayAnimate(TabButton , SlowyTween , {
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
 					BackgroundTransparency = 0.8
 				})
 			end;
 		end)))
 
-		ModernV2:AddSignal(over.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose:AddSignal(over.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
 			if Window.Tabs[Window.CurrentTab] == Tab then
-				ModernV2.PlayAnimate(TabButton , SlowyTween , {
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
 					BackgroundTransparency = 0.500
 				})
 			else
-				ModernV2.PlayAnimate(TabButton , SlowyTween , {
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
 					BackgroundTransparency = 1
 				})
 			end;
@@ -5495,22 +5428,22 @@ function ModernV2:CreateWindow(Config)
 			else
 				Tab.SetValue(false);
 
-				ModernV2.PlayAnimate(TabButton , SlowyTween , {
+				NeverLose.PlayAnimate(TabButton , SlowyTween , {
 					BackgroundTransparency = 1
 				})
 
-				ModernV2.PlayAnimate(TabIcon , SlowyTween , {
+				NeverLose.PlayAnimate(TabIcon , SlowyTween , {
 					TextTransparency = 1,
 				})
 
-				ModernV2.PlayAnimate(TabContentLabel , SlowyTween , {
+				NeverLose.PlayAnimate(TabContentLabel , SlowyTween , {
 					TextTransparency = 1
 				})
 			end;
 		end));
 
 		function Tab:AddSection(Config)
-			Config = ModernV2:ProcessParams(Config , {
+			Config = NeverLose:ProcessParams(Config , {
 				Name = "SECTION",
 				Position = 'left'
 			});
@@ -5522,7 +5455,7 @@ function ModernV2:CreateWindow(Config)
 			local UICorner = Instance.new("UICorner")
 			local UIListLayout = Instance.new("UIListLayout")
 
-			SectionFrame.Name = ModernV2.RandomString();
+			SectionFrame.Name = NeverLose.RandomString();
 			SectionFrame.Parent = (string.lower(Config.Position) == 'left' and LeftScroll) or RightScroll
 			SectionFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 			SectionFrame.BackgroundTransparency = 1.000
@@ -5532,7 +5465,7 @@ function ModernV2:CreateWindow(Config)
 			SectionFrame.Size = UDim2.new(1, -5, 0, 0)
 			SectionFrame.ZIndex = 9
 
-			SectionLabel.Name = ModernV2.RandomString();
+			SectionLabel.Name = NeverLose.RandomString();
 			SectionLabel.Parent = SectionFrame
 			SectionLabel.AnchorPoint = Vector2.new(0.5, 0)
 			SectionLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5549,7 +5482,7 @@ function ModernV2:CreateWindow(Config)
 			SectionLabel.TextTransparency = 0.500
 			SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-			SectionHandler.Name = ModernV2.RandomString();
+			SectionHandler.Name = NeverLose.RandomString();
 			SectionHandler.Parent = SectionFrame
 			SectionHandler.AnchorPoint = Vector2.new(0.5, 0)
 			SectionHandler.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
@@ -5576,41 +5509,41 @@ function ModernV2:CreateWindow(Config)
 
 
 				if UIListLayout.AbsoluteContentSize.Y <= 1 then
-					ModernV2.PlayAnimate(SectionFrame , VSlowTween , {
+					NeverLose.PlayAnimate(SectionFrame , VSlowTween , {
 						Size = UDim2.new(1, -5, 0, 0)
 					})
 				else
-					ModernV2.PlayAnimate(SectionFrame , VSlowTween , {
+					NeverLose.PlayAnimate(SectionFrame , VSlowTween , {
 						Size = UDim2.new(1, -5, 0, UIListLayout.AbsoluteContentSize.Y + 19.5)
 					})
 				end;
 			end));
 
-			local Section = ModernV2:RegisiterItem(SectionHandler , Tab.Signal);
+			local Section = NeverLose:RegisiterItem(SectionHandler , Tab.Signal);
 
 			Section.SetRender = LPH_NO_VIRTUALIZE(function(value)
 				if value then
-					ModernV2.PlayAnimate(SectionLabel,SlowyTween,{
+					NeverLose.PlayAnimate(SectionLabel,SlowyTween,{
 						TextTransparency = 0.500
 					})
 
-					ModernV2.PlayAnimate(SectionHandler,SlowyTween,{
+					NeverLose.PlayAnimate(SectionHandler,SlowyTween,{
 						BackgroundTransparency = 0.500
 					})
 
-					ModernV2.PlayAnimate(UIStroke,SlowyTween,{
+					NeverLose.PlayAnimate(UIStroke,SlowyTween,{
 						Transparency = 0.650
 					})
 				else
-					ModernV2.PlayAnimate(SectionLabel,SlowyTween,{
+					NeverLose.PlayAnimate(SectionLabel,SlowyTween,{
 						TextTransparency = 1
 					})
 
-					ModernV2.PlayAnimate(SectionHandler,SlowyTween,{
+					NeverLose.PlayAnimate(SectionHandler,SlowyTween,{
 						BackgroundTransparency = 1
 					})
 
-					ModernV2.PlayAnimate(UIStroke,SlowyTween,{
+					NeverLose.PlayAnimate(UIStroke,SlowyTween,{
 						Transparency = 1
 					})
 				end;
@@ -5626,7 +5559,7 @@ function ModernV2:CreateWindow(Config)
 	end;
 
 	function Window:_InitConfig()
-		local ConfigSignal = ModernV2:CreateSignal(false);
+		local ConfigSignal = NeverLose:CreateSignal(false);
 		local ConfigLib = {
 			Signals = {},
 		};
@@ -5649,76 +5582,76 @@ function ModernV2:CreateWindow(Config)
 		local UICorner_3 = Instance.new("UICorner")
 		local UICorner_4 = Instance.new("UICorner")
 
-		local shadow = ModernV2:CreateShadow(ConfigMenu);
+		local shadow = NeverLose:CreateShadow(ConfigMenu);
 
 		ConfigLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
 				ConfigMenu.Position = UDim2.fromOffset(ConfigFrame.AbsolutePosition.X + 110 , ConfigFrame.AbsolutePosition.Y + 96)
 
-				ModernV2.PlayAnimate(ConfigMenu , SlowyTween , {
+				NeverLose.PlayAnimate(ConfigMenu , SlowyTween , {
 					BackgroundTransparency = 0.035,
 					Position = UDim2.fromOffset(ConfigFrame.AbsolutePosition.X + 110 , ConfigFrame.AbsolutePosition.Y + 95)
 				})	
 
-				ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 					Transparency = 0.650
 				})
-				ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 					TextTransparency = 0.200
 				})	
 
-				ModernV2.PlayAnimate(UIStroke_2 , SlowyTween , {
+				NeverLose.PlayAnimate(UIStroke_2 , SlowyTween , {
 					Transparency = 0.65
 				})	
 
-				ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
 					BackgroundTransparency = 0.650
 				})	
-				ModernV2.PlayAnimate(TextInput , SlowyTween , {
+				NeverLose.PlayAnimate(TextInput , SlowyTween , {
 					BackgroundTransparency = 0
 				})	
-				ModernV2.PlayAnimate(TextBox , SlowyTween , {
+				NeverLose.PlayAnimate(TextBox , SlowyTween , {
 					TextTransparency = 0.350
 				})	
-				ModernV2.PlayAnimate(Icon , SlowyTween , {
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
 					TextTransparency = 0.350
 				})	
 
-				ModernV2.PlayAnimate(ConfigBthIcon , SlowyTween , {
+				NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
 					Rotation = 180
 				})	
 
 				shadow:Render(true)
 			else
-				ModernV2.PlayAnimate(ConfigBthIcon , SlowyTween , {
+				NeverLose.PlayAnimate(ConfigBthIcon , SlowyTween , {
 					Rotation = 0
 				})
 
-				ModernV2.PlayAnimate(ConfigMenu , SlowyTween , {
+				NeverLose.PlayAnimate(ConfigMenu , SlowyTween , {
 					BackgroundTransparency = 1,
 					Position = UDim2.fromOffset(ConfigFrame.AbsolutePosition.X + 110 , ConfigFrame.AbsolutePosition.Y + 96)
 				})	
 
-				ModernV2.PlayAnimate(UIStroke_2 , SlowyTween , {
+				NeverLose.PlayAnimate(UIStroke_2 , SlowyTween , {
 					Transparency = 1
 				})	
 
-				ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+				NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 					Transparency = 1
 				})
-				ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+				NeverLose.PlayAnimate(BasedLabel , SlowyTween , {
 					TextTransparency = 1
 				})	
-				ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+				NeverLose.PlayAnimate(LineFrame , SlowyTween , {
 					BackgroundTransparency = 1
 				})	
-				ModernV2.PlayAnimate(TextInput , SlowyTween , {
+				NeverLose.PlayAnimate(TextInput , SlowyTween , {
 					BackgroundTransparency = 1
 				})	
-				ModernV2.PlayAnimate(TextBox , SlowyTween , {
+				NeverLose.PlayAnimate(TextBox , SlowyTween , {
 					TextTransparency = 1
 				})	
-				ModernV2.PlayAnimate(Icon , SlowyTween , {
+				NeverLose.PlayAnimate(Icon , SlowyTween , {
 					TextTransparency = 1
 				})	
 
@@ -5726,7 +5659,7 @@ function ModernV2:CreateWindow(Config)
 			end;
 		end);
 
-		ModernV2:AddSignal(ConfigMenu:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose:AddSignal(ConfigMenu:GetPropertyChangedSignal('BackgroundTransparency'):Connect(LPH_NO_VIRTUALIZE(function()
 			if ConfigMenu.BackgroundTransparency > 0.9 then
 				ConfigMenu.Visible = false;
 				UIListLayout.Parent = nil;
@@ -5736,16 +5669,16 @@ function ModernV2:CreateWindow(Config)
 				ConfigMenu.Visible = true;
 				UIListLayout.Parent = ConfigMenu
 
-				if ModernV2.Global3DRenderMode then
-					ConfigMenu.Parent = ModernV2.GlobalSurfaceGui;
+				if NeverLose.Global3DRenderMode then
+					ConfigMenu.Parent = NeverLose.GlobalSurfaceGui;
 				else
-					ConfigMenu.Parent = ModernV2.ScreenGui;
+					ConfigMenu.Parent = NeverLose.ScreenGui;
 				end;
 			end
 		end)))
 
-		ConfigMenu.Name = ModernV2.RandomString();
-		ConfigMenu.Parent = ModernV2.ScreenGui;
+		ConfigMenu.Name = NeverLose.RandomString();
+		ConfigMenu.Parent = NeverLose.ScreenGui;
 		ConfigMenu.AnchorPoint = Vector2.new(0.5, 0)
 		ConfigMenu.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
 		ConfigMenu.BackgroundTransparency = 0.035
@@ -5768,7 +5701,7 @@ function ModernV2:CreateWindow(Config)
 		UIStroke.Color = Color3.fromRGB(45, 48, 58)
 		UIStroke.Parent = ConfigMenu
 
-		InputFrame.Name = ModernV2.RandomString();
+		InputFrame.Name = NeverLose.RandomString();
 		InputFrame.Parent = ConfigMenu
 		InputFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
 		InputFrame.BackgroundTransparency = 1.000
@@ -5777,7 +5710,7 @@ function ModernV2:CreateWindow(Config)
 		InputFrame.Size = UDim2.new(1, 0, 0, 30)
 		InputFrame.ZIndex = 154
 
-		BasedLabel.Name = ModernV2.RandomString();
+		BasedLabel.Name = NeverLose.RandomString();
 		BasedLabel.Parent = InputFrame
 		BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		BasedLabel.BackgroundTransparency = 1.000
@@ -5793,7 +5726,7 @@ function ModernV2:CreateWindow(Config)
 		BasedLabel.TextTransparency = 0.200
 		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-		LineFrame.Name = ModernV2.RandomString();
+		LineFrame.Name = NeverLose.RandomString();
 		LineFrame.Parent = InputFrame
 		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
 		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
@@ -5804,7 +5737,7 @@ function ModernV2:CreateWindow(Config)
 		LineFrame.Size = UDim2.new(1, -20, 0, 1)
 		LineFrame.ZIndex = 154
 
-		BasedHandler.Name = ModernV2.RandomString();
+		BasedHandler.Name = NeverLose.RandomString();
 		BasedHandler.Parent = InputFrame
 		BasedHandler.AnchorPoint = Vector2.new(1, 0)
 		BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5822,20 +5755,20 @@ function ModernV2:CreateWindow(Config)
 		UIListLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
 		UIListLayout_2.Padding = UDim.new(0, 5)
 
-		ModernV2:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
+		NeverLose:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
 			if #ConfigLib.Signals <= 0 then
-				ModernV2.PlayAnimate(ConfigMenu , SlowyTween , {
+				NeverLose.PlayAnimate(ConfigMenu , SlowyTween , {
 					Size = UDim2.new(0, 220,0, UIListLayout.AbsoluteContentSize.Y + 0);
 				})
 			else
-				ModernV2.PlayAnimate(ConfigMenu , SlowyTween , {
+				NeverLose.PlayAnimate(ConfigMenu , SlowyTween , {
 					Size = UDim2.new(0, 220,0, UIListLayout.AbsoluteContentSize.Y + 5);
 				})
 			end;
 
 		end)));
 
-		TextInput.Name = ModernV2.RandomString();
+		TextInput.Name = NeverLose.RandomString();
 		TextInput.Parent = BasedHandler
 		TextInput.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 		TextInput.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -5869,7 +5802,7 @@ function ModernV2:CreateWindow(Config)
 		TextBox.TextTransparency = 0.350
 		TextBox.TextXAlignment = Enum.TextXAlignment.Left
 
-		LoadConfig.Name = ModernV2.RandomString();
+		LoadConfig.Name = NeverLose.RandomString();
 		LoadConfig.Parent = BasedHandler
 		LoadConfig.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
 		LoadConfig.BackgroundTransparency = 1.000
@@ -5879,7 +5812,7 @@ function ModernV2:CreateWindow(Config)
 		LoadConfig.Size = UDim2.new(0, 20, 0, 18)
 		LoadConfig.ZIndex = 153
 
-		Icon.Name = ModernV2.RandomString();
+		Icon.Name = NeverLose.RandomString();
 		Icon.Parent = LoadConfig
 		Icon.AnchorPoint = Vector2.new(0.5, 0.5)
 		Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -5889,7 +5822,7 @@ function ModernV2:CreateWindow(Config)
 		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
 		Icon.Size = UDim2.new(1, 0, 1, 0)
 		Icon.ZIndex = 153
-		Icon.FontFace = ModernV2.BuiltInBold
+		Icon.FontFace = NeverLose.BuiltInBold
 		Icon.Text = "plus-large"
 		Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
 		Icon.TextSize = 16.000
@@ -5905,7 +5838,7 @@ function ModernV2:CreateWindow(Config)
 		local OpenButton = Instance.new("TextButton")
 		local UICorner = Instance.new("UICorner")
 
-		OpenButton.Name = ModernV2.RandomString();
+		OpenButton.Name = NeverLose.RandomString();
 		OpenButton.Parent = ConfigFrame
 		OpenButton.AnchorPoint = Vector2.new(0, 0.5)
 		OpenButton.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
@@ -5931,7 +5864,7 @@ function ModernV2:CreateWindow(Config)
 		local UpdateSize = LPH_NO_VIRTUALIZE(function()
 			local size = TextService:GetTextSize(ConfigName.Text , ConfigName.TextSize,ConfigName.Font,Vector2.new(math.huge,math.huge));
 
-			ModernV2.PlayAnimate(ConfigFrame,SlowyTween , {
+			NeverLose.PlayAnimate(ConfigFrame,SlowyTween , {
 				Size = UDim2.fromOffset(size.X + 75, 30)
 			});
 		end);
@@ -5942,7 +5875,7 @@ function ModernV2:CreateWindow(Config)
 			local ikc = {};
 			
 			local cd = 0;
-			for Flag,v in next , ModernV2.Flags do
+			for Flag,v in next , NeverLose.Flags do
 				if v and v.GetValue then
 					local data = v:GetValue();
 
@@ -5968,17 +5901,17 @@ function ModernV2:CreateWindow(Config)
 				cd += 1;
 			end;
 
-			return ModernV2.Base64Encode(Encryption.new(HttpService:JSONEncode(ikc)));
+			return NeverLose.Base64Encode(Encryption.new(HttpService:JSONEncode(ikc)));
 		end;
 
 		function ConfigLib:LoadData(data)
-			local coded = HttpService:JSONDecode(Encryption.reverse(ModernV2.Base64Decode(data)));
+			local coded = HttpService:JSONDecode(Encryption.reverse(NeverLose.Base64Decode(data)));
 
 			for i,v in next , coded do
 				if v.Idx then
-					if ModernV2.Flags[v.Idx] then
+					if NeverLose.Flags[v.Idx] then
 						task.spawn(function()
-							ModernV2.Flags[v.Idx]:SetValue(v.Value)
+							NeverLose.Flags[v.Idx]:SetValue(v.Value)
 						end)
 					end;
 				end;
@@ -6028,7 +5961,7 @@ function ModernV2:CreateWindow(Config)
 				local BasedLabel = Instance.new("TextLabel")
 				local UIStroke = Instance.new("UIStroke")
 
-				ConfigItemFrame.Name = ModernV2.RandomString();
+				ConfigItemFrame.Name = NeverLose.RandomString();
 				ConfigItemFrame.Parent = ConfigMenu
 				ConfigItemFrame.BackgroundColor3 = Color3.fromRGB(21, 20, 27)
 				ConfigItemFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -6037,7 +5970,7 @@ function ModernV2:CreateWindow(Config)
 				ConfigItemFrame.ZIndex = 153
 				ConfigItemFrame:SetAttribute('ConfigItem',true);
 
-				BasedHandler.Name = ModernV2.RandomString();
+				BasedHandler.Name = NeverLose.RandomString();
 				BasedHandler.Parent = ConfigItemFrame
 				BasedHandler.AnchorPoint = Vector2.new(1, 0)
 				BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -6055,7 +5988,7 @@ function ModernV2:CreateWindow(Config)
 				UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 				UIListLayout.Padding = UDim.new(0, 5)
 
-				DeleteConfig.Name = ModernV2.RandomString();
+				DeleteConfig.Name = NeverLose.RandomString();
 				DeleteConfig.Parent = BasedHandler
 				DeleteConfig.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
 				DeleteConfig.BackgroundTransparency = 1.000
@@ -6065,7 +5998,7 @@ function ModernV2:CreateWindow(Config)
 				DeleteConfig.Size = UDim2.new(0, 20, 0, 18)
 				DeleteConfig.ZIndex = 153
 
-				Icon.Name = ModernV2.RandomString();
+				Icon.Name = NeverLose.RandomString();
 				Icon.Parent = DeleteConfig
 				Icon.AnchorPoint = Vector2.new(0.5, 0.5)
 				Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -6075,7 +6008,7 @@ function ModernV2:CreateWindow(Config)
 				Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
 				Icon.Size = UDim2.new(1, 0, 1, 0)
 				Icon.ZIndex = 153
-				Icon.FontFace = ModernV2.BuiltInBold
+				Icon.FontFace = NeverLose.BuiltInBold
 				Icon.Text = "trash-can"
 				Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
 				Icon.TextSize = 16.000
@@ -6085,7 +6018,7 @@ function ModernV2:CreateWindow(Config)
 				UICorner.CornerRadius = UDim.new(0, 4)
 				UICorner.Parent = DeleteConfig
 
-				LoadConfig.Name = ModernV2.RandomString();
+				LoadConfig.Name = NeverLose.RandomString();
 				LoadConfig.Parent = BasedHandler
 				LoadConfig.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
 				LoadConfig.BackgroundTransparency = 1.000
@@ -6095,7 +6028,7 @@ function ModernV2:CreateWindow(Config)
 				LoadConfig.Size = UDim2.new(0, 20, 0, 18)
 				LoadConfig.ZIndex = 153
 
-				Icon_2.Name = ModernV2.RandomString();
+				Icon_2.Name = NeverLose.RandomString();
 				Icon_2.Parent = LoadConfig
 				Icon_2.AnchorPoint = Vector2.new(0.5, 0.5)
 				Icon_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -6105,7 +6038,7 @@ function ModernV2:CreateWindow(Config)
 				Icon_2.Position = UDim2.new(0.5, 0, 0.5, 0)
 				Icon_2.Size = UDim2.new(1, 0, 1, 0)
 				Icon_2.ZIndex = 153
-				Icon_2.FontFace = ModernV2.BuiltInBold
+				Icon_2.FontFace = NeverLose.BuiltInBold
 				Icon_2.Text = "arrow-right-from-portrait-rectangle"
 				Icon_2.TextColor3 = Color3.fromRGB(223, 223, 223)
 				Icon_2.TextSize = 16.000
@@ -6118,7 +6051,7 @@ function ModernV2:CreateWindow(Config)
 				UICorner_3.CornerRadius = UDim.new(0, 5)
 				UICorner_3.Parent = ConfigItemFrame
 
-				BasedLabel.Name = ModernV2.RandomString();
+				BasedLabel.Name = NeverLose.RandomString();
 				BasedLabel.Parent = ConfigItemFrame
 				BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 				BasedLabel.BackgroundTransparency = 1.000
@@ -6140,43 +6073,43 @@ function ModernV2:CreateWindow(Config)
 
 				local Render = LPH_NO_VIRTUALIZE(function(rst)
 					if rst then
-						ModernV2.PlayAnimate(ConfigItemFrame,SlowyTween,{
+						NeverLose.PlayAnimate(ConfigItemFrame,SlowyTween,{
 							BackgroundTransparency = 0
 						})
 
-						ModernV2.PlayAnimate(Icon,SlowyTween,{
+						NeverLose.PlayAnimate(Icon,SlowyTween,{
 							TextTransparency = 0.400
 						})
 
-						ModernV2.PlayAnimate(Icon_2,SlowyTween,{
+						NeverLose.PlayAnimate(Icon_2,SlowyTween,{
 							TextTransparency = 0.400
 						})
 
-						ModernV2.PlayAnimate(BasedLabel,SlowyTween,{
+						NeverLose.PlayAnimate(BasedLabel,SlowyTween,{
 							TextTransparency = 0.200
 						})
 
-						ModernV2.PlayAnimate(UIStroke,SlowyTween,{
+						NeverLose.PlayAnimate(UIStroke,SlowyTween,{
 							Transparency = 0.500
 						})
 					else
-						ModernV2.PlayAnimate(ConfigItemFrame,SlowyTween,{
+						NeverLose.PlayAnimate(ConfigItemFrame,SlowyTween,{
 							BackgroundTransparency = 1
 						})
 
-						ModernV2.PlayAnimate(Icon,SlowyTween,{
+						NeverLose.PlayAnimate(Icon,SlowyTween,{
 							TextTransparency = 1
 						})
 
-						ModernV2.PlayAnimate(Icon_2,SlowyTween,{
+						NeverLose.PlayAnimate(Icon_2,SlowyTween,{
 							TextTransparency = 1
 						})
 
-						ModernV2.PlayAnimate(BasedLabel,SlowyTween,{
+						NeverLose.PlayAnimate(BasedLabel,SlowyTween,{
 							TextTransparency = 1
 						})
 
-						ModernV2.PlayAnimate(UIStroke,SlowyTween,{
+						NeverLose.PlayAnimate(UIStroke,SlowyTween,{
 							Transparency = 1
 						})
 					end;
@@ -6186,18 +6119,18 @@ function ModernV2:CreateWindow(Config)
 				table.insert(ConfigLib.Signals , ConfigSignal:Connect(Render));
 
 				table.insert(ConfigLib.Signals , ConfigItemFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-					ModernV2.PlayAnimate(UIStroke,SlowyTween,{
+					NeverLose.PlayAnimate(UIStroke,SlowyTween,{
 						Transparency = 0.25
 					})
 				end)));
 
 				table.insert(ConfigLib.Signals , ConfigItemFrame.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-					ModernV2.PlayAnimate(UIStroke,SlowyTween,{
+					NeverLose.PlayAnimate(UIStroke,SlowyTween,{
 						Transparency = 0.500
 					})
 				end)));
 
-				local deleter,signal = ModernV2:CreateInput(DeleteConfig,function()
+				local deleter,signal = NeverLose:CreateInput(DeleteConfig,function()
 					if ConfigNameStr == "Default" then
 						Logging.new("trash-can","You can't delete default config!",3.5)
 						return;
@@ -6213,7 +6146,7 @@ function ModernV2:CreateWindow(Config)
 				end);
 
 
-				local _,load_signal = ModernV2:CreateInput(LoadConfig,function()
+				local _,load_signal = NeverLose:CreateInput(LoadConfig,function()
 					local path = Window.ConfigFolder..'/'..ConfigNameStr;
 
 					if isfile(path) then
@@ -6236,28 +6169,28 @@ function ModernV2:CreateWindow(Config)
 				table.insert(ConfigLib.Signals , load_signal);
 
 				table.insert(ConfigLib.Signals , deleter.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-					ModernV2.PlayAnimate(Icon,SlowyTween,{
+					NeverLose.PlayAnimate(Icon,SlowyTween,{
 						TextTransparency = 0.2,
 						TextColor3 = Color3.fromRGB(223, 125, 125)
 					})
 				end)))
 
 				table.insert(ConfigLib.Signals , deleter.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-					ModernV2.PlayAnimate(Icon,SlowyTween,{
+					NeverLose.PlayAnimate(Icon,SlowyTween,{
 						TextTransparency = 0.400,
 						TextColor3 = Color3.fromRGB(223, 223, 223)
 					})
 				end)))
 
 				table.insert(ConfigLib.Signals , LoadConfig.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-					ModernV2.PlayAnimate(Icon_2,SlowyTween,{
+					NeverLose.PlayAnimate(Icon_2,SlowyTween,{
 						TextTransparency = 0.2,
-						TextColor3 = ModernV2.AccentColor
+						TextColor3 = NeverLose.AccentColor
 					})
 				end)))
 
 				table.insert(ConfigLib.Signals , LoadConfig.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-					ModernV2.PlayAnimate(Icon_2,SlowyTween,{
+					NeverLose.PlayAnimate(Icon_2,SlowyTween,{
 						TextTransparency = 0.400,
 						TextColor3 = Color3.fromRGB(223, 223, 223)
 					})
@@ -6297,7 +6230,7 @@ function ModernV2:CreateWindow(Config)
 			end;
 		end);
 
-		local hover_write = ModernV2:CreateInput(ConfigIcon,function()
+		local hover_write = NeverLose:CreateInput(ConfigIcon,function()
 			local path = Window.ConfigFolder..'/'..(ConfigLib.SelectedConfig or "Default");
 
 			if isfile(path) then
@@ -6307,20 +6240,20 @@ function ModernV2:CreateWindow(Config)
 			end;
 		end);
 
-		ModernV2:AddSignal(hover_write.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(ConfigIcon,SlowyTween,{
+		NeverLose:AddSignal(hover_write.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(ConfigIcon,SlowyTween,{
 				TextTransparency = 0.1
 			})
 		end)));
 
-		ModernV2:AddSignal(hover_write.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(ConfigIcon,SlowyTween,{
+		NeverLose:AddSignal(hover_write.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+			NeverLose.PlayAnimate(ConfigIcon,SlowyTween,{
 				TextTransparency = 0.25
 			})
 		end)));
 
 
-		local mv = ModernV2:CreateInput(LoadConfig , function()
+		local mv = NeverLose:CreateInput(LoadConfig , function()
 			local cfg_name = TextBox.Text;
 
 			if cfg_name and cfg_name:byte() and not cfg_name:find('/',1,true) and not cfg_name:find('\\',1,true) then
@@ -6340,14 +6273,14 @@ function ModernV2:CreateWindow(Config)
 			end;
 		end);
 
-		ModernV2:AddSignal(mv.MouseEnter:Connect(function()
-			ModernV2.PlayAnimate(Icon , SlowyTween , {
+		NeverLose:AddSignal(mv.MouseEnter:Connect(function()
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
 				TextTransparency = 0.1
 			})
 		end))
 
-		ModernV2:AddSignal(mv.MouseLeave:Connect(function()
-			ModernV2.PlayAnimate(Icon , SlowyTween , {
+		NeverLose:AddSignal(mv.MouseLeave:Connect(function()
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
 				TextTransparency = 0.35
 			})
 		end))
@@ -6364,7 +6297,7 @@ function ModernV2:CreateWindow(Config)
 
 			ConfigLib.UnsafeThread = UserInputService.InputBegan:Connect(function(Input)
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-					if not ModernV2:IsMouseOverFrame(ConfigMenu) then
+					if not NeverLose:IsMouseOverFrame(ConfigMenu) then
 						if ConfigLib.UnsafeThread then
 							ConfigLib.UnsafeThread:Disconnect();
 							ConfigLib.UnsafeThread = nil;
@@ -6381,9 +6314,9 @@ function ModernV2:CreateWindow(Config)
 
 	Window:_InitConfig();
 
-	local UserSettings = ModernV2:CreateOptionWindow(BottomFrame , BottomFrame.ZIndex + 13);
+	local UserSettings = NeverLose:CreateOptionWindow(BottomFrame , BottomFrame.ZIndex + 13);
 	local reciveSignal;
-	ModernV2:CreateInput(BottomFrame , LPH_NO_VIRTUALIZE(function()
+	NeverLose:CreateInput(BottomFrame , LPH_NO_VIRTUALIZE(function()
 		if reciveSignal then
 			reciveSignal:Disconnect();
 			reciveSignal = nil;	
@@ -6393,7 +6326,7 @@ function ModernV2:CreateWindow(Config)
 
 		reciveSignal = UserInputService.InputBegan:Connect(function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-				if not ModernV2:IsMouseOverFrame(UserSettings.Root) and not ModernV2:IsMouseOverFrame(BottomFrame) and not ModernV2.IsMosueOverOtherFrame then
+				if not NeverLose:IsMouseOverFrame(UserSettings.Root) and not NeverLose:IsMouseOverFrame(BottomFrame) and not NeverLose.IsMosueOverOtherFrame then
 					if reciveSignal then
 						reciveSignal:Disconnect();
 						reciveSignal = nil;	
@@ -6408,8 +6341,8 @@ function ModernV2:CreateWindow(Config)
 	Window.UserSettings = UserSettings;
 
 	function Window:SetAccount(Config)
-		Config = ModernV2:ProcessParams(Config , {
-			Profile = ModernV2.UserProfile,
+		Config = NeverLose:ProcessParams(Config , {
+			Profile = NeverLose.UserProfile,
 			Username = LocalPlayer.DisplayName,
 			Expires = "Never",
 		});
@@ -6435,7 +6368,7 @@ function ModernV2:CreateWindow(Config)
 		Window.Size = newsize;
 
 		if Window.Signal:GetValue() then
-			ModernV2.PlayAnimate(WindowFrame , VSlowTween , {
+			NeverLose.PlayAnimate(WindowFrame , VSlowTween , {
 				Size = Window.Size
 			})
 		end
@@ -6443,7 +6376,7 @@ function ModernV2:CreateWindow(Config)
 
 	Window:SetAccount();
 
-	ModernV2:AddSignal(UserInputService.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(value,ISTYPING)
+	NeverLose:AddSignal(UserInputService.InputBegan:Connect(LPH_NO_VIRTUALIZE(function(value,ISTYPING)
 		if value.KeyCode == Window.Keybind or value.KeyCode.Name == Window.Keybind then
 			if not ISTYPING then
 				Window:ToggleInterface()
@@ -6460,21 +6393,21 @@ function ModernV2:CreateWindow(Config)
 	end;
 
 	-- Register this window as the active window so bindables can fire it
-	ModernV2.ActiveWindow = Window;
+	NeverLose.ActiveWindow = Window;
 
 	function Window:Watermark()
-		if ModernV2.__WatermarkCache then
-			return ModernV2.__WatermarkCache;
+		if NeverLose.__WatermarkCache then
+			return NeverLose.__WatermarkCache;
 		end;
 
 		local Watermark_lb = {};
 		local Watermark = Instance.new("Frame")
 		local UICorner = Instance.new("UICorner")
 		local UIListLayout = Instance.new("UIListLayout")
-		local Shadow = ModernV2:CreateShadow(Watermark);
+		local Shadow = NeverLose:CreateShadow(Watermark);
 
-		Watermark.Name = ModernV2.RandomString();
-		Watermark.Parent = ModernV2.ScreenGui
+		Watermark.Name = NeverLose.RandomString();
+		Watermark.Parent = NeverLose.ScreenGui
 		Watermark.AnchorPoint = Vector2.new(1, 0)
 		Watermark.BackgroundColor3 = Color3.fromRGB(8, 8, 13)
 		Watermark.BackgroundTransparency = 0.200
@@ -6506,18 +6439,18 @@ function ModernV2:CreateWindow(Config)
 				Watermark.Visible = false;
 				Watermark.Parent = nil;
 			else
-				Watermark.Parent = ModernV2.ScreenGui
+				Watermark.Parent = NeverLose.ScreenGui
 				Watermark.Visible = true;
 			end;
 		end));
 
 		UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(LPH_NO_VIRTUALIZE(function()
-			ModernV2.PlayAnimate(Watermark , SlowyTween , {
+			NeverLose.PlayAnimate(Watermark , SlowyTween , {
 				Size = UDim2.new(0, UIListLayout.AbsoluteContentSize.X + 5, 0, 30)
 			})
 		end));
 
-		ModernV2.__WatermarkCache = Watermark_lb;
+		NeverLose.__WatermarkCache = Watermark_lb;
 
 		Shadow:Render(true);
 
@@ -6528,7 +6461,7 @@ function ModernV2:CreateWindow(Config)
 			Watermark_lb.Status = value;
 
 			if value then
-				ModernV2.PlayAnimate(Watermark,SlowyTween , {
+				NeverLose.PlayAnimate(Watermark,SlowyTween , {
 					BackgroundTransparency = 0.200
 				})
 
@@ -6538,7 +6471,7 @@ function ModernV2:CreateWindow(Config)
 					pcall(v,true);
 				end;
 			else
-				ModernV2.PlayAnimate(Watermark,SlowyTween , {
+				NeverLose.PlayAnimate(Watermark,SlowyTween , {
 					BackgroundTransparency = 1
 				})
 
@@ -6566,7 +6499,7 @@ function ModernV2:CreateWindow(Config)
 			Frame.Size = UDim2.new(0, 50, 0, 30)
 			Frame.ZIndex = 17  -- must be >= Content/Icon ZIndex so CreateInput button (ZIndex+10=27) sits on top
 
-			Content.Name = ModernV2.RandomString();
+			Content.Name = NeverLose.RandomString();
 			Content.Parent = Frame
 			Content.AnchorPoint = Vector2.new(0, 0.5)
 			Content.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
@@ -6583,7 +6516,7 @@ function ModernV2:CreateWindow(Config)
 			Content.TextTransparency = 0.200
 			Content.TextXAlignment = Enum.TextXAlignment.Left
 
-			Icon.Name = ModernV2.RandomString();
+			Icon.Name = NeverLose.RandomString();
 			Icon.Parent = Frame
 			Icon.AnchorPoint = Vector2.new(0, 0.5)
 			Icon.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
@@ -6593,9 +6526,9 @@ function ModernV2:CreateWindow(Config)
 			Icon.Position = UDim2.new(0, 10, 0.5, 0)
 			Icon.Size = UDim2.new(0, 20, 0, 20)
 			Icon.ZIndex = 17
-			Icon.FontFace = ModernV2.BuiltInBold;
+			Icon.FontFace = NeverLose.BuiltInBold;
 			Icon.Text = IconStr
-			Icon.TextColor3 = ModernV2.AccentColor
+			Icon.TextColor3 = NeverLose.AccentColor
 			Icon.TextSize = 18.000
 			Icon.TextTransparency = 0.250
 			Icon.TextWrapped = true
@@ -6604,11 +6537,11 @@ function ModernV2:CreateWindow(Config)
 				local size = TextService:GetTextSize(Content.Text , Content.TextSize,Content.Font,Vector2.new(math.huge,math.huge))
 
 				if InnerBlock.Visible then
-					ModernV2.PlayAnimate(Frame,VSlowTween,{
+					NeverLose.PlayAnimate(Frame,VSlowTween,{
 						Size = UDim2.new(0, size.X + 35, 0, 30)
 					})
 				else
-					ModernV2.PlayAnimate(Frame,VSlowTween,{
+					NeverLose.PlayAnimate(Frame,VSlowTween,{
 						Size = UDim2.new(0, 0, 0, 30)
 					})
 				end;
@@ -6630,20 +6563,20 @@ function ModernV2:CreateWindow(Config)
 
 			InnerBlock.SetRender = LPH_NO_VIRTUALIZE(function(value)
 				if value and InnerBlock.Visible then
-					ModernV2.PlayAnimate(Content,SlowyTween , {
+					NeverLose.PlayAnimate(Content,SlowyTween , {
 						TextTransparency = 0.200
 					})
 
-					ModernV2.PlayAnimate(Icon,SlowyTween , {
+					NeverLose.PlayAnimate(Icon,SlowyTween , {
 						TextTransparency = 0.250
 					})
 				else
 
-					ModernV2.PlayAnimate(Content,SlowyTween , {
+					NeverLose.PlayAnimate(Content,SlowyTween , {
 						TextTransparency = 1
 					})
 
-					ModernV2.PlayAnimate(Icon,SlowyTween , {
+					NeverLose.PlayAnimate(Icon,SlowyTween , {
 						TextTransparency = 1
 					})
 				end;
@@ -6661,10 +6594,10 @@ function ModernV2:CreateWindow(Config)
 				-- If caller passes a function, use it.
 				-- If nil, default to firing the real-time keybind toggle.
 				local handler = func or function()
-					ModernV2:FireKeybind();
+					NeverLose:FireKeybind();
 				end;
 
-				local btn, signal = ModernV2:CreateInput(Frame, handler);
+				local btn, signal = NeverLose:CreateInput(Frame, handler);
 				btn.Active = true;
 				btn.ZIndex = Frame.ZIndex + 10;
 				return signal;
@@ -6722,17 +6655,17 @@ function ModernV2:CreateWindow(Config)
 	return CaseInsensitive(Window);
 end;
 
-function ModernV2:CreateNotification()
-	if ModernV2.__Notification_Cache then
-		return ModernV2.__Notification_Cache;
+function NeverLose:CreateNotification()
+	if NeverLose.__Notification_Cache then
+		return NeverLose.__Notification_Cache;
 	end;
 
 	local Notifier = {};
 	local Notification = Instance.new("Frame")
 	local UIListLayout = Instance.new("UIListLayout")
 
-	Notification.Name = ModernV2.RandomString();
-	Notification.Parent = ModernV2.ScreenGui;
+	Notification.Name = NeverLose.RandomString();
+	Notification.Parent = NeverLose.ScreenGui;
 	Notification.AnchorPoint = Vector2.new(1, 0)
 	Notification.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	Notification.BackgroundTransparency = 1.000
@@ -6746,18 +6679,18 @@ function ModernV2:CreateNotification()
 	UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	UIListLayout.Padding = UDim.new(0, 0)
 
-	ModernV2.__Notification_Cache = Notifier;
+	NeverLose.__Notification_Cache = Notifier;
 
 	function Notifier.new(Config)
-		Config = ModernV2:ProcessParams(Config , {
+		Config = NeverLose:ProcessParams(Config , {
 			Title = "Notification",
 			Content = "Hello World!",
-			Logo = ModernV2.GlobalLogo or "rbxasset://textures/ui/VerifiedBadgeNameIcon.png",
+			Logo = NeverLose.GlobalLogo or "rbxasset://textures/ui/VerifiedBadgeNameIcon.png",
 			Duration = 5,
 		});
 
-		if ModernV2.__WatermarkCache then
-			ModernV2.PlayAnimate(Notification,SlowyTween , {
+		if NeverLose.__WatermarkCache then
+			NeverLose.PlayAnimate(Notification,SlowyTween , {
 				Position = UDim2.new(1, -25, 0, 55)
 			});
 		end;
@@ -6770,9 +6703,9 @@ function ModernV2:CreateNotification()
 		local UICorner_2 = Instance.new("UICorner")
 		local NotifyName = Instance.new("TextLabel")
 		local NotifyContent = Instance.new("TextLabel");
-		local shadow = ModernV2:CreateShadow(NotifyFrame , true);
+		local shadow = NeverLose:CreateShadow(NotifyFrame , true);
 
-		ContainerFrame.Name = ModernV2.RandomString();
+		ContainerFrame.Name = NeverLose.RandomString();
 		ContainerFrame.Parent = Notification
 		ContainerFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		ContainerFrame.BackgroundTransparency = 1.000
@@ -6780,7 +6713,7 @@ function ModernV2:CreateNotification()
 		ContainerFrame.BorderSizePixel = 0
 		ContainerFrame.Size = UDim2.new(0, 0, 0, 100)
 
-		NotifyFrame.Name = ModernV2.RandomString();
+		NotifyFrame.Name = NeverLose.RandomString();
 		NotifyFrame.Parent = ContainerFrame
 		NotifyFrame.AnchorPoint = Vector2.new(1, 0)
 		NotifyFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
@@ -6799,7 +6732,7 @@ function ModernV2:CreateNotification()
 		UIStroke.Color = Color3.fromRGB(45, 48, 58)
 		UIStroke.Parent = NotifyFrame
 
-		LogoImage.Name = ModernV2.RandomString();
+		LogoImage.Name = NeverLose.RandomString();
 		LogoImage.Parent = NotifyFrame
 		LogoImage.AnchorPoint = Vector2.new(0, 0.5)
 		LogoImage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -6810,12 +6743,12 @@ function ModernV2:CreateNotification()
 		LogoImage.Size = UDim2.new(0, 35, 0, 35)
 		LogoImage.ZIndex = 131
 		LogoImage.Image = Config.Logo
-		LogoImage.ImageColor3 = ModernV2.IconColor;
+		LogoImage.ImageColor3 = NeverLose.IconColor;
 
 		UICorner_2.CornerRadius = UDim.new(0, 7)
 		UICorner_2.Parent = LogoImage
 
-		NotifyName.Name = ModernV2.RandomString();
+		NotifyName.Name = NeverLose.RandomString();
 		NotifyName.Parent = NotifyFrame
 		NotifyName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		NotifyName.BackgroundTransparency = 1.000
@@ -6830,7 +6763,7 @@ function ModernV2:CreateNotification()
 		NotifyName.TextSize = 17.000
 		NotifyName.TextXAlignment = Enum.TextXAlignment.Left
 
-		NotifyContent.Name = ModernV2.RandomString();
+		NotifyContent.Name = NeverLose.RandomString();
 		NotifyContent.Parent = NotifyFrame
 		NotifyContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		NotifyContent.BackgroundTransparency = 1.000
@@ -6854,7 +6787,7 @@ function ModernV2:CreateNotification()
 		NotifyFrame.Size = UDim2.new(0, MainSize + 65, 0, 55);
 
 		shadow:Render(true)
-		ModernV2.PlayAnimate(NotifyFrame , VSlowTween , {
+		NeverLose.PlayAnimate(NotifyFrame , VSlowTween , {
 			Position = UDim2.new(1, 0, 0, 0)
 		})
 
@@ -6862,37 +6795,37 @@ function ModernV2:CreateNotification()
 
 		task.delay(Config.Duration or 5 , LPH_NO_VIRTUALIZE(function()
 
-			if ModernV2.__WatermarkCache then
-				ModernV2.PlayAnimate(Notification,SlowyTween , {
+			if NeverLose.__WatermarkCache then
+				NeverLose.PlayAnimate(Notification,SlowyTween , {
 					Position = UDim2.new(1, -25, 0, 55)
 				});
 			end;
 
 			shadow:Render(false)
 
-			ModernV2.PlayAnimate(NotifyFrame , SlowyTween , {
+			NeverLose.PlayAnimate(NotifyFrame , SlowyTween , {
 				BackgroundTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 				Transparency = 1
 			})
 
-			ModernV2.PlayAnimate(LogoImage , SlowyTween , {
+			NeverLose.PlayAnimate(LogoImage , SlowyTween , {
 				ImageTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(NotifyName , SlowyTween , {
+			NeverLose.PlayAnimate(NotifyName , SlowyTween , {
 				TextTransparency = 1
 			})
 
-			ModernV2.PlayAnimate(NotifyContent , SlowyTween , {
+			NeverLose.PlayAnimate(NotifyContent , SlowyTween , {
 				TextTransparency = 1
 			})
 
 			task.wait(0.125);
 
-			ModernV2.PlayAnimate(ContainerFrame , SlowyTween , {
+			NeverLose.PlayAnimate(ContainerFrame , SlowyTween , {
 				Size = UDim2.new(0, 0, 0, 0)
 			})
 
@@ -6905,29 +6838,29 @@ function ModernV2:CreateNotification()
 	return Notifier;
 end;
 
-function ModernV2:CreateLogger()
-	if ModernV2.__LogSystem then
-		return 	ModernV2.__LogSystem;
+function NeverLose:CreateLogger()
+	if NeverLose.__LogSystem then
+		return 	NeverLose.__LogSystem;
 	end;
 
 	local Logging = {};
 	local Log = Instance.new("Frame")
 	local UIListLayout = Instance.new("UIListLayout")
 
-	Log.Name = ModernV2.RandomString();
-	Log.Parent = ModernV2.ScreenGui
+	Log.Name = NeverLose.RandomString();
+	Log.Parent = NeverLose.ScreenGui
 	Log.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	Log.BackgroundTransparency = 1.000
 	Log.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	Log.BorderSizePixel = 0
-	Log.Position = UDim2.new(0, 25, 0, 5 + math.abs(ModernV2.ScreenGui.AbsolutePosition.Y))
+	Log.Position = UDim2.new(0, 25, 0, 5 + math.abs(NeverLose.ScreenGui.AbsolutePosition.Y))
 	Log.Size = UDim2.new(0, 25, 0, 25)
 
 	UIListLayout.Parent = Log
 	UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	UIListLayout.Padding = UDim.new(0, 12)
 
-	ModernV2.__LogSystem = Logging;
+	NeverLose.__LogSystem = Logging;
 
 	function Logging.new(IconStr: string , Message: string , Duration: number)
 		Duration = Duration or 3;
@@ -6941,9 +6874,9 @@ function ModernV2:CreateLogger()
 		local Line = Instance.new("Frame")
 		local UICorner_2 = Instance.new("UICorner")
 		local Icon = Instance.new("TextLabel")
-		local Shadow = ModernV2:CreateShadow(LogFrame , true);
+		local Shadow = NeverLose:CreateShadow(LogFrame , true);
 
-		LogFrame.Name = ModernV2.RandomString();
+		LogFrame.Name = NeverLose.RandomString();
 		LogFrame.Parent = Log
 		LogFrame.AnchorPoint = Vector2.new(0.5, 0)
 		LogFrame.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
@@ -6962,7 +6895,7 @@ function ModernV2:CreateLogger()
 		UIStroke.Color = Color3.fromRGB(45, 48, 58)
 		UIStroke.Parent = LogFrame
 
-		LogContent.Name = ModernV2.RandomString();
+		LogContent.Name = NeverLose.RandomString();
 		LogContent.Parent = LogFrame
 		LogContent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		LogContent.BackgroundTransparency = 1.000
@@ -6978,10 +6911,10 @@ function ModernV2:CreateLogger()
 		LogContent.TextTransparency = 1--0.250
 		LogContent.TextXAlignment = Enum.TextXAlignment.Left
 
-		Line.Name = ModernV2.RandomString();
+		Line.Name = NeverLose.RandomString();
 		Line.Parent = LogFrame
 		Line.AnchorPoint = Vector2.new(0, 0.5)
-		Line.BackgroundColor3 = ModernV2.AccentColor
+		Line.BackgroundColor3 = NeverLose.AccentColor
 		Line.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Line.BackgroundTransparency = 1 --0
 		Line.BorderSizePixel = 0
@@ -6992,7 +6925,7 @@ function ModernV2:CreateLogger()
 		UICorner_2.CornerRadius = UDim.new(0, 4)
 		UICorner_2.Parent = Line
 
-		Icon.Name = ModernV2.RandomString();
+		Icon.Name = NeverLose.RandomString();
 		Icon.Parent = LogFrame
 		Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		Icon.BackgroundTransparency = 1.000
@@ -7001,7 +6934,7 @@ function ModernV2:CreateLogger()
 		Icon.Position = UDim2.new(0, 7, 0, 3)
 		Icon.Size = UDim2.new(0, 15, 0, 15)
 		Icon.ZIndex = 133
-		Icon.FontFace = ModernV2.BuiltInBold
+		Icon.FontFace = NeverLose.BuiltInBold
 		Icon.Text = IconStr
 		Icon.TextColor3 = Color3.fromRGB(223, 223, 223)
 		Icon.TextSize = 13.000
@@ -7010,7 +6943,7 @@ function ModernV2:CreateLogger()
 
 		local size = TextService:GetTextSize(LogContent.Text,LogContent.TextSize,LogContent.Font,Vector2.new(math.huge,math.huge));
 
-		ModernV2.PlayAnimate(LogFrame , SlowyTween , {
+		NeverLose.PlayAnimate(LogFrame , SlowyTween , {
 			Size = UDim2.new(0, size.X + 35, 0, 20),
 			BackgroundTransparency =  0.075
 		});
@@ -7018,19 +6951,19 @@ function ModernV2:CreateLogger()
 		task.delay(0.15,LPH_NO_VIRTUALIZE(function()
 			Shadow:Render(true);
 
-			ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 				Transparency = 0.650
 			});
 
-			ModernV2.PlayAnimate(LogContent , SlowyTween , {
+			NeverLose.PlayAnimate(LogContent , SlowyTween , {
 				TextTransparency = 0.25
 			});
 
-			ModernV2.PlayAnimate(Line , SlowyTween , {
+			NeverLose.PlayAnimate(Line , SlowyTween , {
 				BackgroundTransparency = 0
 			});
 
-			ModernV2.PlayAnimate(Icon , SlowyTween , {
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
 				TextTransparency = 0.25
 			});
 
@@ -7038,23 +6971,23 @@ function ModernV2:CreateLogger()
 
 			Shadow:Render(false);
 
-			ModernV2.PlayAnimate(LogFrame , SlowyTween , {
+			NeverLose.PlayAnimate(LogFrame , SlowyTween , {
 				BackgroundTransparency =  1
 			});
 
-			ModernV2.PlayAnimate(UIStroke , SlowyTween , {
+			NeverLose.PlayAnimate(UIStroke , SlowyTween , {
 				Transparency = 1
 			});
 
-			ModernV2.PlayAnimate(LogContent , SlowyTween , {
+			NeverLose.PlayAnimate(LogContent , SlowyTween , {
 				TextTransparency = 1
 			});
 
-			ModernV2.PlayAnimate(Line , SlowyTween , {
+			NeverLose.PlayAnimate(Line , SlowyTween , {
 				BackgroundTransparency = 1
 			});
 
-			ModernV2.PlayAnimate(Icon , SlowyTween , {
+			NeverLose.PlayAnimate(Icon , SlowyTween , {
 				TextTransparency = 1
 			});
 
@@ -7067,12 +7000,12 @@ function ModernV2:CreateLogger()
 	return CaseInsensitive(Logging)
 end;
 
-function ModernV2:CreateIndicator()
+function NeverLose:CreateIndicator()
 	local IndicatorFrame = Instance.new("Frame")
 	local UIListLayout = Instance.new("UIListLayout")
 
-	IndicatorFrame.Name = ModernV2.RandomString();
-	IndicatorFrame.Parent = ModernV2.ScreenGui;
+	IndicatorFrame.Name = NeverLose.RandomString();
+	IndicatorFrame.Parent = NeverLose.ScreenGui;
 	IndicatorFrame.AnchorPoint = Vector2.new(0, 0.5)
 	IndicatorFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	IndicatorFrame.BackgroundTransparency = 1.000
@@ -7097,7 +7030,7 @@ function ModernV2:CreateIndicator()
 	Indicators.Root = IndicatorFrame;
 
 	function Indicators.new(Config)
-		Config = ModernV2:ProcessParams(Config , {
+		Config = NeverLose:ProcessParams(Config , {
 			Name = "Indicator",
 			Icon = 'crosshairs',
 			Color = 'Red',
@@ -7115,9 +7048,9 @@ function ModernV2:CreateIndicator()
 		local UIGradient = Instance.new("UIGradient")
 		local Icon = Instance.new("TextLabel")
 		local Content = Instance.new("TextLabel")
-		local Shadow = ModernV2:CreateShadow(IndicatorItem);
+		local Shadow = NeverLose:CreateShadow(IndicatorItem);
 
-		IndicatorItem.Name = ModernV2.RandomString();
+		IndicatorItem.Name = NeverLose.RandomString();
 		IndicatorItem.BackgroundColor3 = Color3.fromRGB(8, 8, 13)
 		IndicatorItem.BackgroundTransparency = 1
 		IndicatorItem.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -7140,7 +7073,7 @@ function ModernV2:CreateIndicator()
 		UICorner.CornerRadius = UDim.new(0, 25)
 		UICorner.Parent = IndicatorItem
 
-		Line.Name = ModernV2.RandomString();
+		Line.Name = NeverLose.RandomString();
 		Line.Parent = IndicatorItem
 		Line.AnchorPoint = Vector2.new(0, 0.5)
 		Line.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
@@ -7158,7 +7091,7 @@ function ModernV2:CreateIndicator()
 		UIGradient.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0.00, 1.00), NumberSequenceKeypoint.new(0.50, 0.00), NumberSequenceKeypoint.new(1.00, 1.00)}
 		UIGradient.Parent = Line
 
-		Icon.Name = ModernV2.RandomString();
+		Icon.Name = NeverLose.RandomString();
 		Icon.Parent = IndicatorItem
 		Icon.AnchorPoint = Vector2.new(0, 0.5)
 		Icon.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
@@ -7168,14 +7101,14 @@ function ModernV2:CreateIndicator()
 		Icon.Position = UDim2.new(0, 10, 0.5, 0)
 		Icon.Size = UDim2.new(0, 25, 0, 25)
 		Icon.ZIndex = 17
-		Icon.FontFace = ModernV2.BuiltInBold;
+		Icon.FontFace = NeverLose.BuiltInBold;
 		Icon.Text = Config.Icon
 		Icon.TextColor3 = Color3.fromRGB(186, 186, 186)
 		Icon.TextSize = 21.000
 		Icon.TextTransparency = 1
 		Icon.TextWrapped = true
 
-		Content.Name = ModernV2.RandomString();
+		Content.Name = NeverLose.RandomString();
 		Content.Parent = IndicatorItem
 		Content.AnchorPoint = Vector2.new(0, 0.5)
 		Content.BackgroundColor3 = Color3.fromRGB(186, 186, 186)
@@ -7195,7 +7128,7 @@ function ModernV2:CreateIndicator()
 		Indicator.Update = LPH_NO_VIRTUALIZE(function()
 			local text = TextService:GetTextSize(Content.Text,Content.TextSize , Content.Font , Vector2.new(math.huge,math.huge));
 
-			ModernV2.PlayAnimate(IndicatorItem , SlowyTween , {
+			NeverLose.PlayAnimate(IndicatorItem , SlowyTween , {
 				Size = UDim2.new(0, text.X + 60, 0, 40);
 			})
 		end);
@@ -7204,42 +7137,42 @@ function ModernV2:CreateIndicator()
 			Indicator.Visible = value;
 
 			if value then
-				ModernV2.PlayAnimate(IndicatorItem , SlowyTween , {
+				NeverLose.PlayAnimate(IndicatorItem , SlowyTween , {
 					BackgroundTransparency = 0.200
 				});
 
-				ModernV2.PlayAnimate(Line , SlowyTween , {
+				NeverLose.PlayAnimate(Line , SlowyTween , {
 					BackgroundTransparency = 0,
 					BackgroundColor3 = Indicators.Color[Indicator.CurrentColor]
 				});
 
-				ModernV2.PlayAnimate(Icon , VSlowTween , {
+				NeverLose.PlayAnimate(Icon , VSlowTween , {
 					TextTransparency = 0.250,
 					TextColor3 = Indicators.Color[Indicator.CurrentColor]
 				});
 
-				ModernV2.PlayAnimate(Content , VSlowTween , {
+				NeverLose.PlayAnimate(Content , VSlowTween , {
 					TextTransparency = 0.2,
 					TextColor3 = Indicators.Color[Indicator.CurrentColor]
 				});
 
 				Shadow:Render(true);
 			else
-				ModernV2.PlayAnimate(IndicatorItem , SlowyTween , {
+				NeverLose.PlayAnimate(IndicatorItem , SlowyTween , {
 					BackgroundTransparency = 1
 				});
 
-				ModernV2.PlayAnimate(Line , SlowyTween , {
+				NeverLose.PlayAnimate(Line , SlowyTween , {
 					BackgroundTransparency = 1,
 					BackgroundColor3 = Indicators.Color[Indicator.CurrentColor]
 				});
 
-				ModernV2.PlayAnimate(Icon , VSlowTween , {
+				NeverLose.PlayAnimate(Icon , VSlowTween , {
 					TextTransparency = 1,
 					TextColor3 = Indicators.Color[Indicator.CurrentColor]
 				});
 
-				ModernV2.PlayAnimate(Content , VSlowTween , {
+				NeverLose.PlayAnimate(Content , VSlowTween , {
 					TextTransparency = 1,
 					TextColor3 = Indicators.Color[Indicator.CurrentColor]
 				});
@@ -7275,16 +7208,16 @@ function ModernV2:CreateIndicator()
 	return CaseInsensitive(Indicators);
 end;
 
-function ModernV2:Unload()
-	if not ModernV2.UnloadEnabled then
+function NeverLose:Unload()
+	if not NeverLose.UnloadEnabled then
 		return;	
 	end;
 
-	ModernV2.ScreenGui:Destroy();
+	NeverLose.ScreenGui:Destroy();
 
-	for i,v in next , ModernV2.GlobalSignals do
+	for i,v in next , NeverLose.GlobalSignals do
 		pcall(v.Disconnect,v)
 	end;
 end;
 
-return ModernV2;
+return NeverLose;
