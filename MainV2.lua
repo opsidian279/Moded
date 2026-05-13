@@ -1,3 +1,5 @@
+-- |||||||||
+
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -3925,6 +3927,19 @@ end;
 function ModernV2:RegisiterItem(Frame: Frame , Signel)
 	local idx = {};
 	local LayerIndex = Frame.ZIndex;
+	
+	-- Create internal handler for all component methods
+	local internalHandler = ModernV2:RegisiterHandler(Frame, Signel, Frame);
+	
+	-- Expose component methods from internal handler
+	idx.AddToggle = internalHandler.AddToggle;
+	idx.AddSlider = internalHandler.AddSlider;
+	idx.AddOption = internalHandler.AddOption;
+	idx.AddColorPicker = internalHandler.AddColorPicker;
+	idx.AddKeybind = internalHandler.AddKeybind;
+	idx.AddTextInput = internalHandler.AddTextInput;
+	idx.AddDropdown = internalHandler.AddDropdown;
+	idx.AddButton = internalHandler.AddButton;
 
 	function idx:AddLabel(Name: string,Warp: boolean)
 		local BasedFrame = Instance.new("Frame")
