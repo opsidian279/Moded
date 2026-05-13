@@ -2134,13 +2134,14 @@ function ModernV2:StrToKeyCode(str: string)
 	return Enum.KeyCode[str];
 end;
 
-function ModernV2:RegisiterHandler(Handler: Frame , Signal)
+function ModernV2:RegisiterHandler(Handler: Frame , Signal, ParentFrame: Frame)
 	local handle = {};
 	local ZINdex = Handler.ZIndex;
+	local Frame = ParentFrame or Handler.Parent;
 
 	function handle:AddToggle(Config)
 		local NameParam = Config.Name or Config.Title or nil;
-		
+
 		Config = ModernV2:ProcessParams(Config , {
 			Default = false,
 			Flag = nil,
@@ -2151,8 +2152,8 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 
 		local ToggleContainer = Handler;
 		local DisplayFrame = nil;
-		
-		-- If Name or Title is provided, create a label frame container
+
+		-- If Name or Title is provided, create a standalone label frame container
 		if NameParam then
 			local BasedFrame = Instance.new("Frame");
 			local BasedLabel = Instance.new("TextLabel");
@@ -2160,16 +2161,18 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			local BasedHandler = Instance.new("Frame");
 			local UIListLayout = Instance.new("UIListLayout");
 			local UICorner_Label = Instance.new("UICorner");
-			
+
 			BasedFrame.Name = ModernV2.RandomString();
-			BasedFrame.Parent = Handler;
+			BasedFrame.Parent = Frame;  -- Parent to main Frame, not Handler
 			BasedFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33);
 			BasedFrame.BackgroundTransparency = 1.000;
 			BasedFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
 			BasedFrame.BorderSizePixel = 0;
 			BasedFrame.Size = UDim2.new(1, 0, 0, 30);
 			BasedFrame.ZIndex = ZINdex + 8;
-			
+
+			ModernV2:AddQuery(BasedFrame , NameParam);
+
 			BasedLabel.Name = ModernV2.RandomString();
 			BasedLabel.Parent = BasedFrame;
 			BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
@@ -2185,7 +2188,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			BasedLabel.TextSize = 13.000;
 			BasedLabel.TextTransparency = 0.35;
 			BasedLabel.TextXAlignment = Enum.TextXAlignment.Left;
-			
+
 			LineFrame.Name = ModernV2.RandomString();
 			LineFrame.Parent = BasedFrame;
 			LineFrame.AnchorPoint = Vector2.new(0.5, 1);
@@ -2196,7 +2199,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			LineFrame.Position = UDim2.new(0.5, 0, 1, 0);
 			LineFrame.Size = UDim2.new(1, -20, 0, 1);
 			LineFrame.ZIndex = ZINdex + 11;
-			
+
 			BasedHandler.Name = ModernV2.RandomString();
 			BasedHandler.Parent = BasedFrame;
 			BasedHandler.AnchorPoint = Vector2.new(1, 0);
@@ -2207,19 +2210,54 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			BasedHandler.Position = UDim2.new(1, -11, 0, 2);
 			BasedHandler.Size = UDim2.new(1, -20, 0, 25);
 			BasedHandler.ZIndex = ZINdex + 12;
-			
+
 			UIListLayout.Parent = BasedHandler;
 			UIListLayout.FillDirection = Enum.FillDirection.Horizontal;
 			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right;
 			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
 			UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
 			UIListLayout.Padding = UDim.new(0, 5);
-			
+
 			UICorner_Label.CornerRadius = UDim.new(0, 10);
 			UICorner_Label.Parent = BasedFrame;
-			
+
 			ToggleContainer = BasedHandler;
 			DisplayFrame = BasedFrame;
+
+			-- Add visibility handling for the standalone frame
+			local sectionSignal = Signal;
+			local frameSignal = ModernV2:CreateSignal(sectionSignal:GetValue());
+
+			local SetRender = LPH_NO_VIRTUALIZE(function(value)
+				if value then
+					ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
+						BackgroundTransparency = 1
+					});
+
+					ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+						TextTransparency = 0.35
+					});
+
+					ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+						BackgroundTransparency = 0.650
+					});
+				else
+					ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
+						BackgroundTransparency = 1
+					});
+
+					ModernV2.PlayAnimate(BasedLabel , SlowyTween , {
+						TextTransparency = 1
+					});
+
+					ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+						BackgroundTransparency = 1
+					});
+				end;
+			end);
+
+			SetRender(sectionSignal:GetValue());
+			ModernV2:AddSignal(sectionSignal:Connect(SetRender));
 		end;
 
 		local Toggle = Instance.new("Frame")
@@ -2235,7 +2273,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		Toggle.ClipsDescendants = true
 		Toggle.Size = UDim2.new(0, 30, 0, 18)
 		Toggle.ZIndex = ZINdex + 13
-		Toggle.LayoutOrder = NameParam and 1 or -(#Handler:GetChildren() + 5);
+		Toggle.LayoutOrder = -(#ToggleContainer:GetChildren() + 5);
 
 		UICorner.CornerRadius = UDim.new(1, 0)
 		UICorner.Parent = Toggle
@@ -2302,7 +2340,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		end);
 
 		ToggleLib.SetUI(Config.Default);
-		ToggleLib.SetVisible(Signal:GetValue());
+		ToggleLib.SetVisible(NameParam and frameSignal:GetValue() or Signal:GetValue());
 
 		ModernV2:CreateInput(Toggle , LPH_NO_VIRTUALIZE(function()
 			Config.Default = not Config.Default;
@@ -2312,7 +2350,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			Config.Callback(Config.Default)
 		end))
 
-		ToggleLib.Signal = Signal:Connect(ToggleLib.SetVisible);
+		ToggleLib.Signal = (NameParam and frameSignal or Signal):Connect(ToggleLib.SetVisible);
 
 		function ToggleLib:GetValue()
 			return Config.Default;
@@ -2321,7 +2359,8 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		function ToggleLib:SetValue(v)
 			Config.Default = v;
 
-			if Signal:GetValue() then
+			local currentSignal = NameParam and frameSignal or Signal;
+			if currentSignal:GetValue() then
 				ToggleLib.SetUI(Config.Default);
 			end;
 
@@ -2336,8 +2375,6 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 	end;
 
 	function handle:AddSlider(Config)
-		local NameParam = Config.Name or Config.Label or nil;
-		
 		Config = ModernV2:ProcessParams(Config , {
 			Default = 50,
 			Min = 0,
@@ -2347,86 +2384,10 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			Nums = {},
 			Flag = nil,
 			Size = 125,
-			Name = nil,
-			Label = nil,
 			Callback = EmptyFunction,
 		});
 
-		local SliderContainer = Handler;
-		local DisplayFrame = nil;
-		
-		-- If Name or Label is provided, create a label frame container
-		if NameParam then
-			local BasedFrame = Instance.new("Frame");
-			local BasedLabel = Instance.new("TextLabel");
-			local LineFrame = Instance.new("Frame");
-			local BasedHandler = Instance.new("Frame");
-			local UIListLayout = Instance.new("UIListLayout");
-			local UICorner_Label = Instance.new("UICorner");
-			
-			BasedFrame.Name = ModernV2.RandomString();
-			BasedFrame.Parent = Handler;
-			BasedFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33);
-			BasedFrame.BackgroundTransparency = 1.000;
-			BasedFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedFrame.BorderSizePixel = 0;
-			BasedFrame.Size = UDim2.new(1, 0, 0, 30);
-			BasedFrame.ZIndex = ZINdex + 8;
-			
-			BasedLabel.Name = ModernV2.RandomString();
-			BasedLabel.Parent = BasedFrame;
-			BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.BackgroundTransparency = 1.000;
-			BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedLabel.BorderSizePixel = 0;
-			BasedLabel.Position = UDim2.new(0, 11, 0, 6);
-			BasedLabel.Size = UDim2.new(0, 1, 0, 15);
-			BasedLabel.ZIndex = ZINdex + 9;
-			BasedLabel.Font = Enum.Font.GothamMedium;
-			BasedLabel.Text = NameParam;
-			BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.TextSize = 13.000;
-			BasedLabel.TextTransparency = 0.35;
-			BasedLabel.TextXAlignment = Enum.TextXAlignment.Left;
-			
-			LineFrame.Name = ModernV2.RandomString();
-			LineFrame.Parent = BasedFrame;
-			LineFrame.AnchorPoint = Vector2.new(0.5, 1);
-			LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58);
-			LineFrame.BackgroundTransparency = 0.650;
-			LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			LineFrame.BorderSizePixel = 0;
-			LineFrame.Position = UDim2.new(0.5, 0, 1, 0);
-			LineFrame.Size = UDim2.new(1, -20, 0, 1);
-			LineFrame.ZIndex = ZINdex + 11;
-			
-			BasedHandler.Name = ModernV2.RandomString();
-			BasedHandler.Parent = BasedFrame;
-			BasedHandler.AnchorPoint = Vector2.new(1, 0);
-			BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedHandler.BackgroundTransparency = 1.000;
-			BasedHandler.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedHandler.BorderSizePixel = 0;
-			BasedHandler.Position = UDim2.new(1, -11, 0, 2);
-			BasedHandler.Size = UDim2.new(1, -20, 0, 25);
-			BasedHandler.ZIndex = ZINdex + 12;
-			
-			UIListLayout.Parent = BasedHandler;
-			UIListLayout.FillDirection = Enum.FillDirection.Horizontal;
-			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right;
-			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
-			UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
-			UIListLayout.Padding = UDim.new(0, 5);
-			
-			UICorner_Label.CornerRadius = UDim.new(0, 10);
-			UICorner_Label.Parent = BasedFrame;
-			
-			SliderContainer = BasedHandler;
-			DisplayFrame = BasedFrame;
-		end;
-
 		local SliderLib = {};
-		SliderLib.Root = DisplayFrame or Slider;
 
 		SliderLib.GetSize = LPH_NO_VIRTUALIZE(function()
 			return (Config.Default - Config.Min) / (Config.Max - Config.Min);
@@ -2468,7 +2429,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		local boxSize = 2;
 
 		Slider.Name = ModernV2.RandomString();
-		Slider.Parent = SliderContainer
+		Slider.Parent = Handler
 		Slider.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 		Slider.BackgroundTransparency = 1.000
 		Slider.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -2476,7 +2437,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		Slider.ClipsDescendants = false
 		Slider.Size = UDim2.new(0, Config.Size, 0, 18)
 		Slider.ZIndex = ZINdex + 13
-		Slider.LayoutOrder = NameParam and 1 or -(#Handler:GetChildren() + 5);
+		Slider.LayoutOrder = -(#Handler:GetChildren() + 5);
 
 		UICorner.CornerRadius = UDim.new(0, 4)
 		UICorner.Parent = Slider
@@ -2840,12 +2801,8 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 	end;
 
 	function handle:AddColorPicker(Config)
-		local NameParam = Config.Name or Config.Label or nil;
-		
 		Config = ModernV2:ProcessParams(Config , {
 			Default = Color3.fromRGB(255, 255, 255),
-			Name = nil,
-			Label = nil,
 			Callback  = EmptyFunction,
 		});
 
@@ -2853,81 +2810,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			Config.Default = Color3.fromHex(Config.Default:gsub('#',''));
 		end;
 
-		local ColorPickerContainer = Handler;
-		local DisplayFrame = nil;
-		
-		-- If Name or Label is provided, create a label frame container
-		if NameParam then
-			local BasedFrame = Instance.new("Frame");
-			local BasedLabel = Instance.new("TextLabel");
-			local LineFrame = Instance.new("Frame");
-			local BasedHandler = Instance.new("Frame");
-			local UIListLayout = Instance.new("UIListLayout");
-			local UICorner_Label = Instance.new("UICorner");
-			
-			BasedFrame.Name = ModernV2.RandomString();
-			BasedFrame.Parent = Handler;
-			BasedFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33);
-			BasedFrame.BackgroundTransparency = 1.000;
-			BasedFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedFrame.BorderSizePixel = 0;
-			BasedFrame.Size = UDim2.new(1, 0, 0, 30);
-			BasedFrame.ZIndex = ZINdex + 8;
-			
-			BasedLabel.Name = ModernV2.RandomString();
-			BasedLabel.Parent = BasedFrame;
-			BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.BackgroundTransparency = 1.000;
-			BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedLabel.BorderSizePixel = 0;
-			BasedLabel.Position = UDim2.new(0, 11, 0, 6);
-			BasedLabel.Size = UDim2.new(0, 1, 0, 15);
-			BasedLabel.ZIndex = ZINdex + 9;
-			BasedLabel.Font = Enum.Font.GothamMedium;
-			BasedLabel.Text = NameParam;
-			BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.TextSize = 13.000;
-			BasedLabel.TextTransparency = 0.35;
-			BasedLabel.TextXAlignment = Enum.TextXAlignment.Left;
-			
-			LineFrame.Name = ModernV2.RandomString();
-			LineFrame.Parent = BasedFrame;
-			LineFrame.AnchorPoint = Vector2.new(0.5, 1);
-			LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58);
-			LineFrame.BackgroundTransparency = 0.650;
-			LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			LineFrame.BorderSizePixel = 0;
-			LineFrame.Position = UDim2.new(0.5, 0, 1, 0);
-			LineFrame.Size = UDim2.new(1, -20, 0, 1);
-			LineFrame.ZIndex = ZINdex + 11;
-			
-			BasedHandler.Name = ModernV2.RandomString();
-			BasedHandler.Parent = BasedFrame;
-			BasedHandler.AnchorPoint = Vector2.new(1, 0);
-			BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedHandler.BackgroundTransparency = 1.000;
-			BasedHandler.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedHandler.BorderSizePixel = 0;
-			BasedHandler.Position = UDim2.new(1, -11, 0, 2);
-			BasedHandler.Size = UDim2.new(1, -20, 0, 25);
-			BasedHandler.ZIndex = ZINdex + 12;
-			
-			UIListLayout.Parent = BasedHandler;
-			UIListLayout.FillDirection = Enum.FillDirection.Horizontal;
-			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right;
-			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
-			UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
-			UIListLayout.Padding = UDim.new(0, 5);
-			
-			UICorner_Label.CornerRadius = UDim.new(0, 10);
-			UICorner_Label.Parent = BasedFrame;
-			
-			ColorPickerContainer = BasedHandler;
-			DisplayFrame = BasedFrame;
-		end;
-
 		local ColorPickerLib = {};
-		
 		local ColorPicker = Instance.new("Frame")
 		local UICorner = Instance.new("UICorner")
 		local UIStroke = Instance.new("UIStroke")
@@ -2935,7 +2818,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		local UICorner_2 = Instance.new("UICorner")
 
 		ColorPicker.Name = ModernV2.RandomString();
-		ColorPicker.Parent = ColorPickerContainer
+		ColorPicker.Parent = Handler
 		ColorPicker.BackgroundColor3 = Config.Default;
 		ColorPicker.BackgroundTransparency = 0
 		ColorPicker.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -2964,8 +2847,6 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 
 		UICorner_2.CornerRadius = UDim.new(0, 4)
 		UICorner_2.Parent = ImageLabel
-
-		ColorPickerLib.Root = DisplayFrame or ColorPicker;
 
 		local BackendM = ModernV2:CreateColorPicker(ColorPicker);
 
@@ -3047,92 +2928,14 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 	end;
 
 	function handle:AddKeybind(Config)
-		local NameParam = Config.Name or Config.Label or nil;
-		
 		Config = ModernV2:ProcessParams(Config,{
 			Default = nil,
 			Blacklist = {},
-			Name = nil,
-			Label = nil,
 			Callback = EmptyFunction,
 			Flag = nil
 		});
 
-		local KeybindContainer = Handler;
-		local DisplayFrame = nil;
-		
-		-- If Name or Label is provided, create a label frame container
-		if NameParam then
-			local BasedFrame = Instance.new("Frame");
-			local BasedLabel = Instance.new("TextLabel");
-			local LineFrame = Instance.new("Frame");
-			local BasedHandler = Instance.new("Frame");
-			local UIListLayout = Instance.new("UIListLayout");
-			local UICorner_Label = Instance.new("UICorner");
-			
-			BasedFrame.Name = ModernV2.RandomString();
-			BasedFrame.Parent = Handler;
-			BasedFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33);
-			BasedFrame.BackgroundTransparency = 1.000;
-			BasedFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedFrame.BorderSizePixel = 0;
-			BasedFrame.Size = UDim2.new(1, 0, 0, 30);
-			BasedFrame.ZIndex = ZINdex + 8;
-			
-			BasedLabel.Name = ModernV2.RandomString();
-			BasedLabel.Parent = BasedFrame;
-			BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.BackgroundTransparency = 1.000;
-			BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedLabel.BorderSizePixel = 0;
-			BasedLabel.Position = UDim2.new(0, 11, 0, 6);
-			BasedLabel.Size = UDim2.new(0, 1, 0, 15);
-			BasedLabel.ZIndex = ZINdex + 9;
-			BasedLabel.Font = Enum.Font.GothamMedium;
-			BasedLabel.Text = NameParam;
-			BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.TextSize = 13.000;
-			BasedLabel.TextTransparency = 0.35;
-			BasedLabel.TextXAlignment = Enum.TextXAlignment.Left;
-			
-			LineFrame.Name = ModernV2.RandomString();
-			LineFrame.Parent = BasedFrame;
-			LineFrame.AnchorPoint = Vector2.new(0.5, 1);
-			LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58);
-			LineFrame.BackgroundTransparency = 0.650;
-			LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			LineFrame.BorderSizePixel = 0;
-			LineFrame.Position = UDim2.new(0.5, 0, 1, 0);
-			LineFrame.Size = UDim2.new(1, -20, 0, 1);
-			LineFrame.ZIndex = ZINdex + 11;
-			
-			BasedHandler.Name = ModernV2.RandomString();
-			BasedHandler.Parent = BasedFrame;
-			BasedHandler.AnchorPoint = Vector2.new(1, 0);
-			BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedHandler.BackgroundTransparency = 1.000;
-			BasedHandler.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedHandler.BorderSizePixel = 0;
-			BasedHandler.Position = UDim2.new(1, -11, 0, 2);
-			BasedHandler.Size = UDim2.new(1, -20, 0, 25);
-			BasedHandler.ZIndex = ZINdex + 12;
-			
-			UIListLayout.Parent = BasedHandler;
-			UIListLayout.FillDirection = Enum.FillDirection.Horizontal;
-			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right;
-			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
-			UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
-			UIListLayout.Padding = UDim.new(0, 5);
-			
-			UICorner_Label.CornerRadius = UDim.new(0, 10);
-			UICorner_Label.Parent = BasedFrame;
-			
-			KeybindContainer = BasedHandler;
-			DisplayFrame = BasedFrame;
-		end;
-
 		local KeybindLib = {};
-		KeybindLib.Root = DisplayFrame or nil;
 
 		local Keybind = Instance.new("Frame")
 		local UICorner = Instance.new("UICorner")
@@ -3140,14 +2943,13 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		local ValueLabel = Instance.new("TextLabel")
 
 		Keybind.Name = ModernV2.RandomString();
-		Keybind.Parent = KeybindContainer
+		Keybind.Parent = Handler
 		Keybind.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 		Keybind.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Keybind.BorderSizePixel = 0
 		Keybind.ClipsDescendants = true
 		Keybind.Size = UDim2.new(0, 45, 0, 18)
 		Keybind.ZIndex = ZINdex + 13
-		Keybind.LayoutOrder = NameParam and 1 or -(#Handler:GetChildren() + 5);
 
 		UICorner.CornerRadius = UDim.new(0, 4)
 		UICorner.Parent = Keybind
@@ -3172,8 +2974,6 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 		ValueLabel.TextSize = 10.000
 		ValueLabel.TextTransparency = 0.500
-
-		KeybindLib.Root = DisplayFrame or Keybind;
 
 		KeybindLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
@@ -3280,94 +3080,16 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 	end;
 
 	function handle:AddTextInput(Config)
-		local NameParam = Config.Name or Config.Label or nil;
-		
 		Config = ModernV2:ProcessParams(Config , {
 			Default = "",
 			Placeholder = "Placeholder",
-			Name = nil,
-			Label = nil,
 			Callback = print,
 			Flag = nil,
 			Size = 100,
 			Numeric = false,
 		});
 
-		local TextInputContainer = Handler;
-		local DisplayFrame = nil;
-		
-		-- If Name or Label is provided, create a label frame container
-		if NameParam then
-			local BasedFrame = Instance.new("Frame");
-			local BasedLabel = Instance.new("TextLabel");
-			local LineFrame = Instance.new("Frame");
-			local BasedHandler = Instance.new("Frame");
-			local UIListLayout = Instance.new("UIListLayout");
-			local UICorner_Label = Instance.new("UICorner");
-			
-			BasedFrame.Name = ModernV2.RandomString();
-			BasedFrame.Parent = Handler;
-			BasedFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33);
-			BasedFrame.BackgroundTransparency = 1.000;
-			BasedFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedFrame.BorderSizePixel = 0;
-			BasedFrame.Size = UDim2.new(1, 0, 0, 30);
-			BasedFrame.ZIndex = ZINdex + 8;
-			
-			BasedLabel.Name = ModernV2.RandomString();
-			BasedLabel.Parent = BasedFrame;
-			BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.BackgroundTransparency = 1.000;
-			BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedLabel.BorderSizePixel = 0;
-			BasedLabel.Position = UDim2.new(0, 11, 0, 6);
-			BasedLabel.Size = UDim2.new(0, 1, 0, 15);
-			BasedLabel.ZIndex = ZINdex + 9;
-			BasedLabel.Font = Enum.Font.GothamMedium;
-			BasedLabel.Text = NameParam;
-			BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.TextSize = 13.000;
-			BasedLabel.TextTransparency = 0.35;
-			BasedLabel.TextXAlignment = Enum.TextXAlignment.Left;
-			
-			LineFrame.Name = ModernV2.RandomString();
-			LineFrame.Parent = BasedFrame;
-			LineFrame.AnchorPoint = Vector2.new(0.5, 1);
-			LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58);
-			LineFrame.BackgroundTransparency = 0.650;
-			LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			LineFrame.BorderSizePixel = 0;
-			LineFrame.Position = UDim2.new(0.5, 0, 1, 0);
-			LineFrame.Size = UDim2.new(1, -20, 0, 1);
-			LineFrame.ZIndex = ZINdex + 11;
-			
-			BasedHandler.Name = ModernV2.RandomString();
-			BasedHandler.Parent = BasedFrame;
-			BasedHandler.AnchorPoint = Vector2.new(1, 0);
-			BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedHandler.BackgroundTransparency = 1.000;
-			BasedHandler.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedHandler.BorderSizePixel = 0;
-			BasedHandler.Position = UDim2.new(1, -11, 0, 2);
-			BasedHandler.Size = UDim2.new(1, -20, 0, 25);
-			BasedHandler.ZIndex = ZINdex + 12;
-			
-			UIListLayout.Parent = BasedHandler;
-			UIListLayout.FillDirection = Enum.FillDirection.Horizontal;
-			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right;
-			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
-			UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
-			UIListLayout.Padding = UDim.new(0, 5);
-			
-			UICorner_Label.CornerRadius = UDim.new(0, 10);
-			UICorner_Label.Parent = BasedFrame;
-			
-			TextInputContainer = BasedHandler;
-			DisplayFrame = BasedFrame;
-		end;
-
 		local TextBoxLib = {};
-		TextBoxLib.Root = DisplayFrame or nil;
 
 		local TextInput = Instance.new("Frame")
 		local UICorner = Instance.new("UICorner")
@@ -3375,14 +3097,13 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		local TextBox = Instance.new("TextBox")
 
 		TextInput.Name = ModernV2.RandomString();
-		TextInput.Parent = TextInputContainer
+		TextInput.Parent = Handler
 		TextInput.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 		TextInput.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		TextInput.BorderSizePixel = 0
 		TextInput.ClipsDescendants = true
 		TextInput.Size = UDim2.new(0, Config.Size, 0, 18)
 		TextInput.ZIndex = ZINdex + 13
-		TextInput.LayoutOrder = NameParam and 1 or -(#Handler:GetChildren() + 5);
 
 		UICorner.CornerRadius = UDim.new(0, 4)
 		UICorner.Parent = TextInput
@@ -3408,8 +3129,6 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		TextBox.TextSize = 11.000
 		TextBox.TextTransparency = 0.350
 		TextBox.TextXAlignment = Enum.TextXAlignment.Left
-
-		TextBoxLib.Root = DisplayFrame or TextInput;
 
 		TextBoxLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
 			if value then
@@ -3476,14 +3195,10 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 	handle.AddInput = handle.AddTextInput;
 
 	function handle:AddDropdown(Config)
-		local NameParam = Config.Name or Config.Label or nil;
-		
 		Config = ModernV2:ProcessParams(Config , {
 			Default = nil,
 			Values = {},
 			Multi = false,
-			Name = nil,
-			Label = nil,
 			Callback = EmptyFunction,
 			AutoUpdate = false,
 			Flag = nil,
@@ -3492,87 +3207,14 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 
 		Config.Default = ModernV2.ProcessDropdown(Config.Default);
 
-		local DropdownContainer = Handler;
-		local DisplayFrame = nil;
-		
-		-- If Name or Label is provided, create a label frame container
-		if NameParam then
-			local BasedFrame = Instance.new("Frame");
-			local BasedLabel = Instance.new("TextLabel");
-			local LineFrame = Instance.new("Frame");
-			local BasedHandler = Instance.new("Frame");
-			local UIListLayout = Instance.new("UIListLayout");
-			local UICorner_Label = Instance.new("UICorner");
-			
-			BasedFrame.Name = ModernV2.RandomString();
-			BasedFrame.Parent = Handler;
-			BasedFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33);
-			BasedFrame.BackgroundTransparency = 1.000;
-			BasedFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedFrame.BorderSizePixel = 0;
-			BasedFrame.Size = UDim2.new(1, 0, 0, 30);
-			BasedFrame.ZIndex = ZINdex + 8;
-			
-			BasedLabel.Name = ModernV2.RandomString();
-			BasedLabel.Parent = BasedFrame;
-			BasedLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.BackgroundTransparency = 1.000;
-			BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedLabel.BorderSizePixel = 0;
-			BasedLabel.Position = UDim2.new(0, 11, 0, 6);
-			BasedLabel.Size = UDim2.new(0, 1, 0, 15);
-			BasedLabel.ZIndex = ZINdex + 9;
-			BasedLabel.Font = Enum.Font.GothamMedium;
-			BasedLabel.Text = NameParam;
-			BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
-			BasedLabel.TextSize = 13.000;
-			BasedLabel.TextTransparency = 0.35;
-			BasedLabel.TextXAlignment = Enum.TextXAlignment.Left;
-			
-			LineFrame.Name = ModernV2.RandomString();
-			LineFrame.Parent = BasedFrame;
-			LineFrame.AnchorPoint = Vector2.new(0.5, 1);
-			LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58);
-			LineFrame.BackgroundTransparency = 0.650;
-			LineFrame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			LineFrame.BorderSizePixel = 0;
-			LineFrame.Position = UDim2.new(0.5, 0, 1, 0);
-			LineFrame.Size = UDim2.new(1, -20, 0, 1);
-			LineFrame.ZIndex = ZINdex + 11;
-			
-			BasedHandler.Name = ModernV2.RandomString();
-			BasedHandler.Parent = BasedFrame;
-			BasedHandler.AnchorPoint = Vector2.new(1, 0);
-			BasedHandler.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			BasedHandler.BackgroundTransparency = 1.000;
-			BasedHandler.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			BasedHandler.BorderSizePixel = 0;
-			BasedHandler.Position = UDim2.new(1, -11, 0, 2);
-			BasedHandler.Size = UDim2.new(1, -20, 0, 25);
-			BasedHandler.ZIndex = ZINdex + 12;
-			
-			UIListLayout.Parent = BasedHandler;
-			UIListLayout.FillDirection = Enum.FillDirection.Horizontal;
-			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right;
-			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
-			UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
-			UIListLayout.Padding = UDim.new(0, 5);
-			
-			UICorner_Label.CornerRadius = UDim.new(0, 10);
-			UICorner_Label.Parent = BasedFrame;
-			
-			DropdownContainer = BasedHandler;
-			DisplayFrame = BasedFrame;
-		end;
-
 		local Dropdown = Instance.new("Frame")
 		local DropdownIcon = Instance.new("TextLabel")
 		local UICorner = Instance.new("UICorner")
 		local UIStroke = Instance.new("UIStroke")
-		local DropdownLabel = Instance.new("TextLabel")
+		local BasedLabel = Instance.new("TextLabel")
 
 		Dropdown.Name = ModernV2.RandomString();
-		Dropdown.Parent = DropdownContainer
+		Dropdown.Parent = Handler
 		Dropdown.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
 		Dropdown.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Dropdown.BorderSizePixel = 0
@@ -4365,7 +4007,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 			UpdateWarp();
 		end;
 
-		local handle = ModernV2:RegisiterHandler(BasedHandler , Signel);
+		local handle = ModernV2:RegisiterHandler(BasedHandler , Signel, Frame);
 
 		handle.Root = BasedFrame;
 
