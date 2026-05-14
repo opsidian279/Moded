@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.0.1]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.0.2]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -197,6 +197,7 @@ ModernV2.AccentColor = Color3.fromRGB(78, 127, 252);
 ModernV2.MainColor = Color3.fromRGB(8, 8, 13);
 ModernV2.RegisiteryColor = {};
 ModernV2.NameRegisitry = {};
+ModernV2.SectionOwners = {};
 ModernV2.IsMosueOverOtherFrame = false;
 ModernV2.TextGradientEnabled = true;
 ModernV2.TextGradientAnimationTime = 0;
@@ -782,10 +783,59 @@ ModernV2:AddSignal(GlobalWindow.DescendantAdded:Connect(function(Object)
 end));
 
 function ModernV2:AddQuery(ItemRoot: Frame , Name : string)
+	local SectionOwner = nil;
+	local Parent = ItemRoot;
+
+	while Parent do
+		if ModernV2.SectionOwners[Parent] then
+			SectionOwner = ModernV2.SectionOwners[Parent];
+			break;
+		end;
+
+		Parent = Parent.Parent;
+	end;
+
 	table.insert(ModernV2.NameRegisitry , {
 		Root = ItemRoot,
 		Idx = Name,
+		Section = SectionOwner,
 	});
+end;
+
+function ModernV2:RevealQueryItem(Query)
+	if not Query or not Query.Root then
+		return;
+	end;
+
+	if Query.Section and Query.Section.GetCollapsed and Query.Section:GetCollapsed() then
+		Query.Section:SetCollapsed(false);
+	end;
+
+	task.defer(function()
+		local Root = Query.Root;
+
+		if not Root or not Root.Parent then
+			return;
+		end;
+
+		local ScrollParent = Root.Parent;
+
+		while ScrollParent and not ScrollParent:IsA("ScrollingFrame") do
+			ScrollParent = ScrollParent.Parent;
+		end;
+
+		if not ScrollParent then
+			return;
+		end;
+
+		local CanvasMaxY = math.max(0, ScrollParent.AbsoluteCanvasSize.Y - ScrollParent.AbsoluteSize.Y);
+		local TargetY = Root.AbsolutePosition.Y - ScrollParent.AbsolutePosition.Y + ScrollParent.CanvasPosition.Y - 8;
+
+		ScrollParent.CanvasPosition = Vector2.new(
+			ScrollParent.CanvasPosition.X,
+			math.clamp(TargetY, 0, CanvasMaxY)
+		);
+	end);
 end;
 
 function ModernV2:RegisterFlag(Flag, Object)
@@ -5139,6 +5189,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		BasedLabel.BackgroundTransparency = 1.000
 		BasedLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		BasedLabel.BorderSizePixel = 0
+		BasedLabel.ClipsDescendants = true
 		BasedLabel.Position = UDim2.new(0, 11, 0, 6)
 		BasedLabel.Size = UDim2.new(0,1, 0, 15)
 		BasedLabel.ZIndex = LayerIndex + 9
@@ -5148,7 +5199,10 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		BasedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 		BasedLabel.TextSize = 13.000
 		BasedLabel.TextTransparency = 0.35
+		BasedLabel.TextTruncate = Enum.TextTruncate.None
+		BasedLabel.TextWrapped = true
 		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
+		BasedLabel.TextYAlignment = Enum.TextYAlignment.Top
 		ModernV2:AddTextGradient(BasedLabel);
 
 		LineFrame.Name = ModernV2.RandomString();
@@ -5183,13 +5237,55 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		UICorner.CornerRadius = UDim.new(0, 10)
 		UICorner.Parent = BasedFrame
 
+		local UpdateRowLayout = LPH_NO_VIRTUALIZE(function()
+			task.defer(function()
+				if not BasedFrame.Parent then
+					return;
+				end;
+
+				local FrameWidth = BasedFrame.AbsoluteSize.X;
+
+				if FrameWidth <= 0 then
+					return;
+				end;
+
+				local ContentWidth = math.ceil(UIListLayout.AbsoluteContentSize.X);
+				local MaxContentWidth = math.max(0, FrameWidth - 28);
+				ContentWidth = math.clamp(ContentWidth, 0, MaxContentWidth);
+
+				local LabelWidth = math.max(0, FrameWidth - ContentWidth - 28);
+				local LabelHeight = 15;
+
+				if LabelWidth > 0 then
+					LabelHeight = math.max(15, TextService:GetTextSize(
+						BasedLabel.Text,
+						BasedLabel.TextSize,
+						BasedLabel.Font,
+						Vector2.new(LabelWidth, math.huge)
+					).Y);
+				end;
+
+				local HandlerHeight = math.max(25, UIListLayout.AbsoluteContentSize.Y);
+				local TargetHeight = math.max(30, LabelHeight + 13, HandlerHeight + 5);
+
+				BasedLabel.Size = UDim2.new(0, LabelWidth, 0, LabelHeight);
+				BasedHandler.Size = UDim2.new(0, ContentWidth, 0, 25);
+				BasedHandler.Position = UDim2.new(1, -11, 0, math.max(2, math.floor((TargetHeight - 25) / 2)));
+				BasedFrame.Size = UDim2.new(1, 0, 0, TargetHeight);
+			end);
+		end);
+
+		ModernV2:AddSignal(UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(UpdateRowLayout));
+		ModernV2:AddSignal(BasedFrame:GetPropertyChangedSignal('AbsoluteSize'):Connect(UpdateRowLayout));
+		UpdateRowLayout();
+
 		local UpdateWarp = LPH_NO_VIRTUALIZE(function()
 			local size = TextService:GetTextSize(BasedLabel.Text , BasedLabel.TextSize , BasedLabel.Font , Vector2.new(math.huge,math.huge));
 			ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
 				Size = UDim2.new(1, 0, 0, size.Y + 13);
 			})
 
-			BasedLabel.Size = UDim2.new(1, -35, 1, 0)
+			UpdateRowLayout();
 			BasedLabel.TextYAlignment = Enum.TextYAlignment.Top;
 		end);
 
@@ -5259,6 +5355,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 			local oldtxt = BasedLabel.Text;
 
 			BasedLabel.Text = tostring(t or "");
+			UpdateRowLayout();
 
 			if Warp and oldtxt ~= BasedLabel.Text then
 				UpdateWarp();
@@ -6635,9 +6732,16 @@ function ModernV2:CreateWindow(Config)
 
 			last_thread = task.delay(max_time,function()
 				if SearchBox.Text:byte() and (tick() - wati_for_finish) > max_time then
+					local RevealedMatch = false;
+
 					for i,v in next , ModernV2.NameRegisitry do
 						if string.find(string.lower(v.Idx) , string.lower(SearchBox.Text), 1, true) then
 							v.Root.Visible = true;
+
+							if not RevealedMatch then
+								RevealedMatch = true;
+								ModernV2:RevealQueryItem(v);
+							end;
 						else
 							v.Root.Visible = false;
 						end;
@@ -7380,6 +7484,7 @@ function ModernV2:CreateWindow(Config)
 			Section.Collapsible = Config.Collapsible == true;
 			Section.Collapsed = Config.Collapsed == true;
 			Section.Root = SectionFrame;
+			ModernV2.SectionOwners[SectionHandler] = Section;
 
 			local IsSectionRendered = Tab.Signal:GetValue();
 			local function UpdateSectionSize()
