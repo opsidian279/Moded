@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.0.5]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.0.6]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -7537,7 +7537,9 @@ function ModernV2:CreateWindow(Config)
 		Config = ModernV2:ProcessParams(Config , {
 			Icon = "crosshairs",
 			Name = "Tab",
-			Type = "Double"
+			Type = "Double",
+			Locked = false,
+			TextLocked = "Locked",
 		});
 
 		local Tab = {
@@ -7559,6 +7561,7 @@ function ModernV2:CreateWindow(Config)
 		TabButton.BorderSizePixel = 0
 		TabButton.Size = UDim2.new(1, -1, 0, 30)
 		TabButton.ZIndex = 8
+		ModernV2:AttachLockMethods(Tab, TabButton, Config);
 
 		UICorner.CornerRadius = UDim.new(0, 6)
 		UICorner.Parent = TabButton
@@ -7908,6 +7911,10 @@ function ModernV2:CreateWindow(Config)
 		end)));
 
 		Tab.SetValue = LPH_NO_VIRTUALIZE(function(value)
+			if value and Tab.GetLocked and Tab:GetLocked() then
+				value = false;
+			end;
+
 			Tab.Signal:SetValue(value);
 
 			if value then
@@ -7939,7 +7946,32 @@ function ModernV2:CreateWindow(Config)
 			end;
 		end);
 
+		local BaseTabSetLocked = Tab.SetLocked;
+		function Tab:SetLocked(value)
+			if BaseTabSetLocked then
+				BaseTabSetLocked(Tab, value);
+			end;
+
+			if value == true and Window.Tabs[Window.CurrentTab] == Tab then
+				Tab.SetValue(false);
+
+				for Index,OtherTab in ipairs(Window.Tabs) do
+					if OtherTab ~= Tab and (not OtherTab.GetLocked or not OtherTab:GetLocked()) then
+						Window.CurrentTab = Index;
+						OtherTab.SetValue(true);
+						break;
+					end;
+				end;
+			end;
+
+			return Tab;
+		end;
+
 		table.insert(Window.Tabs,Tab);
+
+		if Window.Tabs[Window.CurrentTab] and Window.Tabs[Window.CurrentTab].GetLocked and Window.Tabs[Window.CurrentTab]:GetLocked() and (not Tab.GetLocked or not Tab:GetLocked()) then
+			Window.CurrentTab = #Window.Tabs;
+		end;
 
 		if Window.Tabs[Window.CurrentTab] == Tab then
 			Tab.SetValue(true)
@@ -7948,6 +7980,10 @@ function ModernV2:CreateWindow(Config)
 		end;
 
 		local over = ModernV2:CreateInput(TabButton,LPH_NO_VIRTUALIZE(function()
+			if Tab.GetLocked and Tab:GetLocked() then
+				return;
+			end;
+
 			for i,v in next , Window.Tabs do
 				if v.Idx == TabButton then
 					v.SetValue(true);
@@ -8012,6 +8048,8 @@ function ModernV2:CreateWindow(Config)
 				Position = 'left',
 				Collapsible = false,
 				Collapsed = false,
+				Locked = false,
+				TextLocked = "Locked",
 			});
 
 			local SectionFrame = Instance.new("Frame")
@@ -8094,6 +8132,7 @@ function ModernV2:CreateWindow(Config)
 			Section.Collapsible = Config.Collapsible == true;
 			Section.Collapsed = Config.Collapsed == true;
 			Section.Root = SectionFrame;
+			ModernV2:AttachLockMethods(Section, SectionFrame, Config);
 			ModernV2.SectionOwners[SectionHandler] = Section;
 
 			local IsSectionRendered = Tab.Signal:GetValue();
@@ -8224,6 +8263,8 @@ function ModernV2:CreateWindow(Config)
 				Name = "TABBOX",
 				Position = 'left',
 				Side = nil,
+				Locked = false,
+				TextLocked = "Locked",
 			});
 
 			local TabboxFrame = Instance.new("Frame")
@@ -8250,6 +8291,7 @@ function ModernV2:CreateWindow(Config)
 			TabboxFrame.ClipsDescendants = true
 			TabboxFrame.Size = UDim2.new(1, -5, 0, 55)
 			TabboxFrame.ZIndex = 9
+			ModernV2:AttachLockMethods(Tabbox, TabboxFrame, Config);
 
 			TabboxLabel.Name = ModernV2.RandomString();
 			TabboxLabel.Parent = TabboxFrame
@@ -8355,9 +8397,12 @@ function ModernV2:CreateWindow(Config)
 			end);
 
 			function Tabbox:AddTab(Name , IconName)
+				local TabConfig = {};
+
 				if typeof(Name) == "table" then
-					IconName = Name.Icon or Name.IconName or IconName;
-					Name = Name.Name or Name.Title or "Tab";
+					TabConfig = Name;
+					IconName = TabConfig.Icon or TabConfig.IconName or IconName;
+					Name = TabConfig.Name or TabConfig.Title or "Tab";
 				end;
 
 				local SubTab = {
@@ -8365,6 +8410,9 @@ function ModernV2:CreateWindow(Config)
 					Icon = IconName or "folder",
 					Signal = ModernV2:CreateSignal(false),
 				};
+
+				TabConfig.Locked = TabConfig.Locked == true;
+				TabConfig.TextLocked = TabConfig.TextLocked or "Locked";
 
 				local Button = Instance.new("Frame")
 				local ButtonCorner = Instance.new("UICorner")
@@ -8383,6 +8431,7 @@ function ModernV2:CreateWindow(Config)
 				Button.ClipsDescendants = true
 				Button.Size = UDim2.new(0, 0, 1, 0)
 				Button.ZIndex = 11
+				ModernV2:AttachLockMethods(SubTab, Button, TabConfig);
 
 				ButtonCorner.CornerRadius = UDim.new(0, 5)
 				ButtonCorner.Parent = Button
@@ -8490,6 +8539,14 @@ function ModernV2:CreateWindow(Config)
 				end);
 
 				function SubTab:Show()
+					if Tabbox.GetLocked and Tabbox:GetLocked() then
+						return SubTab;
+					end;
+
+					if SubTab.GetLocked and SubTab:GetLocked() then
+						return SubTab;
+					end;
+
 					Tabbox.ActiveTab = SubTab;
 
 					for _,Item in ipairs(Tabbox.Tabs) do
@@ -8518,6 +8575,14 @@ function ModernV2:CreateWindow(Config)
 				end)))
 
 				local Input = ModernV2:CreateInput(Button , LPH_NO_VIRTUALIZE(function()
+					if Tabbox.GetLocked and Tabbox:GetLocked() then
+						return;
+					end;
+
+					if SubTab.GetLocked and SubTab:GetLocked() then
+						return;
+					end;
+
 					SubTab:Show();
 				end));
 
@@ -8539,7 +8604,42 @@ function ModernV2:CreateWindow(Config)
 				SubTab.Handler = Handler;
 
 				function Handler:Select()
+					if SubTab.GetLocked and SubTab:GetLocked() then
+						return Handler;
+					end;
+
 					SubTab:Show();
+					return Handler;
+				end;
+
+				function Handler:SetLocked(value)
+					if SubTab.SetLocked then
+						SubTab:SetLocked(value);
+					end;
+
+					if value == true and Tabbox.ActiveTab == SubTab then
+						SubTab:Hide();
+
+						for _,Item in ipairs(Tabbox.Tabs) do
+							if Item ~= SubTab and (not Item.GetLocked or not Item:GetLocked()) then
+								Item:Show();
+								break;
+							end;
+						end;
+					end;
+
+					return Handler;
+				end;
+
+				function Handler:GetLocked()
+					return SubTab.GetLocked and SubTab:GetLocked() or false;
+				end;
+
+				function Handler:SetTextLocked(text)
+					if SubTab.SetTextLocked then
+						SubTab:SetTextLocked(text);
+					end;
+
 					return Handler;
 				end;
 
@@ -9883,6 +9983,292 @@ function ModernV2:CreateWindow(Config)
 		ModernV2.PlayAnimate(Content,SlowyTween,{
 			TextTransparency = 0.250
 		})
+
+		Shadow:Render(true);
+
+		return CaseInsensitive(Dialog);
+	end;
+
+	function Window:ProgressDialog(Config)
+		Config = ModernV2:ProcessParams(Config , {
+			Title = "Progress",
+			Content = "",
+			Value = 0,
+			Max = 100,
+			Type = "%",
+			Cancelable = false,
+			CancelText = "Cancel",
+			AutoClose = false,
+			Callback = EmptyFunction,
+		});
+
+		local Dialog = {
+			Closed = false,
+		};
+
+		local Overlay = Instance.new("Frame")
+		local Panel = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local UIStroke = Instance.new("UIStroke")
+		local Title = Instance.new("TextLabel")
+		local Content = Instance.new("TextLabel")
+		local ValueLabel = Instance.new("TextLabel")
+		local BarBack = Instance.new("Frame")
+		local BarBackCorner = Instance.new("UICorner")
+		local BarFill = Instance.new("Frame")
+		local BarFillCorner = Instance.new("UICorner")
+		local CancelButton = Instance.new("Frame")
+		local CancelCorner = Instance.new("UICorner")
+		local CancelStroke = Instance.new("UIStroke")
+		local CancelLabel = Instance.new("TextLabel")
+
+		Overlay.Name = ModernV2.RandomString();
+		Overlay.Parent = WindowFrame
+		Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		Overlay.BackgroundTransparency = 1
+		Overlay.BorderSizePixel = 0
+		Overlay.Size = UDim2.fromScale(1, 1)
+		Overlay.ZIndex = 180
+		Overlay.Active = true
+
+		Panel.Name = ModernV2.RandomString();
+		Panel.Parent = Overlay
+		Panel.AnchorPoint = Vector2.new(0.5, 0.5)
+		Panel.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+		Panel.BackgroundTransparency = 1
+		Panel.BorderSizePixel = 0
+		Panel.ClipsDescendants = true
+		Panel.Position = UDim2.fromScale(0.5, 0.5)
+		Panel.Size = UDim2.new(0, 335, 0, Config.Cancelable and 150 or 125)
+		Panel.ZIndex = 181
+
+		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.Parent = Panel
+
+		UIStroke.Transparency = 1
+		UIStroke.Color = Color3.fromRGB(45, 48, 58)
+		UIStroke.Parent = Panel
+
+		local Shadow = ModernV2:CreateShadow(Panel);
+
+		Title.Name = ModernV2.RandomString();
+		Title.Parent = Panel
+		Title.BackgroundTransparency = 1
+		Title.BorderSizePixel = 0
+		Title.Position = UDim2.new(0, 18, 0, 15)
+		Title.Size = UDim2.new(1, -36, 0, 20)
+		Title.ZIndex = 182
+		Title.Font = Enum.Font.GothamBold
+		Title.Text = tostring(Config.Title)
+		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Title.TextSize = 15
+		Title.TextTransparency = 1
+		Title.TextXAlignment = Enum.TextXAlignment.Left
+		ModernV2:AddTextGradient(Title);
+
+		Content.Name = ModernV2.RandomString();
+		Content.Parent = Panel
+		Content.BackgroundTransparency = 1
+		Content.BorderSizePixel = 0
+		Content.Position = UDim2.new(0, 18, 0, 43)
+		Content.Size = UDim2.new(1, -36, 0, 32)
+		Content.ZIndex = 182
+		Content.Font = Enum.Font.GothamMedium
+		Content.Text = tostring(Config.Content)
+		Content.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Content.TextSize = 13
+		Content.TextTransparency = 1
+		Content.TextWrapped = true
+		Content.TextXAlignment = Enum.TextXAlignment.Left
+		Content.TextYAlignment = Enum.TextYAlignment.Top
+
+		ValueLabel.Name = ModernV2.RandomString();
+		ValueLabel.Parent = Panel
+		ValueLabel.BackgroundTransparency = 1
+		ValueLabel.BorderSizePixel = 0
+		ValueLabel.Position = UDim2.new(1, -88, 0, 80)
+		ValueLabel.Size = UDim2.new(0, 70, 0, 16)
+		ValueLabel.ZIndex = 182
+		ValueLabel.Font = Enum.Font.GothamMedium
+		ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		ValueLabel.TextSize = 12
+		ValueLabel.TextTransparency = 1
+		ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+		BarBack.Name = ModernV2.RandomString();
+		BarBack.Parent = Panel
+		BarBack.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		BarBack.BackgroundTransparency = 1
+		BarBack.BorderSizePixel = 0
+		BarBack.Position = UDim2.new(0, 18, 0, 84)
+		BarBack.Size = UDim2.new(1, -112, 0, 9)
+		BarBack.ZIndex = 182
+
+		BarBackCorner.CornerRadius = UDim.new(1, 0)
+		BarBackCorner.Parent = BarBack
+
+		BarFill.Name = ModernV2.RandomString();
+		BarFill.Parent = BarBack
+		BarFill.BackgroundColor3 = ModernV2.AccentColor
+		BarFill.BackgroundTransparency = 1
+		BarFill.BorderSizePixel = 0
+		BarFill.Size = UDim2.fromScale(0, 1)
+		BarFill.ZIndex = 183
+
+		BarFillCorner.CornerRadius = UDim.new(1, 0)
+		BarFillCorner.Parent = BarFill
+
+		CancelButton.Name = ModernV2.RandomString();
+		CancelButton.Parent = Panel
+		CancelButton.AnchorPoint = Vector2.new(1, 1)
+		CancelButton.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		CancelButton.BackgroundTransparency = 1
+		CancelButton.BorderSizePixel = 0
+		CancelButton.ClipsDescendants = true
+		CancelButton.Position = UDim2.new(1, -14, 1, -14)
+		CancelButton.Size = UDim2.new(0, 86, 0, 28)
+		CancelButton.Visible = Config.Cancelable == true
+		CancelButton.ZIndex = 182
+
+		CancelCorner.CornerRadius = UDim.new(0, 5)
+		CancelCorner.Parent = CancelButton
+
+		CancelStroke.Transparency = 1
+		CancelStroke.Color = Color3.fromRGB(45, 48, 58)
+		CancelStroke.Parent = CancelButton
+
+		CancelLabel.Name = ModernV2.RandomString();
+		CancelLabel.Parent = CancelButton
+		CancelLabel.BackgroundTransparency = 1
+		CancelLabel.BorderSizePixel = 0
+		CancelLabel.Size = UDim2.fromScale(1, 1)
+		CancelLabel.ZIndex = 183
+		CancelLabel.Font = Enum.Font.GothamMedium
+		CancelLabel.Text = tostring(Config.CancelText)
+		CancelLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		CancelLabel.TextSize = 12
+		CancelLabel.TextTransparency = 1
+
+		local function UpdateProgress()
+			local MaxValue = math.max(tonumber(Config.Max) or 1, 0.0001);
+			local Value = math.clamp(tonumber(Config.Value) or 0, 0, MaxValue);
+			local Percent = Value / MaxValue;
+
+			if Config.Type == "%" then
+				ValueLabel.Text = tostring(ModernV2.Rounding(Percent * 100, 0)).."%";
+			else
+				ValueLabel.Text = tostring(ModernV2.Rounding(Value, 2)).."/"..tostring(ModernV2.Rounding(MaxValue, 2))..tostring(Config.Type or "");
+			end;
+
+			ModernV2.PlayAnimate(BarFill, SlowyTween, {
+				Size = UDim2.fromScale(Percent, 1),
+				BackgroundColor3 = ModernV2.AccentColor
+			});
+		end;
+
+		function Dialog:Close(Result)
+			if Dialog.Closed then
+				return Result;
+			end;
+
+			Dialog.Closed = true;
+
+			ModernV2.PlayAnimate(Overlay,SlowyTween,{ BackgroundTransparency = 1 })
+			ModernV2.PlayAnimate(Panel,SlowyTween,{
+				BackgroundTransparency = 1,
+				Size = UDim2.new(0, 335, 0, Config.Cancelable and 150 or 125)
+			})
+			ModernV2.PlayAnimate(UIStroke,SlowyTween,{ Transparency = 1 })
+			ModernV2.PlayAnimate(Title,SlowyTween,{ TextTransparency = 1 })
+			ModernV2.PlayAnimate(Content,SlowyTween,{ TextTransparency = 1 })
+			ModernV2.PlayAnimate(ValueLabel,SlowyTween,{ TextTransparency = 1 })
+			ModernV2.PlayAnimate(BarBack,SlowyTween,{ BackgroundTransparency = 1 })
+			ModernV2.PlayAnimate(BarFill,SlowyTween,{ BackgroundTransparency = 1 })
+			ModernV2.PlayAnimate(CancelButton,SlowyTween,{ BackgroundTransparency = 1 })
+			ModernV2.PlayAnimate(CancelStroke,SlowyTween,{ Transparency = 1 })
+			ModernV2.PlayAnimate(CancelLabel,SlowyTween,{ TextTransparency = 1 })
+			Shadow:Render(false);
+
+			task.delay(0.18,function()
+				Overlay:Destroy();
+			end);
+
+			Config.Callback(Result);
+			return Result;
+		end;
+
+		function Dialog:SetValue(value)
+			Config.Value = tonumber(value) or Config.Value;
+			UpdateProgress();
+
+			if Config.AutoClose == true and (tonumber(Config.Value) or 0) >= (tonumber(Config.Max) or 100) then
+				Dialog:Close(true);
+			end;
+
+			return Dialog;
+		end;
+
+		function Dialog:SetMax(max)
+			Config.Max = tonumber(max) or Config.Max;
+			UpdateProgress();
+			return Dialog;
+		end;
+
+		function Dialog:SetContent(text)
+			Config.Content = tostring(text or "");
+			Content.Text = Config.Content;
+			return Dialog;
+		end;
+
+		function Dialog:SetTitle(text)
+			Config.Title = tostring(text or "");
+			Title.Text = Config.Title;
+			return Dialog;
+		end;
+
+		function Dialog:SetType(text)
+			Config.Type = tostring(text or "");
+			UpdateProgress();
+			return Dialog;
+		end;
+
+		function Dialog:GetValue()
+			return Config.Value;
+		end;
+
+		if Config.Cancelable then
+			local Input = ModernV2:CreateInput(CancelButton , LPH_NO_VIRTUALIZE(function()
+				Dialog:Close(false);
+			end));
+
+			ModernV2:AddSignal(Input.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+				ModernV2.PlayAnimate(CancelButton,SlowyTween,{ BackgroundTransparency = 0.100 })
+			end)))
+
+			ModernV2:AddSignal(Input.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+				ModernV2.PlayAnimate(CancelButton,SlowyTween,{ BackgroundTransparency = 0.250 })
+			end)))
+		end;
+
+		UpdateProgress();
+
+		ModernV2.PlayAnimate(Overlay,SlowyTween,{ BackgroundTransparency = 0.350 })
+		ModernV2.PlayAnimate(Panel,VSlowTween,{
+			BackgroundTransparency = 0.035,
+			Size = UDim2.new(0, 350, 0, Config.Cancelable and 165 or 140)
+		})
+		ModernV2.PlayAnimate(UIStroke,SlowyTween,{ Transparency = 0.650 })
+		ModernV2.PlayAnimate(Title,SlowyTween,{ TextTransparency = 0 })
+		ModernV2.PlayAnimate(Content,SlowyTween,{ TextTransparency = 0.250 })
+		ModernV2.PlayAnimate(ValueLabel,SlowyTween,{ TextTransparency = 0.500 })
+		ModernV2.PlayAnimate(BarBack,SlowyTween,{ BackgroundTransparency = 0 })
+		ModernV2.PlayAnimate(BarFill,SlowyTween,{ BackgroundTransparency = 0 })
+
+		if Config.Cancelable then
+			ModernV2.PlayAnimate(CancelButton,SlowyTween,{ BackgroundTransparency = 0.250 })
+			ModernV2.PlayAnimate(CancelStroke,SlowyTween,{ Transparency = 0.650 })
+			ModernV2.PlayAnimate(CancelLabel,SlowyTween,{ TextTransparency = 0 })
+		end;
 
 		Shadow:Render(true);
 
