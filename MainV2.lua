@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.0.4]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.0.5]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -5730,6 +5730,617 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		Signel:Connect(Paragraph.SetRender);
 
 		return CaseInsensitive(Paragraph);
+	end;
+
+	function idx:AddImage(Config)
+		if typeof(Config) ~= "table" then
+			Config = {
+				Image = tostring(Config or ""),
+			};
+		end;
+
+		Config = ModernV2:ProcessParams(Config , {
+			Name = "Image",
+			Image = "",
+			Size = UDim2.new(1, -20, 0, 120),
+			Height = nil,
+			ScaleType = Enum.ScaleType.Fit,
+			Color = Color3.fromRGB(255, 255, 255),
+			Transparency = 0,
+			Corner = 6,
+			Locked = false,
+			TextLocked = "Locked",
+		});
+
+		local ImageLib = {};
+		local ImageFrame = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local ImageLabel = Instance.new("ImageLabel")
+		local ImageCorner = Instance.new("UICorner")
+		local LineFrame = Instance.new("Frame")
+
+		if Config.Height then
+			Config.Size = UDim2.new(1, -20, 0, tonumber(Config.Height) or 120);
+		end;
+
+		ModernV2:AddQuery(ImageFrame , Config.Name);
+
+		ImageFrame.Name = ModernV2.RandomString();
+		ImageFrame.Parent = Frame
+		ImageFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
+		ImageFrame.BackgroundTransparency = 1.000
+		ImageFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ImageFrame.BorderSizePixel = 0
+		ImageFrame.ClipsDescendants = true
+		ImageFrame.Size = UDim2.new(1, 0, 0, Config.Size.Y.Offset + 15)
+		ImageFrame.ZIndex = LayerIndex + 8
+		ModernV2:AttachLockMethods(ImageLib, ImageFrame, Config);
+
+		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.Parent = ImageFrame
+
+		ImageLabel.Name = ModernV2.RandomString();
+		ImageLabel.Parent = ImageFrame
+		ImageLabel.AnchorPoint = Vector2.new(0.5, 0)
+		ImageLabel.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		ImageLabel.BackgroundTransparency = 1.000
+		ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		ImageLabel.BorderSizePixel = 0
+		ImageLabel.Position = UDim2.new(0.5, 0, 0, 7)
+		ImageLabel.Size = Config.Size
+		ImageLabel.ZIndex = LayerIndex + 9
+		ImageLabel.ImageColor3 = Config.Color
+		ImageLabel.ImageTransparency = Config.Transparency
+		ImageLabel.ScaleType = Config.ScaleType
+		ModernV2:SetIconMode(ImageLabel, Config.Image);
+		ImageLabel.ScaleType = Config.ScaleType;
+		ImageLabel.ImageColor3 = Config.Color;
+		ImageLabel.ImageTransparency = Config.Transparency;
+		local ImageScale = ImageLabel:FindFirstChild("ModernIconScale");
+		if ImageScale then
+			ImageScale.Scale = 1;
+		end;
+
+		ImageCorner.CornerRadius = UDim.new(0, Config.Corner)
+		ImageCorner.Parent = ImageLabel
+
+		LineFrame.Name = ModernV2.RandomString();
+		LineFrame.Parent = ImageFrame
+		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
+		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		LineFrame.BackgroundTransparency = 0.650
+		LineFrame.BorderSizePixel = 0
+		LineFrame.Position = UDim2.new(0.5, 0, 1, 0)
+		LineFrame.Size = UDim2.new(1, -20, 0, 1)
+		LineFrame.ZIndex = LayerIndex + 11
+
+		local function UpdateSize()
+			local Height = math.max(30, ImageLabel.Size.Y.Offset + 15);
+			ImageFrame.Size = UDim2.new(1, 0, 0, Height);
+		end;
+
+		function ImageLib:SetImage(image)
+			Config.Image = tostring(image or "");
+			ModernV2:SetIconMode(ImageLabel, Config.Image);
+			ImageLabel.ScaleType = Config.ScaleType;
+			ImageLabel.ImageColor3 = Config.Color;
+			ImageLabel.ImageTransparency = Config.Transparency;
+			local ImageScale = ImageLabel:FindFirstChild("ModernIconScale");
+			if ImageScale then
+				ImageScale.Scale = 1;
+			end;
+			return ImageLib;
+		end;
+
+		function ImageLib:GetImage()
+			return Config.Image;
+		end;
+
+		function ImageLib:SetSize(size)
+			if typeof(size) == "UDim2" then
+				Config.Size = size;
+			elseif typeof(size) == "number" then
+				Config.Size = UDim2.new(1, -20, 0, size);
+			end;
+
+			ImageLabel.Size = Config.Size;
+			UpdateSize();
+			return ImageLib;
+		end;
+
+		function ImageLib:SetHeight(height)
+			return ImageLib:SetSize(tonumber(height) or ImageLabel.Size.Y.Offset);
+		end;
+
+		function ImageLib:SetScaleType(scaleType)
+			Config.ScaleType = scaleType or Config.ScaleType;
+			ImageLabel.ScaleType = Config.ScaleType;
+			return ImageLib;
+		end;
+
+		function ImageLib:SetColor(color)
+			Config.Color = color or Config.Color;
+			ImageLabel.ImageColor3 = Config.Color;
+			return ImageLib;
+		end;
+
+		function ImageLib:SetTransparency(value)
+			Config.Transparency = tonumber(value) or Config.Transparency;
+			ImageLabel.ImageTransparency = Config.Transparency;
+			return ImageLib;
+		end;
+
+		function ImageLib:SetVisible(value)
+			ImageFrame.Visible = value ~= false;
+			return ImageLib;
+		end;
+
+		ImageLib.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			if value then
+				ModernV2.PlayAnimate(ImageLabel , SlowyTween , {
+					ImageTransparency = Config.Transparency
+				});
+				ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+					BackgroundTransparency = 0.650
+				});
+			else
+				ModernV2.PlayAnimate(ImageLabel , SlowyTween , {
+					ImageTransparency = 1
+				});
+				ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+					BackgroundTransparency = 1
+				});
+			end;
+		end);
+
+		UpdateSize();
+		ImageLib.SetRender(Signel:GetValue());
+		Signel:Connect(ImageLib.SetRender);
+
+		return CaseInsensitive(ImageLib);
+	end;
+
+	function idx:AddDivider(Config)
+		if typeof(Config) ~= "table" then
+			Config = {
+				Text = tostring(Config or ""),
+			};
+		end;
+
+		Config = ModernV2:ProcessParams(Config , {
+			Text = "",
+			Name = nil,
+		});
+
+		local Divider = {};
+		local DividerFrame = Instance.new("Frame")
+		local LeftLine = Instance.new("Frame")
+		local RightLine = Instance.new("Frame")
+		local TextLabel = Instance.new("TextLabel")
+
+		DividerFrame.Name = ModernV2.RandomString();
+		DividerFrame.Parent = Frame
+		DividerFrame.BackgroundTransparency = 1.000
+		DividerFrame.BorderSizePixel = 0
+		DividerFrame.Size = UDim2.new(1, 0, 0, 22)
+		DividerFrame.ZIndex = LayerIndex + 8
+
+		LeftLine.Name = ModernV2.RandomString();
+		LeftLine.Parent = DividerFrame
+		LeftLine.AnchorPoint = Vector2.new(0, 0.5)
+		LeftLine.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		LeftLine.BackgroundTransparency = 0.650
+		LeftLine.BorderSizePixel = 0
+		LeftLine.Position = UDim2.new(0, 10, 0.5, 0)
+		LeftLine.Size = UDim2.new(0.5, -20, 0, 1)
+		LeftLine.ZIndex = LayerIndex + 9
+
+		TextLabel.Name = ModernV2.RandomString();
+		TextLabel.Parent = DividerFrame
+		TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+		TextLabel.BackgroundTransparency = 1.000
+		TextLabel.BorderSizePixel = 0
+		TextLabel.Position = UDim2.fromScale(0.5, 0.5)
+		TextLabel.Size = UDim2.new(0, 0, 0, 16)
+		TextLabel.ZIndex = LayerIndex + 9
+		TextLabel.Font = Enum.Font.GothamMedium
+		TextLabel.Text = tostring(Config.Text or Config.Name or "")
+		TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		TextLabel.TextSize = 11.000
+		TextLabel.TextTransparency = 0.500
+
+		RightLine.Name = ModernV2.RandomString();
+		RightLine.Parent = DividerFrame
+		RightLine.AnchorPoint = Vector2.new(1, 0.5)
+		RightLine.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		RightLine.BackgroundTransparency = 0.650
+		RightLine.BorderSizePixel = 0
+		RightLine.Position = UDim2.new(1, -10, 0.5, 0)
+		RightLine.Size = UDim2.new(0.5, -20, 0, 1)
+		RightLine.ZIndex = LayerIndex + 9
+
+		local function UpdateDivider()
+			local Text = TextLabel.Text;
+
+			if Text == "" then
+				TextLabel.Visible = false;
+				LeftLine.Size = UDim2.new(1, -20, 0, 1);
+				RightLine.Visible = false;
+				return;
+			end;
+
+			TextLabel.Visible = true;
+			RightLine.Visible = true;
+
+			local MaxTextWidth = math.max(40, DividerFrame.AbsoluteSize.X - 70);
+			local TextWidth = math.min(TextService:GetTextSize(Text, TextLabel.TextSize, TextLabel.Font, Vector2.new(math.huge, math.huge)).X + 16, MaxTextWidth);
+			TextLabel.Size = UDim2.new(0, TextWidth, 0, 16);
+			LeftLine.Size = UDim2.new(0.5, -(TextWidth / 2) - 12, 0, 1);
+			RightLine.Size = UDim2.new(0.5, -(TextWidth / 2) - 12, 0, 1);
+		end;
+
+		function Divider:SetText(text)
+			Config.Text = tostring(text or "");
+			TextLabel.Text = Config.Text;
+			UpdateDivider();
+			return Divider;
+		end;
+
+		function Divider:GetText()
+			return TextLabel.Text;
+		end;
+
+		function Divider:SetVisible(value)
+			DividerFrame.Visible = value ~= false;
+			return Divider;
+		end;
+
+		Divider.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			ModernV2.PlayAnimate(LeftLine , SlowyTween , {
+				BackgroundTransparency = value and 0.650 or 1
+			});
+			ModernV2.PlayAnimate(RightLine , SlowyTween , {
+				BackgroundTransparency = value and 0.650 or 1
+			});
+			ModernV2.PlayAnimate(TextLabel , SlowyTween , {
+				TextTransparency = value and 0.500 or 1
+			});
+		end);
+
+		UpdateDivider();
+		ModernV2:AddSignal(DividerFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateDivider));
+		Divider.SetRender(Signel:GetValue());
+		Signel:Connect(Divider.SetRender);
+
+		return CaseInsensitive(Divider);
+	end;
+
+	function idx:AddSpacer(Size)
+		local Spacer = {};
+		local Height = 8;
+
+		if typeof(Size) == "table" then
+			Height = tonumber(Size.Size or Size.Height or Size[1]) or Height;
+		else
+			Height = tonumber(Size) or Height;
+		end;
+
+		local SpacerFrame = Instance.new("Frame")
+		SpacerFrame.Name = ModernV2.RandomString();
+		SpacerFrame.Parent = Frame
+		SpacerFrame.BackgroundTransparency = 1.000
+		SpacerFrame.BorderSizePixel = 0
+		SpacerFrame.Size = UDim2.new(1, 0, 0, Height)
+		SpacerFrame.ZIndex = LayerIndex + 8
+
+		function Spacer:SetSize(size)
+			Height = tonumber(size) or Height;
+			SpacerFrame.Size = UDim2.new(1, 0, 0, Height);
+			return Spacer;
+		end;
+
+		function Spacer:GetSize()
+			return Height;
+		end;
+
+		function Spacer:SetVisible(value)
+			SpacerFrame.Visible = value ~= false;
+			return Spacer;
+		end;
+
+		Spacer.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			SpacerFrame.Visible = value == true;
+		end);
+
+		Spacer.SetRender(Signel:GetValue());
+		Signel:Connect(Spacer.SetRender);
+
+		return CaseInsensitive(Spacer);
+	end;
+
+	function idx:AddProgressBar(Config)
+		if typeof(Config) ~= "table" then
+			Config = {
+				Value = tonumber(Config) or 0,
+			};
+		end;
+
+		Config = ModernV2:ProcessParams(Config , {
+			Name = "Progress",
+			Value = 0,
+			Max = 100,
+			Type = "%",
+			Locked = false,
+			TextLocked = "Locked",
+		});
+
+		local Progress = {};
+		local ProgressFrame = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local Title = Instance.new("TextLabel")
+		local ValueLabel = Instance.new("TextLabel")
+		local BarBack = Instance.new("Frame")
+		local BarBackCorner = Instance.new("UICorner")
+		local BarFill = Instance.new("Frame")
+		local BarFillCorner = Instance.new("UICorner")
+		local LineFrame = Instance.new("Frame")
+
+		ModernV2:AddQuery(ProgressFrame , Config.Name);
+
+		ProgressFrame.Name = ModernV2.RandomString();
+		ProgressFrame.Parent = Frame
+		ProgressFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
+		ProgressFrame.BackgroundTransparency = 1.000
+		ProgressFrame.BorderSizePixel = 0
+		ProgressFrame.ClipsDescendants = true
+		ProgressFrame.Size = UDim2.new(1, 0, 0, 45)
+		ProgressFrame.ZIndex = LayerIndex + 8
+		ModernV2:AttachLockMethods(Progress, ProgressFrame, Config);
+
+		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.Parent = ProgressFrame
+
+		Title.Name = ModernV2.RandomString();
+		Title.Parent = ProgressFrame
+		Title.BackgroundTransparency = 1.000
+		Title.BorderSizePixel = 0
+		Title.Position = UDim2.new(0, 11, 0, 6)
+		Title.Size = UDim2.new(1, -90, 0, 15)
+		Title.ZIndex = LayerIndex + 9
+		Title.Font = Enum.Font.GothamMedium
+		Title.Text = tostring(Config.Name)
+		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Title.TextSize = 13.000
+		Title.TextTransparency = 0.250
+		Title.TextXAlignment = Enum.TextXAlignment.Left
+		ModernV2:AddTextGradient(Title);
+
+		ValueLabel.Name = ModernV2.RandomString();
+		ValueLabel.Parent = ProgressFrame
+		ValueLabel.BackgroundTransparency = 1.000
+		ValueLabel.BorderSizePixel = 0
+		ValueLabel.Position = UDim2.new(1, -80, 0, 6)
+		ValueLabel.Size = UDim2.new(0, 69, 0, 15)
+		ValueLabel.ZIndex = LayerIndex + 9
+		ValueLabel.Font = Enum.Font.GothamMedium
+		ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		ValueLabel.TextSize = 12.000
+		ValueLabel.TextTransparency = 0.500
+		ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+		BarBack.Name = ModernV2.RandomString();
+		BarBack.Parent = ProgressFrame
+		BarBack.BackgroundColor3 = Color3.fromRGB(26, 28, 36)
+		BarBack.BorderSizePixel = 0
+		BarBack.Position = UDim2.new(0, 11, 0, 27)
+		BarBack.Size = UDim2.new(1, -22, 0, 8)
+		BarBack.ZIndex = LayerIndex + 9
+
+		BarBackCorner.CornerRadius = UDim.new(1, 0)
+		BarBackCorner.Parent = BarBack
+
+		BarFill.Name = ModernV2.RandomString();
+		BarFill.Parent = BarBack
+		BarFill.BackgroundColor3 = ModernV2.AccentColor
+		BarFill.BorderSizePixel = 0
+		BarFill.Size = UDim2.fromScale(0, 1)
+		BarFill.ZIndex = LayerIndex + 10
+
+		BarFillCorner.CornerRadius = UDim.new(1, 0)
+		BarFillCorner.Parent = BarFill
+
+		LineFrame.Name = ModernV2.RandomString();
+		LineFrame.Parent = ProgressFrame
+		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
+		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		LineFrame.BackgroundTransparency = 0.650
+		LineFrame.BorderSizePixel = 0
+		LineFrame.Position = UDim2.new(0.5, 0, 1, 0)
+		LineFrame.Size = UDim2.new(1, -20, 0, 1)
+		LineFrame.ZIndex = LayerIndex + 11
+
+		local function UpdateProgress()
+			local MaxValue = math.max(tonumber(Config.Max) or 1, 0.0001);
+			local Value = math.clamp(tonumber(Config.Value) or 0, 0, MaxValue);
+			local Percent = Value / MaxValue;
+			local DisplayValue = ModernV2.Rounding(Value, 2);
+			local DisplayMax = ModernV2.Rounding(MaxValue, 2);
+
+			if Config.Type == "%" then
+				ValueLabel.Text = tostring(ModernV2.Rounding(Percent * 100, 0)).."%";
+			else
+				ValueLabel.Text = tostring(DisplayValue).."/"..tostring(DisplayMax)..tostring(Config.Type or "");
+			end;
+
+			ModernV2.PlayAnimate(BarFill , SlowyTween , {
+				Size = UDim2.fromScale(Percent, 1),
+				BackgroundColor3 = ModernV2.AccentColor
+			});
+		end;
+
+		function Progress:SetValue(value)
+			Config.Value = tonumber(value) or Config.Value;
+			UpdateProgress();
+			return Progress;
+		end;
+
+		function Progress:GetValue()
+			return Config.Value;
+		end;
+
+		function Progress:SetMax(max)
+			Config.Max = tonumber(max) or Config.Max;
+			UpdateProgress();
+			return Progress;
+		end;
+
+		function Progress:SetText(text)
+			Config.Name = tostring(text or "");
+			Title.Text = Config.Name;
+			return Progress;
+		end;
+
+		function Progress:SetType(text)
+			Config.Type = tostring(text or "");
+			UpdateProgress();
+			return Progress;
+		end;
+
+		function Progress:SetVisible(value)
+			ProgressFrame.Visible = value ~= false;
+			return Progress;
+		end;
+
+		Progress.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			ModernV2.PlayAnimate(Title , SlowyTween , { TextTransparency = value and 0.250 or 1 });
+			ModernV2.PlayAnimate(ValueLabel , SlowyTween , { TextTransparency = value and 0.500 or 1 });
+			ModernV2.PlayAnimate(BarBack , SlowyTween , { BackgroundTransparency = value and 0 or 1 });
+			ModernV2.PlayAnimate(BarFill , SlowyTween , { BackgroundTransparency = value and 0 or 1 });
+			ModernV2.PlayAnimate(LineFrame , SlowyTween , { BackgroundTransparency = value and 0.650 or 1 });
+		end);
+
+		UpdateProgress();
+		Progress.SetRender(Signel:GetValue());
+		Signel:Connect(Progress.SetRender);
+
+		return CaseInsensitive(Progress);
+	end;
+
+	function idx:AddCodeBlock(Config)
+		if typeof(Config) ~= "table" then
+			Config = {
+				Code = tostring(Config or ""),
+			};
+		end;
+
+		Config = ModernV2:ProcessParams(Config , {
+			Name = "Code",
+			Code = "",
+			RichText = false,
+			Locked = false,
+			TextLocked = "Locked",
+		});
+
+		local CodeBlock = {};
+		local CodeFrame = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local CodeLabel = Instance.new("TextLabel")
+		local CodeCorner = Instance.new("UICorner")
+		local LineFrame = Instance.new("Frame")
+
+		ModernV2:AddQuery(CodeFrame , Config.Name);
+
+		CodeFrame.Name = ModernV2.RandomString();
+		CodeFrame.Parent = Frame
+		CodeFrame.BackgroundColor3 = Color3.fromRGB(25, 27, 33)
+		CodeFrame.BackgroundTransparency = 1.000
+		CodeFrame.BorderSizePixel = 0
+		CodeFrame.ClipsDescendants = true
+		CodeFrame.Size = UDim2.new(1, 0, 0, 60)
+		CodeFrame.ZIndex = LayerIndex + 8
+		ModernV2:AttachLockMethods(CodeBlock, CodeFrame, Config);
+
+		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.Parent = CodeFrame
+
+		CodeLabel.Name = ModernV2.RandomString();
+		CodeLabel.Parent = CodeFrame
+		CodeLabel.BackgroundColor3 = Color3.fromRGB(18, 19, 25)
+		CodeLabel.BackgroundTransparency = 0.150
+		CodeLabel.BorderSizePixel = 0
+		CodeLabel.Position = UDim2.new(0, 10, 0, 7)
+		CodeLabel.Size = UDim2.new(1, -20, 0, 40)
+		CodeLabel.ZIndex = LayerIndex + 9
+		CodeLabel.Font = Enum.Font.Code
+		CodeLabel.RichText = Config.RichText == true
+		CodeLabel.Text = tostring(Config.Code)
+		CodeLabel.TextColor3 = Color3.fromRGB(235, 235, 235)
+		CodeLabel.TextSize = 12.000
+		CodeLabel.TextTransparency = 0.200
+		CodeLabel.TextWrapped = true
+		CodeLabel.TextXAlignment = Enum.TextXAlignment.Left
+		CodeLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+		CodeCorner.CornerRadius = UDim.new(0, 5)
+		CodeCorner.Parent = CodeLabel
+
+		LineFrame.Name = ModernV2.RandomString();
+		LineFrame.Parent = CodeFrame
+		LineFrame.AnchorPoint = Vector2.new(0.5, 1)
+		LineFrame.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		LineFrame.BackgroundTransparency = 0.650
+		LineFrame.BorderSizePixel = 0
+		LineFrame.Position = UDim2.new(0.5, 0, 1, 0)
+		LineFrame.Size = UDim2.new(1, -20, 0, 1)
+		LineFrame.ZIndex = LayerIndex + 11
+
+		local function UpdateCodeSize()
+			local Width = math.max(120, CodeFrame.AbsoluteSize.X - 32);
+			local Size = TextService:GetTextSize(CodeLabel.Text,CodeLabel.TextSize,CodeLabel.Font,Vector2.new(Width,math.huge));
+			local Height = math.max(40, Size.Y + 14);
+
+			CodeLabel.Size = UDim2.new(1, -20, 0, Height);
+			CodeFrame.Size = UDim2.new(1, 0, 0, Height + 15);
+		end;
+
+		function CodeBlock:SetCode(code)
+			Config.Code = tostring(code or "");
+			CodeLabel.Text = Config.Code;
+			UpdateCodeSize();
+			return CodeBlock;
+		end;
+
+		function CodeBlock:GetCode()
+			return Config.Code;
+		end;
+
+		function CodeBlock:SetRichText(value)
+			Config.RichText = value == true;
+			CodeLabel.RichText = Config.RichText;
+			return CodeBlock;
+		end;
+
+		function CodeBlock:SetVisible(value)
+			CodeFrame.Visible = value ~= false;
+			return CodeBlock;
+		end;
+
+		CodeBlock.SetRender = LPH_NO_VIRTUALIZE(function(value)
+			ModernV2.PlayAnimate(CodeLabel , SlowyTween , {
+				BackgroundTransparency = value and 0.150 or 1,
+				TextTransparency = value and 0.200 or 1
+			});
+			ModernV2.PlayAnimate(LineFrame , SlowyTween , {
+				BackgroundTransparency = value and 0.650 or 1
+			});
+		end);
+
+		task.defer(UpdateCodeSize);
+		ModernV2:AddSignal(CodeFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(UpdateCodeSize));
+		CodeBlock.SetRender(Signel:GetValue());
+		Signel:Connect(CodeBlock.SetRender);
+
+		return CaseInsensitive(CodeBlock);
 	end;
 
 	function idx:AddUserFrame(Name : string , Profile: string , Expires : string)
