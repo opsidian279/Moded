@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.0.3]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.0.4]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -509,28 +509,18 @@ function ModernV2:CreateMenuIcon(Config)
 	};
 
 	-- ── Helpers ───────────────────────────────────────────────────
-	local function _isImageSource(src)
-		-- rbxassetid, https link, or looks like a number (asset id)
-		return src and ModernV2:GetIconId(src) ~= "";
-	end;
-
 	local function _applyIcon(src)
 		if not src or src == "" then
 			IconLabel.Text           = "";
 			IconImage.Image          = "";
+			IconLabel.Visible        = false;
+			IconImage.Visible        = true;
 			return;
 		end;
 
-		if _isImageSource(src) then
-			IconImage.Image      = ModernV2:GetIconId(src);
-			IconImage.Visible    = true;
-			IconLabel.Visible    = false;
-		else
-			-- treat as built-in icon name (Lucide / builder-icons)
-			ModernV2:SetIconMode(IconLabel, src);
-			IconLabel.Visible    = true;
-			IconImage.Visible    = false;
-		end;
+		ModernV2:SetIconMode(IconImage, src);
+		IconImage.Visible = true;
+		IconLabel.Visible = false;
 	end;
 
 	_applyIcon(iconImage);
@@ -538,6 +528,7 @@ function ModernV2:CreateMenuIcon(Config)
 	-- ── Show / Hide with smooth animations ───────────────────────
 	local function _setIconVisible(val)
 		MenuIconLib.Visible = val;
+		local IconFallbackText = IconImage:FindFirstChild("ModernIconFallbackText");
 
 		if val then
 			-- Bounce-in from left
@@ -555,6 +546,11 @@ function ModernV2:CreateMenuIcon(Config)
 			ModernV2.PlayAnimate(IconImage, VSlowTween, {
 				ImageTransparency = 0,
 			});
+			if IconFallbackText then
+				ModernV2.PlayAnimate(IconFallbackText, VSlowTween, {
+					TextTransparency = 0,
+				});
+			end;
 			IconShadow:Render(true);
 		else
 			-- Slide out to the left
@@ -571,6 +567,11 @@ function ModernV2:CreateMenuIcon(Config)
 			ModernV2.PlayAnimate(IconImage, SlowyTween, {
 				ImageTransparency = 1,
 			});
+			if IconFallbackText then
+				ModernV2.PlayAnimate(IconFallbackText, SlowyTween, {
+					TextTransparency = 1,
+				});
+			end;
 			IconShadow:Render(false);
 		end;
 	end;
@@ -5982,6 +5983,8 @@ function ModernV2:CreateWindow(Config)
 		ConfigAutoSaveFile = ConfigSettings.AutoSaveFile or "Default",
 		ConfigAutoSave = ConfigSettings.AutoSave ~= false,
 		ConfigAutoLoad = ConfigSettings.AutoLoad ~= false,
+		ConfigOverwrite = ConfigSettings.Overwrite ~= false,
+		ConfigEncrypted = ConfigSettings.Encrypted == true or string.lower(tostring(ConfigSettings.Format or "")) == "encoded",
 		ConfigShowAutoSaveToggle = ConfigSettings.ShowAutoSaveToggle == true,
 		Signal = ModernV2:CreateSignal(true),
 		Tabs = {},
@@ -8346,11 +8349,83 @@ function ModernV2:CreateWindow(Config)
 				cd += 1;
 			end;
 
-			return ModernV2.Base64Encode(Encryption.new(HttpService:JSONEncode(ikc)));
+			local JsonData = HttpService:JSONEncode(ikc);
+
+			if Window.ConfigEncrypted then
+				return ModernV2.Base64Encode(Encryption.new(JsonData));
+			end;
+
+			return JsonData;
+		end;
+
+		function ConfigLib:WriteConfig(ConfigNameStr, Overwrite, performance)
+			ConfigNameStr = tostring(ConfigNameStr or ConfigLib.SelectedConfig or "Default");
+			ConfigNameStr = string.sub(ConfigNameStr, 1, 24);
+
+			if not ConfigNameStr:byte() or ConfigNameStr:find('/',1,true) or ConfigNameStr:find('\\',1,true) then
+				Logging.new("folder","Invalid config name!",3.5);
+				return false;
+			end;
+
+			if not isfolder(Window.ConfigFolder) then
+				makefolder(Window.ConfigFolder);
+			end;
+
+			local path = Window.ConfigFolder..'/'..ConfigNameStr;
+			local Exists = isfile(path);
+			local ShouldOverwrite = Overwrite;
+
+			if ShouldOverwrite == nil then
+				ShouldOverwrite = Window.ConfigOverwrite;
+			end;
+
+			if Exists and not ShouldOverwrite then
+				Logging.new("folder","Config "..tostring(ConfigNameStr).." already exists!",3.5);
+				return false;
+			end;
+
+			writefile(path,ConfigLib:GetData(performance));
+
+			ConfigLib.SelectedConfig = ConfigNameStr;
+			ConfigName.Text = ConfigNameStr;
+			UpdateSize();
+
+			Logging.new("folder",(Exists and "Overwritten " or "Created ")..tostring(ConfigNameStr),3.5);
+			return true;
+		end;
+
+		function ConfigLib:RewriteSelectedAsJson()
+			local WasEncrypted = Window.ConfigEncrypted;
+			Window.ConfigEncrypted = false;
+
+			local Saved = ConfigLib:WriteConfig(ConfigLib.SelectedConfig or "Default", true);
+			Window.ConfigEncrypted = WasEncrypted;
+
+			return Saved;
+		end;
+
+		function ConfigLib:DecodeData(data)
+			local success, decoded = pcall(function()
+				return HttpService:JSONDecode(data);
+			end);
+
+			if success and typeof(decoded) == "table" then
+				return decoded;
+			end;
+
+			success, decoded = pcall(function()
+				return HttpService:JSONDecode(Encryption.reverse(ModernV2.Base64Decode(data)));
+			end);
+
+			if success and typeof(decoded) == "table" then
+				return decoded;
+			end;
+
+			return {};
 		end;
 
 		function ConfigLib:LoadData(data)
-			local coded = HttpService:JSONDecode(Encryption.reverse(ModernV2.Base64Decode(data)));
+			local coded = ConfigLib:DecodeData(data);
 
 			for i,v in next , coded do
 				if v.Idx then
@@ -8401,6 +8476,9 @@ function ModernV2:CreateWindow(Config)
 				local DeleteConfig = Instance.new("Frame")
 				local Icon = Instance.new("ImageLabel")
 				local UICorner = Instance.new("UICorner")
+				local OverwriteConfig = Instance.new("Frame")
+				local Icon_3 = Instance.new("ImageLabel")
+				local UICorner_4 = Instance.new("UICorner")
 				local LoadConfig = Instance.new("Frame")
 				local Icon_2 = Instance.new("ImageLabel")
 				local UICorner_2 = Instance.new("UICorner")
@@ -8463,6 +8541,34 @@ function ModernV2:CreateWindow(Config)
 				UICorner.CornerRadius = UDim.new(0, 4)
 				UICorner.Parent = DeleteConfig
 
+				OverwriteConfig.Name = ModernV2.RandomString();
+				OverwriteConfig.Parent = BasedHandler
+				OverwriteConfig.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
+				OverwriteConfig.BackgroundTransparency = 1.000
+				OverwriteConfig.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				OverwriteConfig.BorderSizePixel = 0
+				OverwriteConfig.ClipsDescendants = true
+				OverwriteConfig.Size = UDim2.new(0, 20, 0, 18)
+				OverwriteConfig.ZIndex = 153
+
+				Icon_3.Name = ModernV2.RandomString();
+				Icon_3.Parent = OverwriteConfig
+				Icon_3.AnchorPoint = Vector2.new(0.5, 0.5)
+				Icon_3.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				Icon_3.BackgroundTransparency = 1.000
+				Icon_3.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				Icon_3.BorderSizePixel = 0
+				Icon_3.Position = UDim2.new(0.5, 0, 0.5, 0)
+				Icon_3.Size = UDim2.new(1, 0, 1, 0)
+				Icon_3.ZIndex = 153
+				ModernV2:SetIconMode(Icon_3, "pencil-square")
+				Icon_3.ImageColor3 = Color3.fromRGB(223, 223, 223)
+				Icon_3.ImageTransparency = 0.400
+				Icon_3.ScaleType = Enum.ScaleType.Fit
+
+				UICorner_4.CornerRadius = UDim.new(0, 4)
+				UICorner_4.Parent = OverwriteConfig
+
 				LoadConfig.Name = ModernV2.RandomString();
 				LoadConfig.Parent = BasedHandler
 				LoadConfig.BackgroundColor3 = Color3.fromRGB(39, 40, 49)
@@ -8524,6 +8630,10 @@ function ModernV2:CreateWindow(Config)
 							TextTransparency = 0.400
 						})
 
+						ModernV2.PlayAnimate(Icon_3,SlowyTween,{
+							TextTransparency = 0.400
+						})
+
 						ModernV2.PlayAnimate(Icon_2,SlowyTween,{
 							TextTransparency = 0.400
 						})
@@ -8541,6 +8651,10 @@ function ModernV2:CreateWindow(Config)
 						})
 
 						ModernV2.PlayAnimate(Icon,SlowyTween,{
+							TextTransparency = 1
+						})
+
+						ModernV2.PlayAnimate(Icon_3,SlowyTween,{
 							TextTransparency = 1
 						})
 
@@ -8588,6 +8702,15 @@ function ModernV2:CreateWindow(Config)
 					Logging.new("trash-can",'Deleted '..tostring(ConfigNameStr),3.5)
 				end);
 
+				local _,overwrite_signal = ModernV2:CreateInput(OverwriteConfig,function()
+					if ConfigLib:WriteConfig(ConfigNameStr, true) then
+						ConfigLib.SelectedConfig = ConfigNameStr;
+						ConfigName.Text = ConfigNameStr;
+
+						UpdateSize();
+						ConfigLib:RefreshConfig();
+					end;
+				end);
 
 				local _,load_signal = ModernV2:CreateInput(LoadConfig,function()
 					local path = Window.ConfigFolder..'/'..ConfigNameStr;
@@ -8609,6 +8732,7 @@ function ModernV2:CreateWindow(Config)
 				end);
 
 				table.insert(ConfigLib.Signals , signal);
+				table.insert(ConfigLib.Signals , overwrite_signal);
 				table.insert(ConfigLib.Signals , load_signal);
 
 				table.insert(ConfigLib.Signals , deleter.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
@@ -8620,6 +8744,20 @@ function ModernV2:CreateWindow(Config)
 
 				table.insert(ConfigLib.Signals , deleter.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
 					ModernV2.PlayAnimate(Icon,SlowyTween,{
+						TextTransparency = 0.400,
+						TextColor3 = Color3.fromRGB(223, 223, 223)
+					})
+				end)))
+
+				table.insert(ConfigLib.Signals , OverwriteConfig.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
+					ModernV2.PlayAnimate(Icon_3,SlowyTween,{
+						TextTransparency = 0.2,
+						TextColor3 = ModernV2.AccentColor
+					})
+				end)))
+
+				table.insert(ConfigLib.Signals , OverwriteConfig.MouseLeave:Connect(LPH_NO_VIRTUALIZE(function()
+					ModernV2.PlayAnimate(Icon_3,SlowyTween,{
 						TextTransparency = 0.400,
 						TextColor3 = Color3.fromRGB(223, 223, 223)
 					})
@@ -8679,12 +8817,8 @@ function ModernV2:CreateWindow(Config)
 		end);
 
 		local hover_write = ModernV2:CreateInput(ConfigIcon,function()
-			local path = Window.ConfigFolder..'/'..(ConfigLib.SelectedConfig or "Default");
-
-			if isfile(path) then
-				writefile(Window.ConfigFolder..'/'..(ConfigLib.SelectedConfig or "Default"),ConfigLib:GetData());
-
-				Logging.new("folder",'Saved '..tostring(ConfigLib.SelectedConfig),3.5)
+			if ConfigLib:WriteConfig(ConfigLib.SelectedConfig or "Default", true) then
+				ConfigLib:RefreshConfig();
 			end;
 		end);
 
@@ -8707,17 +8841,10 @@ function ModernV2:CreateWindow(Config)
 			if cfg_name and cfg_name:byte() and not cfg_name:find('/',1,true) and not cfg_name:find('\\',1,true) then
 				cfg_name = string.sub(cfg_name , 1 , 24);
 
-				writefile(Window.ConfigFolder..'/'..cfg_name,ConfigLib:GetData());
-				ConfigLib.SelectedConfig = cfg_name;
-				ConfigName.Text = cfg_name;
-
-				Logging.new("folder",'Created '..tostring(cfg_name),3.5)
-
-				TextBox.Text = "";
-
-				UpdateSize();
-
-				ConfigLib:RefreshConfig();
+				if ConfigLib:WriteConfig(cfg_name, Window.ConfigOverwrite) then
+					TextBox.Text = "";
+					ConfigLib:RefreshConfig();
+				end;
 			end;
 		end);
 
@@ -8851,6 +8978,46 @@ function ModernV2:CreateWindow(Config)
 				Size = Window.Size
 			})
 		end
+	end;
+
+	function Window:SetConfigOverwrite(value)
+		Window.ConfigOverwrite = value == true;
+		return Window;
+	end;
+
+	function Window:SaveConfig(ConfigNameStr, Overwrite)
+		if not Window.ConfigManager or not Window.ConfigManager.WriteConfig then
+			return false;
+		end;
+
+		return Window.ConfigManager:WriteConfig(ConfigNameStr or Window.ConfigManager.SelectedConfig or "Default", Overwrite);
+	end;
+
+	function Window:LoadConfig(ConfigNameStr)
+		if not Window.ConfigManager then
+			return false;
+		end;
+
+		ConfigNameStr = tostring(ConfigNameStr or Window.ConfigManager.SelectedConfig or "Default");
+		local path = Window.ConfigFolder..'/'..ConfigNameStr;
+
+		if not isfile(path) then
+			return false;
+		end;
+
+		Window.ConfigManager:LoadData(readfile(path));
+		Window.ConfigManager.SelectedConfig = ConfigNameStr;
+		ConfigName.Text = ConfigNameStr;
+
+		return true;
+	end;
+
+	function Window:RewriteConfigAsJson()
+		if not Window.ConfigManager or not Window.ConfigManager.RewriteSelectedAsJson then
+			return false;
+		end;
+
+		return Window.ConfigManager:RewriteSelectedAsJson();
 	end;
 
 	function Window:Dialog(Config)
