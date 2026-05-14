@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.0.2]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.0.3]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -5200,9 +5200,9 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		BasedLabel.TextSize = 13.000
 		BasedLabel.TextTransparency = 0.35
 		BasedLabel.TextTruncate = Enum.TextTruncate.None
-		BasedLabel.TextWrapped = true
+		BasedLabel.TextWrapped = false
 		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
-		BasedLabel.TextYAlignment = Enum.TextYAlignment.Top
+		BasedLabel.TextYAlignment = Enum.TextYAlignment.Center
 		ModernV2:AddTextGradient(BasedLabel);
 
 		LineFrame.Name = ModernV2.RandomString();
@@ -5254,21 +5254,24 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 				ContentWidth = math.clamp(ContentWidth, 0, MaxContentWidth);
 
 				local LabelWidth = math.max(0, FrameWidth - ContentWidth - 28);
-				local LabelHeight = 15;
+				local LabelTextSize = 13;
 
 				if LabelWidth > 0 then
-					LabelHeight = math.max(15, TextService:GetTextSize(
+					while LabelTextSize > 9 and TextService:GetTextSize(
 						BasedLabel.Text,
-						BasedLabel.TextSize,
+						LabelTextSize,
 						BasedLabel.Font,
-						Vector2.new(LabelWidth, math.huge)
-					).Y);
+						Vector2.new(math.huge, math.huge)
+					).X > LabelWidth do
+						LabelTextSize = LabelTextSize - 1;
+					end;
 				end;
 
 				local HandlerHeight = math.max(25, UIListLayout.AbsoluteContentSize.Y);
-				local TargetHeight = math.max(30, LabelHeight + 13, HandlerHeight + 5);
+				local TargetHeight = math.max(30, HandlerHeight + 5);
 
-				BasedLabel.Size = UDim2.new(0, LabelWidth, 0, LabelHeight);
+				BasedLabel.TextSize = LabelTextSize;
+				BasedLabel.Size = UDim2.new(0, LabelWidth, 0, 15);
 				BasedHandler.Size = UDim2.new(0, ContentWidth, 0, 25);
 				BasedHandler.Position = UDim2.new(1, -11, 0, math.max(2, math.floor((TargetHeight - 25) / 2)));
 				BasedFrame.Size = UDim2.new(1, 0, 0, TargetHeight);
@@ -5286,7 +5289,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 			})
 
 			UpdateRowLayout();
-			BasedLabel.TextYAlignment = Enum.TextYAlignment.Top;
+			BasedLabel.TextYAlignment = Enum.TextYAlignment.Center;
 		end);
 
 		if Warp then
@@ -7211,6 +7214,7 @@ function ModernV2:CreateWindow(Config)
 				Root = Row,
 				Left = LeftCell,
 				Right = RightCell,
+				Kind = kind,
 				HasLeft = false,
 				HasRight = false,
 				Update = UpdateRowSize,
@@ -7234,22 +7238,14 @@ function ModernV2:CreateWindow(Config)
 				PositionName = "left";
 			end;
 
-			if PendingPairRow then
-				if PositionName == "left" and not PendingPairRow.HasLeft then
-					PendingPairRow.HasLeft = true;
-					local parent = PendingPairRow.Left;
-					if PendingPairRow.HasRight then
-						PendingPairRow = nil;
-					end;
-					return parent;
-				elseif PositionName == "right" and not PendingPairRow.HasRight then
+			if PendingPairRow and PendingPairRow.Kind == "pair" then
+				if PositionName == "right" then
 					PendingPairRow.HasRight = true;
-					local parent = PendingPairRow.Right;
-					if PendingPairRow.HasLeft then
-						PendingPairRow = nil;
-					end;
-					return parent;
+					return PendingPairRow.Right;
 				end;
+
+				PendingPairRow.HasLeft = true;
+				return PendingPairRow.Left;
 			end;
 
 			local NewRow = CreateFlowRow("pair");
