@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.0.6]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.0.7]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -9657,6 +9657,28 @@ function ModernV2:CreateWindow(Config)
 		end,
 	});
 
+	function Window:AddToggle(Config)
+		Config = ModernV2:ProcessParams(Config , {
+			Name = "Toggle",
+			Default = false,
+			Flag = nil,
+			Callback = EmptyFunction,
+		});
+
+		return Window.UserSettings:AddLabel(Config.Name):AddToggle(Config);
+	end;
+
+	function Window:AddButton(Config)
+		Config = ModernV2:ProcessParams(Config , {
+			Name = "Button",
+			Icon = "chevron-large-left",
+			Callback = EmptyFunction,
+			ToolTip = nil,
+		});
+
+		return Window.UserSettings:AddButton(Config);
+	end;
+
 	function Window:SetAccount(Config)
 		Config = ModernV2:ProcessParams(Config , {
 			Profile = ModernV2.UserProfile,
@@ -11211,4 +11233,4 @@ function ModernV2:Window(Config)
 	return ModernV2:CreateWindow(Config);
 end;
 
-return ModernV2;
+return CaseInsensitive(ModernV2);
