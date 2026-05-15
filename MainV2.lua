@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.0.7]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.0.8]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -1987,6 +1987,10 @@ function ModernV2:ApplyLock(Frame, isLocked, lockMessage)
 	local LockOverlay;
 	local LockLabel;
 	local RefreshLockSize = function() end;
+
+	pcall(function()
+		Frame.ClipsDescendants = true;
+	end);
 
 	local function BuildOverlay()
 		if Destroyed or not Frame or not Frame.Parent then
@@ -3988,6 +3992,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			Height = nil,
 			Type = "TextInput",
 			Numeric = false,
+			FullWidth = false,
 		});
 		ModernV2:ResolveConfigFlag(Config);
 		local IsTextarea = string.lower(tostring(Config.Type or "TextInput")) == "textarea";
@@ -3995,6 +4000,13 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			Config.Numeric = false;
 		end;
 		local InputHeight = Config.Height or (IsTextarea and 72 or 18);
+		local GetInputSize = LPH_NO_VIRTUALIZE(function()
+			if Config.FullWidth then
+				return UDim2.new(1, 0, 0, InputHeight);
+			end;
+
+			return UDim2.new(0, Config.Size, 0, InputHeight);
+		end);
 
 		local TextBoxLib = {};
 
@@ -4009,7 +4021,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		TextInput.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		TextInput.BorderSizePixel = 0
 		TextInput.ClipsDescendants = true
-		TextInput.Size = UDim2.new(0, Config.Size, 0, InputHeight)
+		TextInput.Size = GetInputSize()
 		TextInput.ZIndex = ZINdex + 13
 		ModernV2:AttachLockMethods(TextBoxLib, self.Root or TextInput, Config);
 
@@ -4124,7 +4136,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			end;
 
 			InputHeight = Config.Height or (IsTextarea and 72 or 18);
-			TextInput.Size = UDim2.new(0, Config.Size, 0, InputHeight);
+			TextInput.Size = GetInputSize();
 			TextBox.AnchorPoint = IsTextarea and Vector2.new(0, 0) or Vector2.new(0, 0.5);
 			TextBox.Position = IsTextarea and UDim2.new(0, 6, 0, 5) or UDim2.new(0, 5, 0.5, 0);
 			TextBox.Size = IsTextarea and UDim2.new(1, -12, 1, -10) or UDim2.new(1, -5, 0, 17);
@@ -4137,7 +4149,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		function TextBoxLib:SetHeight(height)
 			Config.Height = tonumber(height) or Config.Height;
 			InputHeight = Config.Height or (IsTextarea and 72 or 18);
-			TextInput.Size = UDim2.new(0, Config.Size, 0, InputHeight);
+			TextInput.Size = GetInputSize();
 			return TextBoxLib;
 		end;
 
@@ -5155,16 +5167,20 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 
 	function idx:AddLabel(Name: string,Warp: boolean)
 		local RichText = false;
+		local AutoSize = false;
+		local Stacked = false;
 
 		if typeof(Name) == "table" then
 			local Config = Name;
 			Name = Config.Text or Config.Name or Config.Title or "Label";
-			Warp = Config.Wrap or Config.Warp or Config.Wrapped or Warp;
+			AutoSize = Config.AutomaticSize == true;
+			Warp = Config.Wrap or Config.Warp or Config.Wrapped or AutoSize or Warp;
 			RichText = Config.RichText;
 		end;
 
 		Name = tostring(Name or "Label");
 		RichText = RichText == true;
+		Warp = Warp == true;
 
 		local BasedFrame = Instance.new("Frame")
 		local BasedLabel = Instance.new("TextLabel")
@@ -5201,9 +5217,9 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		BasedLabel.TextSize = 13.000
 		BasedLabel.TextTransparency = 0.35
 		BasedLabel.TextTruncate = Enum.TextTruncate.None
-		BasedLabel.TextWrapped = false
+		BasedLabel.TextWrapped = Warp
 		BasedLabel.TextXAlignment = Enum.TextXAlignment.Left
-		BasedLabel.TextYAlignment = Enum.TextYAlignment.Center
+		BasedLabel.TextYAlignment = (Warp and Enum.TextYAlignment.Top) or Enum.TextYAlignment.Center
 		ModernV2:AddTextGradient(BasedLabel);
 
 		LineFrame.Name = ModernV2.RandomString();
@@ -5254,10 +5270,25 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 				local MaxContentWidth = math.max(0, FrameWidth - 28);
 				ContentWidth = math.clamp(ContentWidth, 0, MaxContentWidth);
 
-				local LabelWidth = math.max(0, FrameWidth - ContentWidth - 28);
+				local HandlerHeight = math.max(25, UIListLayout.AbsoluteContentSize.Y);
+				local LabelWidth = Stacked and math.max(0, FrameWidth - 22) or math.max(0, FrameWidth - ContentWidth - 28);
 				local LabelTextSize = 13;
+				local LabelHeight = 15;
 
-				if LabelWidth > 0 then
+				if Warp then
+					BasedLabel.TextWrapped = true;
+					BasedLabel.TextYAlignment = Enum.TextYAlignment.Top;
+					if LabelWidth > 0 then
+						LabelHeight = math.max(15, TextService:GetTextSize(
+							BasedLabel.Text,
+							LabelTextSize,
+							BasedLabel.Font,
+							Vector2.new(LabelWidth, math.huge)
+						).Y);
+					end;
+				elseif LabelWidth > 0 then
+					BasedLabel.TextWrapped = false;
+					BasedLabel.TextYAlignment = Enum.TextYAlignment.Center;
 					while LabelTextSize > 9 and TextService:GetTextSize(
 						BasedLabel.Text,
 						LabelTextSize,
@@ -5268,13 +5299,19 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 					end;
 				end;
 
-				local HandlerHeight = math.max(25, UIListLayout.AbsoluteContentSize.Y);
-				local TargetHeight = math.max(30, HandlerHeight + 5);
+				local TargetHeight = Stacked and math.max(30, LabelHeight + HandlerHeight + 18) or math.max(30, HandlerHeight + 5, LabelHeight + 13);
 
 				BasedLabel.TextSize = LabelTextSize;
-				BasedLabel.Size = UDim2.new(0, LabelWidth, 0, 15);
-				BasedHandler.Size = UDim2.new(0, ContentWidth, 0, 25);
-				BasedHandler.Position = UDim2.new(1, -11, 0, math.max(2, math.floor((TargetHeight - 25) / 2)));
+				BasedLabel.Size = UDim2.new(0, LabelWidth, 0, LabelHeight);
+				if Stacked then
+					BasedHandler.AnchorPoint = Vector2.new(0, 0);
+					BasedHandler.Position = UDim2.new(0, 11, 0, LabelHeight + 11);
+					BasedHandler.Size = UDim2.new(1, -22, 0, HandlerHeight);
+				else
+					BasedHandler.AnchorPoint = Vector2.new(1, 0);
+					BasedHandler.Size = UDim2.new(0, ContentWidth, 0, 25);
+					BasedHandler.Position = UDim2.new(1, -11, 0, math.max(2, math.floor((TargetHeight - 25) / 2)));
+				end;
 				BasedFrame.Size = UDim2.new(1, 0, 0, TargetHeight);
 			end);
 		end);
@@ -5284,13 +5321,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		UpdateRowLayout();
 
 		local UpdateWarp = LPH_NO_VIRTUALIZE(function()
-			local size = TextService:GetTextSize(BasedLabel.Text , BasedLabel.TextSize , BasedLabel.Font , Vector2.new(math.huge,math.huge));
-			ModernV2.PlayAnimate(BasedFrame , SlowyTween , {
-				Size = UDim2.new(1, 0, 0, size.Y + 13);
-			})
-
 			UpdateRowLayout();
-			BasedLabel.TextYAlignment = Enum.TextYAlignment.Center;
 		end);
 
 		if Warp then
@@ -5374,11 +5405,36 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 
 		function handle:SetRichText(value)
 			BasedLabel.RichText = value == true;
+			UpdateRowLayout();
 			return handle;
 		end;
 
 		function handle:GetRichText()
 			return BasedLabel.RichText;
+		end;
+
+		function handle:SetWrapped(value)
+			Warp = value == true;
+			BasedLabel.TextWrapped = Warp;
+			BasedLabel.TextYAlignment = (Warp and Enum.TextYAlignment.Top) or Enum.TextYAlignment.Center;
+			UpdateRowLayout();
+			return handle;
+		end;
+
+		function handle:SetAutomaticSize(value)
+			AutoSize = value == true;
+			return handle:SetWrapped(AutoSize);
+		end;
+
+		function handle:SetStacked(value)
+			Stacked = value == true;
+			UIListLayout.HorizontalAlignment = (Stacked and Enum.HorizontalAlignment.Left) or Enum.HorizontalAlignment.Right;
+			UpdateRowLayout();
+			return handle;
+		end;
+
+		function handle:GetStacked()
+			return Stacked;
 		end;
 
 		function handle:ToolTip(Content: string)
@@ -6519,6 +6575,13 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 
 	function idx:AddTextInput(Config)
 		if Config.Name then
+			local IsTextarea = string.lower(tostring(Config.Type or "TextInput")) == "textarea";
+
+			if IsTextarea then
+				Config.FullWidth = Config.FullWidth ~= false;
+				return self:AddLabel(Config.Name):SetStacked(true):AddTextInput(Config)
+			end;
+
 			return self:AddLabel(Config.Name):AddTextInput(Config)
 		else
 			error("Name is required for AddTextInput in sections")
@@ -7559,6 +7622,7 @@ function ModernV2:CreateWindow(Config)
 		TabButton.BackgroundTransparency = 0.500
 		TabButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		TabButton.BorderSizePixel = 0
+		TabButton.ClipsDescendants = true
 		TabButton.Size = UDim2.new(1, -1, 0, 30)
 		TabButton.ZIndex = 8
 		ModernV2:AttachLockMethods(Tab, TabButton, Config);
@@ -8048,14 +8112,39 @@ function ModernV2:CreateWindow(Config)
 				Position = 'left',
 				Collapsible = false,
 				Collapsed = false,
+				Box = false,
+				Icon = nil,
+				IconColor = Color3.fromRGB(223, 223, 223),
+				TextSize = 11,
+				TextXAlignment = "Left",
 				Locked = false,
 				TextLocked = "Locked",
 			});
+			local SectionBoxed = Config.Collapsible == true and Config.Box == true;
+			local function ResolveTextXAlignment(value)
+				local Alignment = string.lower(tostring(value or "left"));
+
+				if Alignment == "center" then
+					return Enum.TextXAlignment.Center;
+				elseif Alignment == "right" then
+					return Enum.TextXAlignment.Right;
+				end;
+
+				return Enum.TextXAlignment.Left;
+			end;
+			local function GetSectionHeaderHeight()
+				local TextHeight = (tonumber(Config.TextSize) or 11) + 9;
+				local IconHeight = (Config.Icon and tostring(Config.Icon) ~= "") and 25 or 20;
+
+				return math.max(20, TextHeight, IconHeight);
+			end;
 
 			local SectionFrame = Instance.new("Frame")
+			local SectionIcon = Instance.new("ImageLabel")
 			local SectionLabel = Instance.new("TextLabel")
 			local SectionCollapseIcon = Instance.new("ImageLabel")
 			local SectionHandler = Instance.new("Frame")
+			local SectionHeaderSpacer = Instance.new("Frame")
 			local UIStroke = Instance.new("UIStroke")
 			local UICorner = Instance.new("UICorner")
 			local UIListLayout = Instance.new("UIListLayout")
@@ -8071,22 +8160,37 @@ function ModernV2:CreateWindow(Config)
 			SectionFrame.Size = UDim2.new(1, -5, 0, 0)
 			SectionFrame.ZIndex = 9
 
+			SectionIcon.Name = ModernV2.RandomString();
+			SectionIcon.Parent = SectionFrame
+			SectionIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			SectionIcon.BackgroundTransparency = 1.000
+			SectionIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			SectionIcon.BorderSizePixel = 0
+			SectionIcon.Size = UDim2.new(0, 15, 0, 15)
+			SectionIcon.ZIndex = 11
+			SectionIcon.ImageColor3 = Config.IconColor
+			SectionIcon.ImageTransparency = Config.Icon and 0.500 or 1
+			SectionIcon.ScaleType = Enum.ScaleType.Fit
+			if Config.Icon then
+				ModernV2:SetIconMode(SectionIcon, Config.Icon);
+			end;
+
 			SectionLabel.Name = ModernV2.RandomString();
 			SectionLabel.Parent = SectionFrame
-			SectionLabel.AnchorPoint = Vector2.new(0.5, 0)
+			SectionLabel.AnchorPoint = Vector2.new(0, 0)
 			SectionLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 			SectionLabel.BackgroundTransparency = 1.000
 			SectionLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
 			SectionLabel.BorderSizePixel = 0
-			SectionLabel.Position = UDim2.new(0.5, 0, 0, 0)
-			SectionLabel.Size = UDim2.new(1, -35, 0, 15)
-			SectionLabel.ZIndex = 9
+			SectionLabel.Position = UDim2.new(0, 11, 0, 0)
+			SectionLabel.Size = UDim2.new(1, -46, 0, 15)
+			SectionLabel.ZIndex = 11
 			SectionLabel.Font = Enum.Font.GothamMedium
 			SectionLabel.Text = Config.Name
 			SectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-			SectionLabel.TextSize = 11.000
+			SectionLabel.TextSize = tonumber(Config.TextSize) or 11
 			SectionLabel.TextTransparency = 0.500
-			SectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+			SectionLabel.TextXAlignment = ResolveTextXAlignment(Config.TextXAlignment)
 			ModernV2:AddTextGradient(SectionLabel);
 
 			SectionCollapseIcon.Name = ModernV2.RandomString();
@@ -8096,10 +8200,10 @@ function ModernV2:CreateWindow(Config)
 			SectionCollapseIcon.BackgroundTransparency = 1.000
 			SectionCollapseIcon.BorderColor3 = Color3.fromRGB(0, 0, 0)
 			SectionCollapseIcon.BorderSizePixel = 0
-			SectionCollapseIcon.Position = UDim2.new(1, -8, 0, -4)
+			SectionCollapseIcon.Position = SectionBoxed and UDim2.new(1, -8, 0, 1) or UDim2.new(1, -8, 0, -4)
 			SectionCollapseIcon.Size = UDim2.new(0, 24, 0, 24)
 			SectionCollapseIcon.Visible = Config.Collapsible == true
-			SectionCollapseIcon.ZIndex = 10
+			SectionCollapseIcon.ZIndex = 12
 			ModernV2:SetIconMode(SectionCollapseIcon, "chevron-small-down")
 			SectionCollapseIcon.ImageColor3 = Color3.fromRGB(223, 223, 223)
 			SectionCollapseIcon.ImageTransparency = 0.500
@@ -8113,9 +8217,18 @@ function ModernV2:CreateWindow(Config)
 			SectionHandler.BorderColor3 = Color3.fromRGB(0, 0, 0)
 			SectionHandler.BorderSizePixel = 0
 			SectionHandler.ClipsDescendants = true
-			SectionHandler.Position = UDim2.new(0.5, 0, 0, 20)
-			SectionHandler.Size = UDim2.new(1, -10, 1, -21)
+			SectionHandler.Position = SectionBoxed and UDim2.new(0.5, 0, 0, 0) or UDim2.new(0.5, 0, 0, GetSectionHeaderHeight())
+			SectionHandler.Size = SectionBoxed and UDim2.new(1, -10, 1, 0) or UDim2.new(1, -10, 1, -GetSectionHeaderHeight() - 1)
 			SectionHandler.ZIndex = 9
+
+			SectionHeaderSpacer.Name = ModernV2.RandomString();
+			SectionHeaderSpacer.Parent = SectionHandler
+			SectionHeaderSpacer.BackgroundTransparency = 1.000
+			SectionHeaderSpacer.BorderSizePixel = 0
+			SectionHeaderSpacer.LayoutOrder = -100000
+			SectionHeaderSpacer.Size = UDim2.new(1, 0, 0, GetSectionHeaderHeight() + 4)
+			SectionHeaderSpacer.Visible = SectionBoxed
+			SectionHeaderSpacer.ZIndex = 9
 
 			UIStroke.Transparency = 0.650
 			UIStroke.Color = Color3.fromRGB(45, 48, 58)
@@ -8127,6 +8240,33 @@ function ModernV2:CreateWindow(Config)
 			UIListLayout.Parent = SectionHandler
 			UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+			local CollapseInput;
+			local function UpdateSectionHeaderLayout()
+				local HasIcon = Config.Icon ~= nil and tostring(Config.Icon) ~= "";
+				local HeaderY = SectionBoxed and 5 or 0;
+				local IconX = 11;
+				local LabelX = HasIcon and 32 or 11;
+				local RightPadding = Config.Collapsible == true and 38 or 11;
+
+				SectionIcon.Visible = HasIcon;
+				SectionIcon.Position = UDim2.new(0, IconX, 0, HeaderY);
+				SectionIcon.ImageColor3 = Config.IconColor;
+				SectionIcon.ImageTransparency = HasIcon and 0.500 or 1;
+				SectionLabel.TextSize = tonumber(Config.TextSize) or 11;
+				SectionLabel.Position = UDim2.new(0, LabelX, 0, HeaderY);
+				SectionLabel.Size = UDim2.new(1, -(LabelX + RightPadding), 0, math.max(15, SectionLabel.TextSize + 4));
+				SectionLabel.TextXAlignment = ResolveTextXAlignment(Config.TextXAlignment);
+				SectionCollapseIcon.Position = SectionBoxed and UDim2.new(1, -8, 0, 1) or UDim2.new(1, -8, 0, -4);
+				SectionHeaderSpacer.Size = UDim2.new(1, 0, 0, GetSectionHeaderHeight() + 4);
+				SectionHandler.Position = SectionBoxed and UDim2.new(0.5, 0, 0, 0) or UDim2.new(0.5, 0, 0, GetSectionHeaderHeight());
+				SectionHandler.Size = SectionBoxed and UDim2.new(1, -10, 1, 0) or UDim2.new(1, -10, 1, -GetSectionHeaderHeight() - 1);
+				if CollapseInput then
+					CollapseInput.Size = UDim2.new(1, 0, 0, GetSectionHeaderHeight());
+				end;
+			end;
+
+			UpdateSectionHeaderLayout();
 
 			local Section = ModernV2:RegisiterItem(SectionHandler , Tab.Signal);
 			Section.Collapsible = Config.Collapsible == true;
@@ -8143,10 +8283,11 @@ function ModernV2:CreateWindow(Config)
 				end;
 
 				local ContentHeight = UIListLayout.AbsoluteContentSize.Y;
-				local TargetHeight = 20;
+				local HeaderHeight = GetSectionHeaderHeight();
+				local TargetHeight = SectionBoxed and (HeaderHeight + 10) or HeaderHeight;
 
 				if not Section.Collapsed and ContentHeight > 1 then
-					TargetHeight = ContentHeight + 19.5;
+					TargetHeight = SectionBoxed and (ContentHeight + 10) or (ContentHeight + HeaderHeight - 0.5);
 				end;
 
 				ModernV2.PlayAnimate(SectionFrame , VSlowTween , {
@@ -8157,13 +8298,13 @@ function ModernV2:CreateWindow(Config)
 			local function RenderCollapsedState()
 				local ShowContent = IsSectionRendered and not Section.Collapsed;
 
-				SectionHandler.Visible = ShowContent;
+				SectionHandler.Visible = SectionBoxed and IsSectionRendered or ShowContent;
 				UIListLayout.Parent = SectionHandler;
 
 				if Section.Collapsible then
 					ModernV2.PlayAnimate(SectionCollapseIcon,SlowyTween,{
 						Rotation = Section.Collapsed and -90 or 0,
-						TextTransparency = IsSectionRendered and 0.500 or 1
+						ImageTransparency = IsSectionRendered and 0.500 or 1
 					})
 				end;
 
@@ -8196,7 +8337,10 @@ function ModernV2:CreateWindow(Config)
 			function Section:SetCollapsible(value)
 				Section.Collapsible = value == true;
 				Config.Collapsible = Section.Collapsible;
+				SectionBoxed = Section.Collapsible and Config.Box == true;
 				SectionCollapseIcon.Visible = Section.Collapsible;
+				SectionHeaderSpacer.Visible = SectionBoxed;
+				UpdateSectionHeaderLayout();
 
 				if not Section.Collapsible then
 					Section.Collapsed = false;
@@ -8207,17 +8351,65 @@ function ModernV2:CreateWindow(Config)
 				return Section;
 			end;
 
+			function Section:SetBox(value)
+				Config.Box = value == true;
+				SectionBoxed = Section.Collapsible and Config.Box == true;
+				SectionHeaderSpacer.Visible = SectionBoxed;
+				UpdateSectionHeaderLayout();
+				RenderCollapsedState();
+				return Section;
+			end;
+
+			function Section:GetBox()
+				return SectionBoxed;
+			end;
+
+			function Section:SetIcon(icon)
+				Config.Icon = icon;
+
+				if Config.Icon and tostring(Config.Icon) ~= "" then
+					ModernV2:SetIconMode(SectionIcon, Config.Icon);
+				end;
+
+				UpdateSectionHeaderLayout();
+				RenderCollapsedState();
+				return Section;
+			end;
+
+			function Section:SetIconColor(color)
+				Config.IconColor = color or Config.IconColor;
+				UpdateSectionHeaderLayout();
+				return Section;
+			end;
+
+			function Section:SetTextSize(size)
+				Config.TextSize = tonumber(size) or Config.TextSize;
+				UpdateSectionHeaderLayout();
+				RenderCollapsedState();
+				return Section;
+			end;
+
+			function Section:SetTextXAlignment(alignment)
+				Config.TextXAlignment = alignment or Config.TextXAlignment;
+				UpdateSectionHeaderLayout();
+				return Section;
+			end;
+
 			if Config.Collapsible then
-				local CollapseInput = ModernV2:CreateInput(SectionFrame , LPH_NO_VIRTUALIZE(function()
+				CollapseInput = ModernV2:CreateInput(SectionFrame , LPH_NO_VIRTUALIZE(function()
 					Section:ToggleCollapsed();
 				end));
 				CollapseInput.ZIndex = 12;
-				CollapseInput.Size = UDim2.new(1, 0, 0, 20);
+				CollapseInput.Size = UDim2.new(1, 0, 0, GetSectionHeaderHeight());
 			end;
 
 			Section.SetRender = LPH_NO_VIRTUALIZE(function(value)
 				IsSectionRendered = value == true;
 				if value then
+					ModernV2.PlayAnimate(SectionIcon,SlowyTween,{
+						ImageTransparency = (Config.Icon and tostring(Config.Icon) ~= "") and 0.500 or 1
+					})
+
 					ModernV2.PlayAnimate(SectionLabel,SlowyTween,{
 						TextTransparency = 0.500
 					})
@@ -8230,6 +8422,10 @@ function ModernV2:CreateWindow(Config)
 						Transparency = 0.650
 					})
 				else
+					ModernV2.PlayAnimate(SectionIcon,SlowyTween,{
+						ImageTransparency = 1
+					})
+
 					ModernV2.PlayAnimate(SectionLabel,SlowyTween,{
 						TextTransparency = 1
 					})
