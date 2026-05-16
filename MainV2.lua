@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.0]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.1]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -9183,12 +9183,17 @@ function ModernV2:CreateWindow(Config)
 
 	function Window:CreateHomeTab(Config)
 		Config = ModernV2:ProcessParams(Config or {}, {
-			Name = "Home",
+			Name = "Dashboard",
 			Title = nil,
-			Icon = "lucide:house",
+			Icon = "lucide:layout-dashboard",
 			Content = "",
 			SectionName = nil,
-			Type = "Single",
+			Type = "Double",
+			AutoSetup = true,
+			DiscordInvite = "",
+			SupportedExecutors = {},
+			UnsupportedExecutors = {},
+			Changelog = {},
 			Locked = false,
 			TextLocked = "Locked",
 		});
@@ -9203,7 +9208,7 @@ function ModernV2:CreateWindow(Config)
 
 		local Section = Tab:AddSection({
 			Name = Config.SectionName or Config.Title or Config.Name,
-			Position = "Center",
+			Position = Config.AutoSetup ~= false and "Left" or "Center",
 			Collapsible = Config.Collapsible == true,
 			Box = Config.Box == true,
 			Icon = Config.SectionIcon,
@@ -9211,7 +9216,220 @@ function ModernV2:CreateWindow(Config)
 
 		Tab.HomeSection = Section;
 
-		if tostring(Config.Content or "") ~= "" then
+		if Config.AutoSetup ~= false then
+			local Player = LocalPlayer;
+			local ExecutorName = "Roblox Studio";
+			local PlaceName = "Unknown Place";
+			local Region = "Unknown";
+			local TimeFunction = RunService:IsRunning() and time or os.clock;
+			local FrameTimes = {};
+			local StartedAt = TimeFunction();
+
+			pcall(function()
+				if identifyexecutor then
+					ExecutorName = tostring(select(1, identifyexecutor()));
+				end;
+			end);
+
+			pcall(function()
+				PlaceName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name;
+			end);
+
+			pcall(function()
+				Region = game:GetService("LocalizationService"):GetCountryRegionForPlayerAsync(Player);
+			end);
+
+			local function GetGreeting()
+				local Hour = os.date("*t").hour;
+
+				if Hour >= 4 and Hour < 12 then
+					return "Good Morning";
+				elseif Hour >= 12 and Hour < 19 then
+					return "How's Your Day Going?";
+				elseif Hour >= 19 and Hour <= 23 then
+					return "Sweet Dreams";
+				end;
+
+				return "You should be asleep";
+			end;
+
+			local function GetElapsed()
+				local Elapsed = math.max(0, TimeFunction() - StartedAt);
+
+				if Elapsed < 60 then
+					return tostring(math.floor(Elapsed)).."s";
+				elseif Elapsed < 3600 then
+					return tostring(math.floor(Elapsed / 60)).."m";
+				end;
+
+				return tostring(math.floor(Elapsed / 3600)).."h";
+			end;
+
+			Section:AddParagraph({
+				Name = "Welcome, "..tostring(Player.DisplayName),
+				Content = tostring(Config.Content ~= "" and Config.Content or (GetGreeting().." | @"..Player.Name)),
+			});
+
+			local StatusSection = Tab:AddSection({
+				Name = "Status",
+				Position = "Right",
+				Icon = "lucide:activity",
+			});
+
+			local ServerSection = Tab:AddSection({
+				Name = "Server",
+				Position = "Left",
+				Icon = "lucide:server",
+			});
+
+			local PlayerLabel = StatusSection:AddLabel({
+				Text = "Players: "..tostring(#Players:GetPlayers()).."/"..tostring(Players.MaxPlayers),
+			});
+
+			local RuntimeLabel = StatusSection:AddLabel({
+				Text = "Runtime: 0s",
+			});
+
+			local PerformanceLabel = StatusSection:AddLabel({
+				Text = "FPS: ... | Ping: ...",
+			});
+
+			local ExecutorStatus = "Unknown";
+
+			if table.find(Config.SupportedExecutors, ExecutorName) then
+				ExecutorStatus = "Supported";
+			elseif table.find(Config.UnsupportedExecutors, ExecutorName) then
+				ExecutorStatus = "Unsupported";
+			end;
+
+			StatusSection:AddParagraph({
+				Name = ExecutorName,
+				Content = "Executor: "..ExecutorStatus,
+			});
+
+			ServerSection:AddParagraph({
+				Name = PlaceName,
+				Content = "PlaceId: "..tostring(game.PlaceId).."\nJobId: "..tostring(game.JobId).."\nRegion: "..tostring(Region),
+			});
+
+			ServerSection:AddButton({
+				Name = "Copy Join Script",
+				Icon = "lucide:copy",
+				Callback = function()
+					local JoinScript = ('game:GetService("TeleportService"):TeleportToPlaceInstance(%s, "%s", game:GetService("Players").LocalPlayer)'):format(tostring(game.PlaceId), tostring(game.JobId));
+
+					if setclipboard then
+						setclipboard(JoinScript);
+					elseif toclipboard then
+						toclipboard(JoinScript);
+					elseif set_clipboard then
+						set_clipboard(JoinScript);
+					end;
+
+					Window:Notify({
+						Title = "Copied",
+						Content = "Join script copied.",
+						Duration = 2,
+						Icon = "lucide:check",
+					});
+				end,
+			});
+
+			if tostring(Config.DiscordInvite or "") ~= "" then
+				ServerSection:AddButton({
+					Name = "Copy Discord",
+					Icon = "lucide:message-circle",
+					Callback = function()
+						local Link = "https://discord.gg/"..tostring(Config.DiscordInvite);
+
+						if setclipboard then
+							setclipboard(Link);
+						elseif toclipboard then
+							toclipboard(Link);
+						elseif set_clipboard then
+							set_clipboard(Link);
+						end;
+
+						Window:Notify({
+							Title = "Copied",
+							Content = Link,
+							Duration = 2,
+							Icon = "lucide:check",
+						});
+					end,
+				});
+			end;
+
+			if typeof(Config.Changelog) == "table" and #Config.Changelog > 0 then
+				local ChangelogSection = Tab:AddSection({
+					Name = "Changelog",
+					Position = "Right",
+					Icon = "lucide:list-checks",
+					Collapsible = true,
+				});
+
+				for Index,Entry in ipairs(Config.Changelog) do
+					if Index > 4 then
+						break;
+					end;
+
+					if typeof(Entry) == "table" then
+						ChangelogSection:AddParagraph({
+							Name = tostring(Entry.Title or Entry.Name or ("Update "..Index)),
+							Content = tostring(Entry.Date and (Entry.Date.."\n") or "")..tostring(Entry.Description or Entry.Content or ""),
+						});
+					else
+						ChangelogSection:AddLabel({
+							Text = tostring(Entry),
+						});
+					end;
+				end;
+			end;
+
+			local Accumulator = 0;
+			local function UpdateHome(dt)
+				Accumulator = Accumulator + (dt or 0);
+				local Now = TimeFunction();
+
+				for Index = #FrameTimes, 1, -1 do
+					if FrameTimes[Index] < Now - 1 then
+						table.remove(FrameTimes, Index);
+					end;
+				end;
+
+				table.insert(FrameTimes, Now);
+
+				if Accumulator < 0.5 then
+					return;
+				end;
+
+				Accumulator = 0;
+
+				local Ping = "...";
+				pcall(function()
+					Ping = tostring(math.floor((Player:GetNetworkPing() * 1000) + 0.5)).."ms";
+				end);
+
+				if PlayerLabel.SetText then
+					PlayerLabel:SetText("Players: "..tostring(#Players:GetPlayers()).."/"..tostring(Players.MaxPlayers));
+				end;
+
+				if RuntimeLabel.SetText then
+					RuntimeLabel:SetText("Runtime: "..GetElapsed());
+				end;
+
+				if PerformanceLabel.SetText then
+					PerformanceLabel:SetText("FPS: "..tostring(#FrameTimes).." | Ping: "..Ping);
+				end;
+			end;
+
+			local HomeSignal = ModernV2:AddSignal(RunService.RenderStepped:Connect(UpdateHome));
+			table.insert(Window.OnDestroyCallbacks, function()
+				if HomeSignal then
+					HomeSignal:Disconnect();
+				end;
+			end);
+		elseif tostring(Config.Content or "") ~= "" then
 			Section:AddParagraph({
 				Name = Config.ParagraphName or Config.Title or Config.Name,
 				Content = Config.Content,
