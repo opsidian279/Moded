@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.0.9]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.0]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -3386,6 +3386,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		local Frame = Instance.new("Frame")
 		local UICorner_5 = Instance.new("UICorner")
 		local boxSize = 2;
+		local valueGap = 5;
 		local TooltipEnabled = Config.Tooltip == true;
 		local TooltipFrame;
 		local TooltipCorner;
@@ -3450,7 +3451,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		SlideMain.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		SlideMain.BorderSizePixel = 0
 		SlideMain.Position = UDim2.new(0, 0, 0.5, 0)
-		SlideMain.Size = UDim2.new(1, -((SliderLib.MaximumSize + 11)), 0, 18)
+		SlideMain.Size = UDim2.new(1, -((SliderLib.MaximumSize + boxSize + valueGap)), 0, 18)
 		SlideMain.ZIndex = ZINdex + 13
 
 		SlideFrame.Name = ModernV2.RandomString();
@@ -3539,7 +3540,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			TooltipLabel.Text = ValueLabel.Text;
 			local TextSize = TextService:GetTextSize(TooltipLabel.Text, TooltipLabel.TextSize, TooltipLabel.Font, Vector2.new(math.huge, math.huge));
 			TooltipFrame.Size = UDim2.fromOffset(math.max(34, TextSize.X + 14), 22);
-			TooltipFrame.Position = UDim2.fromOffset(Frame.AbsolutePosition.X + (Frame.AbsoluteSize.X / 2), Frame.AbsolutePosition.Y - 6);
+			TooltipFrame.Position = UDim2.fromOffset(Frame.AbsolutePosition.X + (Frame.AbsoluteSize.X / 2), Frame.AbsolutePosition.Y - 2);
 		end;
 
 		local function SetSliderTooltipRender(value)
@@ -9052,11 +9053,31 @@ function ModernV2:CreateWindow(Config)
 
 		local function UpdateSize()
 			local tabsHeight = Category.Open and (TabsLayout.AbsoluteContentSize.Y + (#Category.Tabs > 0 and 1 or 0)) or 0;
+			local rootHeight = 30 + (Category.Open and 5 or 0) + tabsHeight;
 
-			TabsHolder.Visible = Category.Open;
-			TabsHolder.Size = UDim2.new(1, 0, 0, tabsHeight);
-			CategoryRoot.Size = UDim2.new(1, -1, 0, 30 + (Category.Open and 5 or 0) + tabsHeight);
-			ChevronIcon.Rotation = Category.Open and 0 or -90;
+			if Category.Open then
+				TabsHolder.Visible = true;
+			end;
+
+			ModernV2.PlayAnimate(TabsHolder, VSlowTween, {
+				Size = UDim2.new(1, 0, 0, tabsHeight)
+			});
+
+			ModernV2.PlayAnimate(CategoryRoot, VSlowTween, {
+				Size = UDim2.new(1, -1, 0, rootHeight)
+			});
+
+			ModernV2.PlayAnimate(ChevronIcon, SlowyTween, {
+				Rotation = Category.Open and 0 or -90
+			});
+
+			if not Category.Open then
+				task.delay(0.2, function()
+					if not Category.Open then
+						TabsHolder.Visible = false;
+					end;
+				end);
+			end;
 		end;
 
 		function Category:SetOpen(value)
