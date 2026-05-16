@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.4]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.5]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -9466,12 +9466,33 @@ function ModernV2:CreateWindow(Config)
 				Button.BackgroundTransparency = 0.550;
 				SegmentCount += 1;
 				Button.LayoutOrder = SegmentCount;
+				local Inner = Instance.new("Frame");
+				local InnerLayout = Instance.new("UIListLayout");
+
+				Inner.Name = ModernV2.RandomString();
+				Inner.Parent = Button;
+				Inner.AnchorPoint = Vector2.new(0.5, 0.5);
+				Inner.BackgroundTransparency = 1;
+				Inner.BorderSizePixel = 0;
+				Inner.Position = UDim2.fromScale(0.5, 0.5);
+				Inner.Size = UDim2.new(1, -18, 1, 0);
+				Inner.ZIndex = 14;
+
+				InnerLayout.Parent = Inner;
+				InnerLayout.FillDirection = Enum.FillDirection.Horizontal;
+				InnerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center;
+				InnerLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
+				InnerLayout.SortOrder = Enum.SortOrder.LayoutOrder;
+				InnerLayout.Padding = UDim.new(0, 7);
+
 				local IconImage = MakeIcon(Button, Icon, 17, Color3.fromRGB(210, 210, 220));
-				IconImage.Position = UDim2.new(0.5, -54, 0.5, -8);
+				IconImage.Parent = Inner;
+				IconImage.LayoutOrder = 1;
 				local Label = MakeText(Button, Text, 13, true, 0.250);
-				Label.Position = UDim2.new(0, 42, 0, 0);
-				Label.Size = UDim2.new(1, -46, 1, 0);
-				Label.TextXAlignment = Enum.TextXAlignment.Center;
+				Label.Parent = Inner;
+				Label.LayoutOrder = 2;
+				Label.Size = UDim2.fromOffset(math.max(24, TextService:GetTextSize(tostring(Text), 13, Enum.Font.GothamBold, Vector2.new(math.huge, math.huge)).X), 18);
+				Label.TextXAlignment = Enum.TextXAlignment.Left;
 				SegmentButtons[Name] = {
 					Root = Button,
 					Icon = IconImage,
@@ -9588,17 +9609,17 @@ function ModernV2:CreateWindow(Config)
 				ExecutorStatus = "Your executor may not support this script.";
 				ExecutorColor = Color3.fromRGB(220, 70, 70);
 			end;
-			ExecutorCard.BackgroundColor3 = Color3.fromRGB(13, 17, 22);
-			ExecutorCard.BackgroundTransparency = 0.080;
+			ExecutorCard.BackgroundColor3 = ExecutorColor;
+			ExecutorCard.BackgroundTransparency = 0.180;
 			local ExecutorGradient = Instance.new("UIGradient");
 			ExecutorGradient.Color = ColorSequence.new({
-				ColorSequenceKeypoint.new(0, ExecutorColor:Lerp(Color3.fromRGB(0, 0, 0), 0.450)),
-				ColorSequenceKeypoint.new(0.45, Color3.fromRGB(13, 17, 22)),
-				ColorSequenceKeypoint.new(1, Color3.fromRGB(6, 8, 12)),
+				ColorSequenceKeypoint.new(0, ExecutorColor),
+				ColorSequenceKeypoint.new(0.58, Color3.fromRGB(13, 17, 22)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)),
 			});
 			ExecutorGradient.Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 0.180),
-				NumberSequenceKeypoint.new(0.55, 0.020),
+				NumberSequenceKeypoint.new(0, 0.080),
+				NumberSequenceKeypoint.new(0.55, 0),
 				NumberSequenceKeypoint.new(1, 0),
 			});
 			ExecutorGradient.Parent = ExecutorCard;
