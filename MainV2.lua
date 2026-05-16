@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.3]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.4]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -9194,6 +9194,7 @@ function ModernV2:CreateWindow(Config)
 			SupportedExecutors = {},
 			UnsupportedExecutors = {},
 			Changelog = {},
+			Segments = nil,
 			Locked = false,
 			TextLocked = "Locked",
 		});
@@ -9457,8 +9458,11 @@ function ModernV2:CreateWindow(Config)
 				end;
 			end;
 
+			local VisibleSegmentCount = 3;
+
 			local function MakeSegment(Name, Text, Icon)
-				local Button = MakePanel(Segments, UDim2.new(0.333, -10, 0, 34));
+				local WidthScale = 1 / math.max(VisibleSegmentCount, 1);
+				local Button = MakePanel(Segments, UDim2.new(WidthScale, -10, 0, 34));
 				Button.BackgroundTransparency = 0.550;
 				SegmentCount += 1;
 				Button.LayoutOrder = SegmentCount;
@@ -9478,9 +9482,33 @@ function ModernV2:CreateWindow(Config)
 				end);
 			end;
 
-			MakeSegment("Details", "Details And Info", "lucide:layout-grid");
-			MakeSegment("Script", "Script Changelog", "lucide:code-2");
-			MakeSegment("UI", "UI Changelog", "lucide:file-text");
+			local SegmentConfig = typeof(Config.Segments) == "table" and Config.Segments or {};
+			local DetailsSegment = SegmentConfig.Details or SegmentConfig[1] or {};
+			local ScriptSegment = SegmentConfig.Script or SegmentConfig[2] or {};
+			local UISegment = SegmentConfig.UI or SegmentConfig.Ui or SegmentConfig[3] or {};
+
+			local ShowDetailsSegment = DetailsSegment.Show ~= false and Config.ShowDetailsSegment ~= false;
+			local ShowScriptSegment = ScriptSegment.Show ~= false and Config.ShowScriptSegment ~= false;
+			local ShowUISegment = UISegment.Show ~= false and Config.ShowUISegment ~= false;
+
+			VisibleSegmentCount = (ShowDetailsSegment and 1 or 0) + (ShowScriptSegment and 1 or 0) + (ShowUISegment and 1 or 0);
+
+			if VisibleSegmentCount <= 0 then
+				ShowDetailsSegment = true;
+				VisibleSegmentCount = 1;
+			end;
+
+			if ShowDetailsSegment then
+				MakeSegment("Details", DetailsSegment.Text or DetailsSegment.Name or Config.DetailsText or "Details And Info", DetailsSegment.Icon or Config.DetailsIcon or "lucide:layout-grid");
+			end;
+
+			if ShowScriptSegment then
+				MakeSegment("Script", ScriptSegment.Text or ScriptSegment.Name or Config.ScriptText or "Script Changelog", ScriptSegment.Icon or Config.ScriptIcon or "lucide:code-2");
+			end;
+
+			if ShowUISegment then
+				MakeSegment("UI", UISegment.Text or UISegment.Name or Config.UIText or Config.UiText or "UI Changelog", UISegment.Icon or Config.UIIcon or Config.UiIcon or "lucide:file-text");
+			end;
 
 			local LeftColumn = Instance.new("Frame");
 			LeftColumn.Name = ModernV2.RandomString();
@@ -9552,7 +9580,7 @@ function ModernV2:CreateWindow(Config)
 
 			local ExecutorCard = MakePanel(RightColumn, UDim2.new(1, 0, 0, 92), UDim2.fromOffset(0, 0));
 			local ExecutorStatus = "Unknown";
-			local ExecutorColor = Color3.fromRGB(78, 127, 252);
+			local ExecutorColor = ModernV2.AccentColor;
 			if table.find(Config.SupportedExecutors, ExecutorName) then
 				ExecutorStatus = "Your executor seems to support this script.";
 				ExecutorColor = Color3.fromRGB(45, 180, 115);
@@ -9560,8 +9588,20 @@ function ModernV2:CreateWindow(Config)
 				ExecutorStatus = "Your executor may not support this script.";
 				ExecutorColor = Color3.fromRGB(220, 70, 70);
 			end;
-			ExecutorCard.BackgroundColor3 = ExecutorColor;
-			ExecutorCard.BackgroundTransparency = 0.650;
+			ExecutorCard.BackgroundColor3 = Color3.fromRGB(13, 17, 22);
+			ExecutorCard.BackgroundTransparency = 0.080;
+			local ExecutorGradient = Instance.new("UIGradient");
+			ExecutorGradient.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, ExecutorColor:Lerp(Color3.fromRGB(0, 0, 0), 0.450)),
+				ColorSequenceKeypoint.new(0.45, Color3.fromRGB(13, 17, 22)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(6, 8, 12)),
+			});
+			ExecutorGradient.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.180),
+				NumberSequenceKeypoint.new(0.55, 0.020),
+				NumberSequenceKeypoint.new(1, 0),
+			});
+			ExecutorGradient.Parent = ExecutorCard;
 			local ExecutorTitle = MakeText(ExecutorCard, ExecutorName, 17, true, 0);
 			ExecutorTitle.Position = UDim2.fromOffset(18, 18);
 			ExecutorTitle.Size = UDim2.new(1, -36, 0, 22);
