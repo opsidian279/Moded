@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.1]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.3]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -9206,6 +9206,514 @@ function ModernV2:CreateWindow(Config)
 			TextLocked = Config.TextLocked,
 		});
 
+		if Config.AutoSetup ~= false then
+			if not Tab.CustomRoot and Tab.Root then
+				Tab.CustomRoot = Instance.new("Frame");
+				Tab.CustomRoot.Name = ModernV2.RandomString();
+				Tab.CustomRoot.Parent = Tab.Root;
+				Tab.CustomRoot.BackgroundTransparency = 1;
+				Tab.CustomRoot.BorderSizePixel = 0;
+				Tab.CustomRoot.Position = UDim2.fromOffset(0, 0);
+				Tab.CustomRoot.Size = UDim2.fromScale(1, 1);
+				Tab.CustomRoot.ZIndex = 10;
+			end;
+
+			if not Tab.CustomRoot then
+				return CaseInsensitive(Tab);
+			end;
+
+			local Player = LocalPlayer;
+			local ExecutorName = "Roblox Studio";
+			local PlaceName = "Unknown Place";
+			local Region = "Unknown";
+			local TimeFunction = RunService:IsRunning() and time or os.clock;
+			local FrameTimes = {};
+			local StartedAt = TimeFunction();
+			local ActivePage = "Details";
+
+			pcall(function()
+				if identifyexecutor then
+					ExecutorName = tostring(select(1, identifyexecutor()));
+				end;
+			end);
+
+			pcall(function()
+				PlaceName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name;
+			end);
+
+			pcall(function()
+				Region = game:GetService("LocalizationService"):GetCountryRegionForPlayerAsync(Player);
+			end);
+
+			local function SetText(Object, Text)
+				if Object and Object.Parent then
+					Object.Text = tostring(Text or "");
+				end;
+			end;
+
+			local function AddCorner(Object, Radius)
+				local Corner = Instance.new("UICorner");
+				Corner.CornerRadius = UDim.new(0, Radius or 8);
+				Corner.Parent = Object;
+				return Corner;
+			end;
+
+			local function AddStroke(Object, Color, Transparency)
+				local Stroke = Instance.new("UIStroke");
+				Stroke.Color = Color or Color3.fromRGB(45, 48, 58);
+				Stroke.Transparency = Transparency or 0.650;
+				Stroke.Parent = Object;
+				return Stroke;
+			end;
+
+			local function MakeText(Parent, Text, Size, Bold, Transparency)
+				local Label = Instance.new("TextLabel");
+				Label.Name = ModernV2.RandomString();
+				Label.Parent = Parent;
+				Label.BackgroundTransparency = 1;
+				Label.BorderSizePixel = 0;
+				Label.Font = Bold and Enum.Font.GothamBold or Enum.Font.GothamMedium;
+				Label.Text = tostring(Text or "");
+				Label.TextColor3 = Color3.fromRGB(255, 255, 255);
+				Label.TextSize = Size or 12;
+				Label.TextTransparency = Transparency or 0;
+				Label.TextXAlignment = Enum.TextXAlignment.Left;
+				Label.TextYAlignment = Enum.TextYAlignment.Center;
+				Label.TextTruncate = Enum.TextTruncate.AtEnd;
+				Label.ZIndex = 14;
+				return Label;
+			end;
+
+			local function MakePanel(Parent, Size, Position)
+				local Panel = Instance.new("Frame");
+				Panel.Name = ModernV2.RandomString();
+				Panel.Parent = Parent;
+				Panel.BackgroundColor3 = Color3.fromRGB(13, 17, 22);
+				Panel.BackgroundTransparency = 0.100;
+				Panel.BorderSizePixel = 0;
+				Panel.ClipsDescendants = true;
+				Panel.Size = Size;
+				Panel.Position = Position or UDim2.fromOffset(0, 0);
+				Panel.ZIndex = 12;
+				AddCorner(Panel, 8);
+				AddStroke(Panel, Color3.fromRGB(45, 48, 58), 0.680);
+				return Panel;
+			end;
+
+			local function MakeIcon(Parent, Icon, Size, Color)
+				local Image = Instance.new("ImageLabel");
+				Image.Name = ModernV2.RandomString();
+				Image.Parent = Parent;
+				Image.BackgroundTransparency = 1;
+				Image.BorderSizePixel = 0;
+				Image.Size = UDim2.fromOffset(Size or 18, Size or 18);
+				Image.ScaleType = Enum.ScaleType.Fit;
+				Image.ImageColor3 = Color or Color3.fromRGB(255, 255, 255);
+				Image.ZIndex = 15;
+				ModernV2:SetIconMode(Image, Icon or "");
+				return Image;
+			end;
+
+			local function MakeButton(Parent, Text, Icon, Callback)
+				local Button = MakePanel(Parent, UDim2.fromOffset(0, 34));
+				Button.BackgroundTransparency = 0.250;
+				Button.Size = UDim2.new(1, 0, 0, 34);
+
+				local IconImage = MakeIcon(Button, Icon, 16, ModernV2.AccentColor);
+				IconImage.Position = UDim2.new(0, 12, 0.5, -8);
+
+				local Label = MakeText(Button, Text, 12, true, 0.050);
+				Label.Position = UDim2.new(0, 36, 0, 0);
+				Label.Size = UDim2.new(1, -44, 1, 0);
+
+				local Input = ModernV2:CreateInput(Button, Callback or EmptyFunction);
+				ModernV2:AddSignal(Input.MouseEnter:Connect(function()
+					ModernV2.PlayAnimate(Button, SlowyTween, { BackgroundTransparency = 0.080 });
+				end));
+				ModernV2:AddSignal(Input.MouseLeave:Connect(function()
+					ModernV2.PlayAnimate(Button, SlowyTween, { BackgroundTransparency = 0.250 });
+				end));
+
+				return Button;
+			end;
+
+			local function GetGreeting()
+				local Hour = os.date("*t").hour;
+				if Hour >= 4 and Hour < 12 then
+					return "Good Morning";
+				elseif Hour >= 12 and Hour < 19 then
+					return "How's Your Day Going?";
+				elseif Hour >= 19 and Hour <= 23 then
+					return "Sweet Dreams";
+				end;
+				return "You should be asleep";
+			end;
+
+			local function GetElapsed()
+				local Elapsed = math.max(0, TimeFunction() - StartedAt);
+				if Elapsed < 60 then
+					return tostring(math.floor(Elapsed)).."s";
+				elseif Elapsed < 3600 then
+					return tostring(math.floor(Elapsed / 60)).."m";
+				end;
+				return tostring(math.floor(Elapsed / 3600)).."h";
+			end;
+
+			local Root = Instance.new("Frame");
+			Root.Name = ModernV2.RandomString();
+			Root.Parent = Tab.CustomRoot;
+			Root.BackgroundTransparency = 1;
+			Root.BorderSizePixel = 0;
+			Root.Size = UDim2.new(1, -12, 0, 450);
+			Root.ZIndex = 11;
+			Tab.HomeRoot = Root;
+
+			local Profile = MakePanel(Root, UDim2.new(1, 0, 0, 74), UDim2.fromOffset(0, 4));
+			local AvatarBox = MakePanel(Profile, UDim2.fromOffset(58, 58), UDim2.fromOffset(10, 8));
+			AvatarBox.BackgroundTransparency = 0.200;
+
+			local Avatar = Instance.new("ImageLabel");
+			Avatar.Name = ModernV2.RandomString();
+			Avatar.Parent = AvatarBox;
+			Avatar.BackgroundTransparency = 1;
+			Avatar.BorderSizePixel = 0;
+			Avatar.Size = UDim2.fromScale(1, 1);
+			Avatar.Image = ModernV2.UserProfile or "";
+			Avatar.ZIndex = 15;
+			AddCorner(Avatar, 8);
+
+			local Welcome = MakeText(Profile, "Hello, "..tostring(Player.DisplayName), 18, true, 0);
+			Welcome.Position = UDim2.new(0, 82, 0, 17);
+			Welcome.Size = UDim2.new(1, -98, 0, 24);
+			ModernV2:AddTextGradient(Welcome);
+
+			local Username = MakeText(Profile, "@"..tostring(Player.Name), 12, false, 0.350);
+			Username.Position = UDim2.new(0, 82, 0, 41);
+			Username.Size = UDim2.new(1, -98, 0, 18);
+
+			local Segments = MakePanel(Root, UDim2.new(1, 0, 0, 48), UDim2.fromOffset(0, 86));
+			local SegmentLayout = Instance.new("UIListLayout");
+			SegmentLayout.Parent = Segments;
+			SegmentLayout.FillDirection = Enum.FillDirection.Horizontal;
+			SegmentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center;
+			SegmentLayout.VerticalAlignment = Enum.VerticalAlignment.Center;
+			SegmentLayout.SortOrder = Enum.SortOrder.LayoutOrder;
+			SegmentLayout.Padding = UDim.new(0, 8);
+
+			local ContentHolder = Instance.new("Frame");
+			ContentHolder.Name = ModernV2.RandomString();
+			ContentHolder.Parent = Root;
+			ContentHolder.BackgroundTransparency = 1;
+			ContentHolder.BorderSizePixel = 0;
+			ContentHolder.Position = UDim2.fromOffset(0, 144);
+			ContentHolder.Size = UDim2.new(1, 0, 1, -144);
+			ContentHolder.ZIndex = 11;
+
+			local DetailsPage = Instance.new("Frame");
+			DetailsPage.Name = ModernV2.RandomString();
+			DetailsPage.Parent = ContentHolder;
+			DetailsPage.BackgroundTransparency = 1;
+			DetailsPage.BorderSizePixel = 0;
+			DetailsPage.Size = UDim2.fromScale(1, 1);
+			DetailsPage.ZIndex = 11;
+
+			local ScriptPage = Instance.new("Frame");
+			ScriptPage.Name = ModernV2.RandomString();
+			ScriptPage.Parent = ContentHolder;
+			ScriptPage.BackgroundTransparency = 1;
+			ScriptPage.BorderSizePixel = 0;
+			ScriptPage.Size = UDim2.fromScale(1, 1);
+			ScriptPage.Visible = false;
+			ScriptPage.ZIndex = 11;
+
+			local UiPage = Instance.new("Frame");
+			UiPage.Name = ModernV2.RandomString();
+			UiPage.Parent = ContentHolder;
+			UiPage.BackgroundTransparency = 1;
+			UiPage.BorderSizePixel = 0;
+			UiPage.Size = UDim2.fromScale(1, 1);
+			UiPage.Visible = false;
+			UiPage.ZIndex = 11;
+
+			local SegmentButtons = {};
+			local SegmentCount = 0;
+			local Pages = {
+				Details = DetailsPage,
+				Script = ScriptPage,
+				UI = UiPage,
+			};
+
+			local function SelectPage(PageName)
+				ActivePage = PageName;
+				for Name,Page in next, Pages do
+					Page.Visible = Name == PageName;
+				end;
+				for Name,Button in next, SegmentButtons do
+					ModernV2.PlayAnimate(Button.Root, SlowyTween, {
+						BackgroundTransparency = Name == PageName and 0.080 or 0.550
+					});
+					Button.Icon.ImageColor3 = Name == PageName and ModernV2.AccentColor or Color3.fromRGB(210, 210, 220);
+					Button.Label.TextTransparency = Name == PageName and 0 or 0.250;
+				end;
+			end;
+
+			local function MakeSegment(Name, Text, Icon)
+				local Button = MakePanel(Segments, UDim2.new(0.333, -10, 0, 34));
+				Button.BackgroundTransparency = 0.550;
+				SegmentCount += 1;
+				Button.LayoutOrder = SegmentCount;
+				local IconImage = MakeIcon(Button, Icon, 17, Color3.fromRGB(210, 210, 220));
+				IconImage.Position = UDim2.new(0.5, -54, 0.5, -8);
+				local Label = MakeText(Button, Text, 13, true, 0.250);
+				Label.Position = UDim2.new(0, 42, 0, 0);
+				Label.Size = UDim2.new(1, -46, 1, 0);
+				Label.TextXAlignment = Enum.TextXAlignment.Center;
+				SegmentButtons[Name] = {
+					Root = Button,
+					Icon = IconImage,
+					Label = Label,
+				};
+				ModernV2:CreateInput(Button, function()
+					SelectPage(Name);
+				end);
+			end;
+
+			MakeSegment("Details", "Details And Info", "lucide:layout-grid");
+			MakeSegment("Script", "Script Changelog", "lucide:code-2");
+			MakeSegment("UI", "UI Changelog", "lucide:file-text");
+
+			local LeftColumn = Instance.new("Frame");
+			LeftColumn.Name = ModernV2.RandomString();
+			LeftColumn.Parent = DetailsPage;
+			LeftColumn.BackgroundTransparency = 1;
+			LeftColumn.BorderSizePixel = 0;
+			LeftColumn.Size = UDim2.new(0.52, -5, 1, 0);
+			LeftColumn.ZIndex = 11;
+
+			local RightColumn = Instance.new("Frame");
+			RightColumn.Name = ModernV2.RandomString();
+			RightColumn.Parent = DetailsPage;
+			RightColumn.BackgroundTransparency = 1;
+			RightColumn.BorderSizePixel = 0;
+			RightColumn.Position = UDim2.new(0.52, 5, 0, 0);
+			RightColumn.Size = UDim2.new(0.48, -5, 1, 0);
+			RightColumn.ZIndex = 11;
+
+			local ServerCard = MakePanel(LeftColumn, UDim2.new(1, 0, 0, 154), UDim2.fromOffset(0, 0));
+			local ServerTitle = MakeText(ServerCard, "Server", 15, true, 0);
+			ServerTitle.Position = UDim2.fromOffset(16, 14);
+			ServerTitle.Size = UDim2.new(1, -32, 0, 18);
+			local ServerSub = MakeText(ServerCard, "Information on the session you're currently in", 10, false, 0.480);
+			ServerSub.Position = UDim2.fromOffset(16, 32);
+			ServerSub.Size = UDim2.new(1, -32, 0, 14);
+
+			local StatLabels = {};
+			local function MakeStat(Parent, Title, Value, X, Y, W)
+				local Stat = MakePanel(Parent, UDim2.new(W, -6, 0, 42), UDim2.new(X, 3, 0, Y));
+				Stat.BackgroundTransparency = 0.250;
+				local T = MakeText(Stat, Title, 10, true, 0.130);
+				T.Position = UDim2.fromOffset(10, 7);
+				T.Size = UDim2.new(1, -20, 0, 13);
+				local V = MakeText(Stat, Value, 10, false, 0.350);
+				V.Position = UDim2.fromOffset(10, 21);
+				V.Size = UDim2.new(1, -20, 0, 13);
+				return V;
+			end;
+
+			StatLabels.Players = MakeStat(ServerCard, "Players", "0 playing", 0, 58, 0.5);
+			StatLabels.Capacity = MakeStat(ServerCard, "Maximum Players", tostring(Players.MaxPlayers).." can join", 0.5, 58, 0.5);
+			StatLabels.Latency = MakeStat(ServerCard, "Latency", "...", 0, 104, 0.33);
+			StatLabels.Region = MakeStat(ServerCard, "Server Region", tostring(Region), 0.33, 104, 0.34);
+			StatLabels.Runtime = MakeStat(ServerCard, "In server for", "0s", 0.67, 104, 0.33);
+
+			local DiscordCard = MakePanel(LeftColumn, UDim2.new(1, 0, 0, 68), UDim2.fromOffset(0, 164));
+			DiscordCard.BackgroundColor3 = ModernV2.AccentColor;
+			DiscordCard.BackgroundTransparency = 0.180;
+			local DiscordGradient = Instance.new("UIGradient");
+			DiscordGradient.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, ModernV2.AccentColor),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(13, 17, 22)),
+			});
+			DiscordGradient.Parent = DiscordCard;
+			local DiscordTitle = MakeText(DiscordCard, "Discord", 20, true, 0);
+			DiscordTitle.Position = UDim2.fromOffset(18, 12);
+			DiscordTitle.Size = UDim2.new(1, -36, 0, 25);
+			local DiscordSub = MakeText(DiscordCard, tostring(Config.DiscordInvite or "") ~= "" and "Tap to copy Discord invite" or "No Discord invite configured", 12, false, 0.250);
+			DiscordSub.Position = UDim2.fromOffset(18, 38);
+			DiscordSub.Size = UDim2.new(1, -36, 0, 18);
+			ModernV2:CreateInput(DiscordCard, function()
+				if tostring(Config.DiscordInvite or "") == "" then
+					return;
+				end;
+				local Link = "https://discord.gg/"..tostring(Config.DiscordInvite);
+				if setclipboard then setclipboard(Link); elseif toclipboard then toclipboard(Link); elseif set_clipboard then set_clipboard(Link); end;
+				Window:Notify({ Title = "Copied", Content = Link, Duration = 2, Icon = "lucide:check" });
+			end);
+
+			local ExecutorCard = MakePanel(RightColumn, UDim2.new(1, 0, 0, 92), UDim2.fromOffset(0, 0));
+			local ExecutorStatus = "Unknown";
+			local ExecutorColor = Color3.fromRGB(78, 127, 252);
+			if table.find(Config.SupportedExecutors, ExecutorName) then
+				ExecutorStatus = "Your executor seems to support this script.";
+				ExecutorColor = Color3.fromRGB(45, 180, 115);
+			elseif table.find(Config.UnsupportedExecutors, ExecutorName) then
+				ExecutorStatus = "Your executor may not support this script.";
+				ExecutorColor = Color3.fromRGB(220, 70, 70);
+			end;
+			ExecutorCard.BackgroundColor3 = ExecutorColor;
+			ExecutorCard.BackgroundTransparency = 0.650;
+			local ExecutorTitle = MakeText(ExecutorCard, ExecutorName, 17, true, 0);
+			ExecutorTitle.Position = UDim2.fromOffset(18, 18);
+			ExecutorTitle.Size = UDim2.new(1, -36, 0, 22);
+			local ExecutorSub = MakeText(ExecutorCard, ExecutorStatus, 12, false, 0.150);
+			ExecutorSub.Position = UDim2.fromOffset(18, 43);
+			ExecutorSub.Size = UDim2.new(1, -36, 0, 18);
+
+			local FriendsCard = MakePanel(RightColumn, UDim2.new(1, 0, 0, 166), UDim2.fromOffset(0, 102));
+			local FriendsTitle = MakeText(FriendsCard, "Friends", 16, true, 0);
+			FriendsTitle.Position = UDim2.fromOffset(16, 12);
+			FriendsTitle.Size = UDim2.new(1, -32, 0, 20);
+			local FriendsSub = MakeText(FriendsCard, "Find out what your friends are currently doing", 10, false, 0.480);
+			FriendsSub.Position = UDim2.fromOffset(16, 32);
+			FriendsSub.Size = UDim2.new(1, -32, 0, 14);
+			local FriendLabels = {};
+			FriendLabels.InServer = MakeStat(FriendsCard, "In Server", "...", 0, 58, 0.5);
+			FriendLabels.Offline = MakeStat(FriendsCard, "Offline", "...", 0.5, 58, 0.5);
+			FriendLabels.Online = MakeStat(FriendsCard, "Online", "...", 0, 104, 0.5);
+			FriendLabels.All = MakeStat(FriendsCard, "All", "...", 0.5, 104, 0.5);
+
+			local function FillChangelog(Page, Entries, EmptyText)
+				local Holder = MakePanel(Page, UDim2.new(1, 0, 1, 0), UDim2.fromOffset(0, 0));
+				local Layout = Instance.new("UIListLayout");
+				Layout.Parent = Holder;
+				Layout.SortOrder = Enum.SortOrder.LayoutOrder;
+				Layout.Padding = UDim.new(0, 8);
+
+				local Padding = Instance.new("UIPadding");
+				Padding.Parent = Holder;
+				Padding.PaddingTop = UDim.new(0, 12);
+				Padding.PaddingLeft = UDim.new(0, 12);
+				Padding.PaddingRight = UDim.new(0, 12);
+
+				if typeof(Entries) ~= "table" or #Entries <= 0 then
+					local Empty = MakeText(Holder, EmptyText, 13, false, 0.250);
+					Empty.Size = UDim2.new(1, 0, 0, 26);
+					return;
+				end;
+
+				for Index,Entry in ipairs(Entries) do
+					local Item = MakePanel(Holder, UDim2.new(1, 0, 0, 64));
+					Item.LayoutOrder = Index;
+					local Title = MakeText(Item, tostring(Entry.Title or Entry.Name or ("Update "..Index)), 14, true, 0);
+					Title.Position = UDim2.fromOffset(14, 10);
+					Title.Size = UDim2.new(1, -28, 0, 18);
+					local Desc = MakeText(Item, tostring(Entry.Description or Entry.Content or Entry.Date or ""), 11, false, 0.300);
+					Desc.Position = UDim2.fromOffset(14, 31);
+					Desc.Size = UDim2.new(1, -28, 0, 20);
+				end;
+			end;
+
+			FillChangelog(ScriptPage, Config.ScriptChangelog or Config.Changelog, "No script changelog.");
+			FillChangelog(UiPage, Config.UIChangelog or Config.UiChangelog, "No UI changelog.");
+
+			local FriendCache = {
+				All = "...",
+				Online = "...",
+				Offline = "...",
+				InServer = "...",
+				Cooldown = 0,
+			};
+
+			local function UpdateFriends()
+				if FriendCache.Cooldown > 0 then
+					FriendCache.Cooldown -= 1;
+					return;
+				end;
+
+				FriendCache.Cooldown = 30;
+
+				task.spawn(function()
+					local OnlineFriends = 0;
+					local TotalFriends = 0;
+					local InServer = 0;
+
+					pcall(function()
+						OnlineFriends = #Player:GetFriendsOnline();
+					end);
+
+					pcall(function()
+						local Pages = Players:GetFriendsAsync(Player.UserId);
+						while true do
+							for _,Data in ipairs(Pages:GetCurrentPage()) do
+								TotalFriends += 1;
+								if Players:FindFirstChild(Data.Username) then
+									InServer += 1;
+								end;
+							end;
+							if Pages.IsFinished then
+								break;
+							end;
+							Pages:AdvanceToNextPageAsync();
+						end;
+					end);
+
+					FriendCache.All = tostring(TotalFriends).." friends";
+					FriendCache.Online = tostring(OnlineFriends).." friends";
+					FriendCache.Offline = tostring(math.max(TotalFriends - OnlineFriends, 0)).." friends";
+					FriendCache.InServer = InServer > 0 and tostring(InServer).." friends" or "no friends";
+				end);
+			end;
+
+			local Accumulator = 0;
+			local function UpdateHome(dt)
+				local Now = TimeFunction();
+				for Index = #FrameTimes, 1, -1 do
+					if FrameTimes[Index] < Now - 1 then
+						table.remove(FrameTimes, Index);
+					end;
+				end;
+				table.insert(FrameTimes, Now);
+
+				Accumulator += dt or 0;
+				if Accumulator < 0.5 then
+					return;
+				end;
+				Accumulator = 0;
+
+				local Ping = "...";
+				pcall(function()
+					Ping = tostring(math.floor((Player:GetNetworkPing() * 1000) + 0.5)).."ms";
+				end);
+
+				SetText(Welcome, "Hello, "..tostring(Player.DisplayName));
+				SetText(Username, GetGreeting().." | @"..tostring(Player.Name));
+				SetText(StatLabels.Players, tostring(#Players:GetPlayers()).." playing");
+				SetText(StatLabels.Capacity, tostring(Players.MaxPlayers).." can join");
+				SetText(StatLabels.Latency, Ping);
+				SetText(StatLabels.Runtime, GetElapsed());
+				SetText(FriendLabels.InServer, FriendCache.InServer);
+				SetText(FriendLabels.Offline, FriendCache.Offline);
+				SetText(FriendLabels.Online, FriendCache.Online);
+				SetText(FriendLabels.All, FriendCache.All);
+				UpdateFriends();
+			end;
+
+			SelectPage("Details");
+
+			local HomeSignal = ModernV2:AddSignal(RunService.RenderStepped:Connect(UpdateHome));
+			table.insert(Window.OnDestroyCallbacks, function()
+				if HomeSignal then
+					HomeSignal:Disconnect();
+				end;
+			end);
+
+			function Tab:GetHomeSection()
+				return Tab.HomeRoot;
+			end;
+
+			return CaseInsensitive(Tab);
+		end;
+
 		local Section = Tab:AddSection({
 			Name = Config.SectionName or Config.Title or Config.Name,
 			Position = Config.AutoSetup ~= false and "Left" or "Center",
@@ -9663,6 +10171,12 @@ function ModernV2:CreateWindow(Config)
 		UIListLayout_4.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		UIListLayout_4.SortOrder = Enum.SortOrder.LayoutOrder
 		UIListLayout_4.Padding = UDim.new(0, 5)
+
+		Tab.Root = TabFrame;
+		Tab.LeftScroll = LeftScroll;
+		Tab.RightScroll = RightScroll;
+		Tab.CenterScroll = CenterScroll;
+		Tab.CustomRoot = FlowScroll;
 
 		LeftScroll.Visible = false
 		RightScroll.Visible = false
