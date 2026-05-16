@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.5]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.6]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -9491,8 +9491,9 @@ function ModernV2:CreateWindow(Config)
 				local Label = MakeText(Button, Text, 13, true, 0.250);
 				Label.Parent = Inner;
 				Label.LayoutOrder = 2;
-				Label.Size = UDim2.fromOffset(math.max(24, TextService:GetTextSize(tostring(Text), 13, Enum.Font.GothamBold, Vector2.new(math.huge, math.huge)).X), 18);
+				Label.Size = UDim2.new(0, math.max(24, TextService:GetTextSize(tostring(Text), 13, Enum.Font.GothamBold, Vector2.new(math.huge, math.huge)).X + 2), 0, 18);
 				Label.TextXAlignment = Enum.TextXAlignment.Left;
+				Label.TextTruncate = Enum.TextTruncate.None;
 				SegmentButtons[Name] = {
 					Root = Button,
 					Icon = IconImage,
@@ -9501,6 +9502,17 @@ function ModernV2:CreateWindow(Config)
 				ModernV2:CreateInput(Button, function()
 					SelectPage(Name);
 				end);
+
+				local function FitSegmentText()
+					local AvailableWidth = math.max(20, Inner.AbsoluteSize.X - IconImage.AbsoluteSize.X - InnerLayout.Padding.Offset);
+					local TextWidth = TextService:GetTextSize(Label.Text, Label.TextSize, Label.Font, Vector2.new(math.huge, math.huge)).X + 4;
+
+					Label.Size = UDim2.new(0, math.min(TextWidth, AvailableWidth), 0, 18);
+					Label.TextTruncate = TextWidth > AvailableWidth and Enum.TextTruncate.AtEnd or Enum.TextTruncate.None;
+				end;
+
+				ModernV2:AddSignal(Inner:GetPropertyChangedSignal("AbsoluteSize"):Connect(FitSegmentText))
+				task.defer(FitSegmentText);
 			end;
 
 			local SegmentConfig = typeof(Config.Segments) == "table" and Config.Segments or {};
