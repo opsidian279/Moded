@@ -81,45 +81,12 @@ local function _antiBypass()
 
     AntiBypassOk = not _bypassFlag
 end
+local AntiDumpEnabled = false
 
-_antiBypass()
-
-task.spawn(function()
-    local conn
-
-    conn = RunService.Heartbeat:Connect(function()
-        if _bypassFlag then
-            conn:Disconnect()
-            return
-        end
-
-        if pcall ~= _realPcall then
-            conn:Disconnect()
-            _panic()
-            return
-        end
-
-        local isCClosure = safeGet(function()
-            return iscclosure
-        end)
-
-        if isCClosure and not isCClosure(game.HttpGet) then
-            conn:Disconnect()
-            _panic()
-            return
-        end
-
-        local genv = safeGet(function()
-            return getgenv and getgenv()
-        end)
-
-        if genv and genv.loadstring and genv.loadstring ~= _realLoadstring then
-            conn:Disconnect()
-            _panic()
-            return
-        end
-    end)
-end)
+local function _startAntiDump()
+    -- perform anti-dump/bypass checks once at startup
+    _antiBypass()
+end
 
 function SafeJsonDecode(body)
     local ok, result = _realPcall(function()
@@ -181,7 +148,8 @@ Modern.Options = {
     Keyless = nil,
     KeylessUI = false,
     Blur = true,
-    Draggable = true
+    Draggable = true,
+    AntiDump = false
 }
 
 -- theme
@@ -241,6 +209,11 @@ function Modern:Setup(config)
         end
     end
     mergeConfig(self, config)
+    -- enable anti-dump if requested in config
+    if type(self.Options) == "table" and self.Options.AntiDump then
+        AntiDumpEnabled = true
+        _startAntiDump()
+    end
     -- Auto-setup PandaDevelopment if provided
     if config.PandaDevelopment then
         self:SetupPanda(config.PandaDevelopment)
