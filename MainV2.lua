@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.6]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.7]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -9285,6 +9285,29 @@ function ModernV2:CreateWindow(Config)
 				return Label;
 			end;
 
+			local function FitTextToWidth(Label, BaseSize, MinSize, Wrapped)
+				BaseSize = BaseSize or Label.TextSize;
+				MinSize = MinSize or 8;
+				Label.TextSize = BaseSize;
+				task.defer(function()
+					if not Label or not Label.Parent then
+						return;
+					end;
+
+					local Width = math.max(1, Label.AbsoluteSize.X);
+					local Height = math.max(1, Label.AbsoluteSize.Y);
+					local Size = BaseSize;
+					while Size > MinSize do
+						local Bounds = TextService:GetTextSize(Label.Text, Size, Label.Font, Wrapped and Vector2.new(Width, math.huge) or Vector2.new(math.huge, Height));
+						if Bounds.X <= Width and (not Wrapped or Bounds.Y <= Height) then
+							break;
+						end;
+						Size -= 1;
+					end;
+					Label.TextSize = Size;
+				end);
+			end;
+
 			local function MakePanel(Parent, Size, Position)
 				local Panel = Instance.new("Frame");
 				Panel.Name = ModernV2.RandomString();
@@ -9640,7 +9663,11 @@ function ModernV2:CreateWindow(Config)
 			ExecutorTitle.Size = UDim2.new(1, -36, 0, 22);
 			local ExecutorSub = MakeText(ExecutorCard, ExecutorStatus, 12, false, 0.150);
 			ExecutorSub.Position = UDim2.fromOffset(18, 43);
-			ExecutorSub.Size = UDim2.new(1, -36, 0, 18);
+			ExecutorSub.Size = UDim2.new(1, -36, 0, 34);
+			ExecutorSub.TextWrapped = true;
+			ExecutorSub.TextTruncate = Enum.TextTruncate.None;
+			ExecutorSub.TextYAlignment = Enum.TextYAlignment.Top;
+			FitTextToWidth(ExecutorSub, 12, 8, true);
 
 			local FriendsCard = MakePanel(RightColumn, UDim2.new(1, 0, 0, 166), UDim2.fromOffset(0, 102));
 			local FriendsTitle = MakeText(FriendsCard, "Friends", 16, true, 0);
