@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.7]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.8]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -12799,6 +12799,7 @@ function ModernV2:CreateWindow(Config)
 		Config = ModernV2:ProcessParams(Config , {
 			Title = "Dialog",
 			Content = "",
+			Icon = "lucide:message-square",
 			Buttons = {},
 			Callback = EmptyFunction,
 		});
@@ -12811,10 +12812,21 @@ function ModernV2:CreateWindow(Config)
 		local Panel = Instance.new("Frame")
 		local UICorner = Instance.new("UICorner")
 		local UIStroke = Instance.new("UIStroke")
+		local AccentBar = Instance.new("Frame")
+		local AccentCorner = Instance.new("UICorner")
+		local IconHolder = Instance.new("Frame")
+		local IconCorner = Instance.new("UICorner")
+		local IconStroke = Instance.new("UIStroke")
+		local DialogIcon = Instance.new("ImageLabel")
 		local Title = Instance.new("TextLabel")
 		local Content = Instance.new("TextLabel")
+		local Divider = Instance.new("Frame")
 		local ButtonHolder = Instance.new("Frame")
 		local ButtonLayout = Instance.new("UIListLayout")
+		local ContentHeight = math.clamp(TextService:GetTextSize(tostring(Config.Content or ""), 13, Enum.Font.GothamMedium, Vector2.new(310, math.huge)).Y + 4, 38, 76);
+		local PanelHeight = math.max(188, 132 + ContentHeight);
+		local PanelClosedSize = UDim2.new(0, 365, 0, PanelHeight - 18);
+		local PanelOpenSize = UDim2.new(0, 392, 0, PanelHeight);
 
 		Overlay.Name = ModernV2.RandomString();
 		Overlay.Parent = WindowFrame
@@ -12829,16 +12841,16 @@ function ModernV2:CreateWindow(Config)
 		Panel.Name = ModernV2.RandomString();
 		Panel.Parent = Overlay
 		Panel.AnchorPoint = Vector2.new(0.5, 0.5)
-		Panel.BackgroundColor3 = Color3.fromRGB(20, 22, 27)
+		Panel.BackgroundColor3 = Color3.fromRGB(13, 17, 22)
 		Panel.BackgroundTransparency = 1
 		Panel.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Panel.BorderSizePixel = 0
 		Panel.ClipsDescendants = true
 		Panel.Position = UDim2.fromScale(0.5, 0.5)
-		Panel.Size = UDim2.new(0, 335, 0, 145)
+		Panel.Size = PanelClosedSize
 		Panel.ZIndex = 181
 
-		UICorner.CornerRadius = UDim.new(0, 10)
+		UICorner.CornerRadius = UDim.new(0, 12)
 		UICorner.Parent = Panel
 
 		UIStroke.Transparency = 1
@@ -12847,19 +12859,59 @@ function ModernV2:CreateWindow(Config)
 
 		local Shadow = ModernV2:CreateShadow(Panel);
 
+		AccentBar.Name = ModernV2.RandomString();
+		AccentBar.Parent = Panel
+		AccentBar.BackgroundColor3 = ModernV2.AccentColor
+		AccentBar.BackgroundTransparency = 1
+		AccentBar.BorderSizePixel = 0
+		AccentBar.Position = UDim2.fromOffset(0, 0)
+		AccentBar.Size = UDim2.new(1, 0, 0, 3)
+		AccentBar.ZIndex = 182
+
+		AccentCorner.CornerRadius = UDim.new(0, 12)
+		AccentCorner.Parent = AccentBar
+
+		IconHolder.Name = ModernV2.RandomString();
+		IconHolder.Parent = Panel
+		IconHolder.BackgroundColor3 = ModernV2.AccentColor
+		IconHolder.BackgroundTransparency = 1
+		IconHolder.BorderSizePixel = 0
+		IconHolder.Position = UDim2.fromOffset(18, 18)
+		IconHolder.Size = UDim2.fromOffset(34, 34)
+		IconHolder.ZIndex = 182
+
+		IconCorner.CornerRadius = UDim.new(0, 8)
+		IconCorner.Parent = IconHolder
+
+		IconStroke.Color = ModernV2.AccentColor
+		IconStroke.Transparency = 1
+		IconStroke.Parent = IconHolder
+
+		DialogIcon.Name = ModernV2.RandomString();
+		DialogIcon.Parent = IconHolder
+		DialogIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+		DialogIcon.BackgroundTransparency = 1
+		DialogIcon.BorderSizePixel = 0
+		DialogIcon.Position = UDim2.fromScale(0.5, 0.5)
+		DialogIcon.Size = UDim2.fromOffset(18, 18)
+		DialogIcon.ZIndex = 183
+		DialogIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+		DialogIcon.ImageTransparency = 1
+		ModernV2:SetIconMode(DialogIcon, Config.Icon)
+
 		Title.Name = ModernV2.RandomString();
 		Title.Parent = Panel
 		Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		Title.BackgroundTransparency = 1
 		Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Title.BorderSizePixel = 0
-		Title.Position = UDim2.new(0, 18, 0, 15)
-		Title.Size = UDim2.new(1, -36, 0, 20)
-		Title.ZIndex = 182
+		Title.Position = UDim2.new(0, 64, 0, 18)
+		Title.Size = UDim2.new(1, -82, 0, 21)
+		Title.ZIndex = 183
 		Title.Font = Enum.Font.GothamBold
 		Title.Text = Config.Title
 		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Title.TextSize = 15
+		Title.TextSize = 16
 		Title.TextTransparency = 1
 		Title.TextXAlignment = Enum.TextXAlignment.Left
 		ModernV2:AddTextGradient(Title);
@@ -12870,9 +12922,9 @@ function ModernV2:CreateWindow(Config)
 		Content.BackgroundTransparency = 1
 		Content.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Content.BorderSizePixel = 0
-		Content.Position = UDim2.new(0, 18, 0, 43)
-		Content.Size = UDim2.new(1, -36, 1, -93)
-		Content.ZIndex = 182
+		Content.Position = UDim2.new(0, 64, 0, 43)
+		Content.Size = UDim2.new(1, -82, 0, ContentHeight)
+		Content.ZIndex = 183
 		Content.Font = Enum.Font.GothamMedium
 		Content.Text = Config.Content
 		Content.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -12882,6 +12934,15 @@ function ModernV2:CreateWindow(Config)
 		Content.TextXAlignment = Enum.TextXAlignment.Left
 		Content.TextYAlignment = Enum.TextYAlignment.Top
 
+		Divider.Name = ModernV2.RandomString();
+		Divider.Parent = Panel
+		Divider.BackgroundColor3 = Color3.fromRGB(45, 48, 58)
+		Divider.BackgroundTransparency = 1
+		Divider.BorderSizePixel = 0
+		Divider.Position = UDim2.new(0, 14, 1, -54)
+		Divider.Size = UDim2.new(1, -28, 0, 1)
+		Divider.ZIndex = 182
+
 		ButtonHolder.Name = ModernV2.RandomString();
 		ButtonHolder.Parent = Panel
 		ButtonHolder.AnchorPoint = Vector2.new(1, 1)
@@ -12889,8 +12950,8 @@ function ModernV2:CreateWindow(Config)
 		ButtonHolder.BackgroundTransparency = 1
 		ButtonHolder.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		ButtonHolder.BorderSizePixel = 0
-		ButtonHolder.Position = UDim2.new(1, -14, 1, -14)
-		ButtonHolder.Size = UDim2.new(1, -28, 0, 30)
+		ButtonHolder.Position = UDim2.new(1, -16, 1, -14)
+		ButtonHolder.Size = UDim2.new(1, -32, 0, 32)
 		ButtonHolder.ZIndex = 182
 
 		ButtonLayout.Parent = ButtonHolder
@@ -12912,11 +12973,27 @@ function ModernV2:CreateWindow(Config)
 
 			ModernV2.PlayAnimate(Panel,SlowyTween,{
 				BackgroundTransparency = 1,
-				Size = UDim2.new(0, 335, 0, 145)
+				Size = PanelClosedSize
 			})
 
 			ModernV2.PlayAnimate(UIStroke,SlowyTween,{
 				Transparency = 1
+			})
+
+			ModernV2.PlayAnimate(AccentBar,SlowyTween,{
+				BackgroundTransparency = 1
+			})
+
+			ModernV2.PlayAnimate(IconHolder,SlowyTween,{
+				BackgroundTransparency = 1
+			})
+
+			ModernV2.PlayAnimate(IconStroke,SlowyTween,{
+				Transparency = 1
+			})
+
+			ModernV2.PlayAnimate(DialogIcon,SlowyTween,{
+				ImageTransparency = 1
 			})
 
 			ModernV2.PlayAnimate(Title,SlowyTween,{
@@ -12925,6 +13002,10 @@ function ModernV2:CreateWindow(Config)
 
 			ModernV2.PlayAnimate(Content,SlowyTween,{
 				TextTransparency = 1
+			})
+
+			ModernV2.PlayAnimate(Divider,SlowyTween,{
+				BackgroundTransparency = 1
 			})
 
 			Shadow:Render(false);
@@ -12966,11 +13047,11 @@ function ModernV2:CreateWindow(Config)
 			Button.BorderColor3 = Color3.fromRGB(0, 0, 0)
 			Button.BorderSizePixel = 0
 			Button.ClipsDescendants = true
-			Button.Size = UDim2.new(0, math.max(72, TextService:GetTextSize(tostring(ButtonConfig.Text), 12, Enum.Font.GothamMedium, Vector2.new(math.huge, math.huge)).X + 28), 0, 28)
+			Button.Size = UDim2.new(0, math.max(78, TextService:GetTextSize(tostring(ButtonConfig.Text), 12, Enum.Font.GothamBold, Vector2.new(math.huge, math.huge)).X + 32), 0, 32)
 			Button.ZIndex = 183
 			Button.LayoutOrder = Index
 
-			ButtonCorner.CornerRadius = UDim.new(0, 5)
+			ButtonCorner.CornerRadius = UDim.new(0, 7)
 			ButtonCorner.Parent = Button
 
 			ButtonStroke.Transparency = 1
@@ -12985,7 +13066,7 @@ function ModernV2:CreateWindow(Config)
 			ButtonLabel.BorderSizePixel = 0
 			ButtonLabel.Size = UDim2.fromScale(1, 1)
 			ButtonLabel.ZIndex = 184
-			ButtonLabel.Font = Enum.Font.GothamMedium
+			ButtonLabel.Font = ButtonConfig.Primary and Enum.Font.GothamBold or Enum.Font.GothamMedium
 			ButtonLabel.Text = ButtonConfig.Text
 			ButtonLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 			ButtonLabel.TextSize = 12
@@ -13004,7 +13085,7 @@ function ModernV2:CreateWindow(Config)
 
 			ModernV2:AddSignal(Input.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
 				ModernV2.PlayAnimate(Button,SlowyTween,{
-					BackgroundTransparency = ButtonConfig.Primary and 0 or 0.100
+					BackgroundTransparency = ButtonConfig.Primary and 0 or 0.080
 				})
 			end)))
 
@@ -13028,16 +13109,32 @@ function ModernV2:CreateWindow(Config)
 		end;
 
 		ModernV2.PlayAnimate(Overlay,SlowyTween,{
-			BackgroundTransparency = 0.350
+			BackgroundTransparency = 0.280
 		})
 
 		ModernV2.PlayAnimate(Panel,VSlowTween,{
-			BackgroundTransparency = 0.035,
-			Size = UDim2.new(0, 350, 0, 160)
+			BackgroundTransparency = 0.025,
+			Size = PanelOpenSize
 		})
 
 		ModernV2.PlayAnimate(UIStroke,SlowyTween,{
 			Transparency = 0.650
+		})
+
+		ModernV2.PlayAnimate(AccentBar,SlowyTween,{
+			BackgroundTransparency = 0
+		})
+
+		ModernV2.PlayAnimate(IconHolder,SlowyTween,{
+			BackgroundTransparency = 0.820
+		})
+
+		ModernV2.PlayAnimate(IconStroke,SlowyTween,{
+			Transparency = 0.350
+		})
+
+		ModernV2.PlayAnimate(DialogIcon,SlowyTween,{
+			ImageTransparency = 0
 		})
 
 		ModernV2.PlayAnimate(Title,SlowyTween,{
@@ -13046,6 +13143,10 @@ function ModernV2:CreateWindow(Config)
 
 		ModernV2.PlayAnimate(Content,SlowyTween,{
 			TextTransparency = 0.250
+		})
+
+		ModernV2.PlayAnimate(Divider,SlowyTween,{
+			BackgroundTransparency = 0.720
 		})
 
 		Shadow:Render(true);
