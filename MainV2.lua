@@ -7895,6 +7895,7 @@ function ModernV2:CreateWindow(Config)
 		ConfigOverwrite = ConfigSettings.Overwrite ~= false,
 		ConfigEncrypted = ConfigSettings.Encrypted == true or string.lower(tostring(ConfigSettings.Format or "")) == "encoded",
 		ConfigShowAutoSaveToggle = ConfigSettings.ShowAutoSaveToggle == true,
+		ConfigSaveWindowState = ConfigSettings.SaveWindowState == true,
 		Signal = ModernV2:CreateSignal(true),
 		Tabs = {},
 		CurrentTab = 1,
@@ -12272,6 +12273,15 @@ function ModernV2:CreateWindow(Config)
 					ConfigLib:RefreshConfig();
 
 					Logging.new("folder","Loaded "..tostring(ConfigNameStr),3.5);
+				end;
+			end;
+
+			if not Window.ConfigSaveWindowState and not Window.Destroyed then
+				Window.Signal:SetValue(true);
+				Window:SetRender(true);
+
+				if Window._MenuIcon then
+					Window._MenuIcon:OnWindowToggle(true);
 				end;
 			end;
 
