@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.8]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.2.0]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -7904,6 +7904,7 @@ function ModernV2:CreateWindow(Config)
 		Search = true,
 		ConfigEnabled = true,
 		TextGradient = true,
+		RunningText = false,
 		NotifyOnCallbackError = false,
 		Loadingscreen = false,
 		Enable3DRenderer = false,
@@ -7928,6 +7929,7 @@ function ModernV2:CreateWindow(Config)
 		ShowUser = Config.ShowUser,
 		SearchEnabled = Config.Search,
 		ConfigEnabled = Config.ConfigEnabled and Config.Config ~= false,
+		RunningText = Config.RunningText == true,
 		ConfigAutoSaveFile = ConfigSettings.AutoSaveFile or "Default",
 		ConfigAutoSave = ConfigSettings.AutoSave ~= false,
 		ConfigAutoLoad = ConfigSettings.AutoLoad ~= false,
@@ -8421,6 +8423,7 @@ function ModernV2:CreateWindow(Config)
 	WindowContent.TextSize = 9.000
 	WindowContent.TextTransparency = 0.650
 	WindowContent.TextXAlignment = Enum.TextXAlignment.Left
+	WindowContent.TextTruncate = Enum.TextTruncate.AtEnd
 
 	local function EnableHeaderRunningText(Label, Speed, Gap)
 		Speed = Speed or 22;
@@ -8511,8 +8514,11 @@ function ModernV2:CreateWindow(Config)
 		return Clip;
 	end;
 
-	EnableHeaderRunningText(WindowName, 24, 50);
-	EnableHeaderRunningText(WindowContent, 16, 38);
+	if Window.RunningText then
+		EnableHeaderRunningText(WindowName, 24, 50);
+	else
+		WindowName.TextTruncate = Enum.TextTruncate.AtEnd;
+	end;
 
 	LineFrame.Name = ModernV2.RandomString();
 	LineFrame.Parent = HeadFrame
