@@ -8370,6 +8370,7 @@ function ModernV2:CreateWindow(Config)
 	HeadFrame.BackgroundTransparency = 1.000
 	HeadFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	HeadFrame.BorderSizePixel = 0
+	HeadFrame.ClipsDescendants = true
 	HeadFrame.Size = UDim2.new(1, 0, 0, 50)
 	HeadFrame.ZIndex = 7
 
@@ -8396,7 +8397,7 @@ function ModernV2:CreateWindow(Config)
 	WindowName.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	WindowName.BorderSizePixel = 0
 	WindowName.Position = UDim2.new(0, 55, 0, 4)
-	WindowName.Size = UDim2.new(0, 200, 0, 25)
+	WindowName.Size = UDim2.new(1, -65, 0, 25)
 	WindowName.ZIndex = 7
 	WindowName.Font = Enum.Font.GothamBold
 	WindowName.Text = Window.Name
@@ -8412,7 +8413,7 @@ function ModernV2:CreateWindow(Config)
 	WindowContent.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	WindowContent.BorderSizePixel = 0
 	WindowContent.Position = UDim2.new(0, 55, 0, 25)
-	WindowContent.Size = UDim2.new(0, 200, 0, 15)
+	WindowContent.Size = UDim2.new(1, -65, 0, 15)
 	WindowContent.ZIndex = 7
 	WindowContent.Font = Enum.Font.GothamBold
 	WindowContent.Text = Window.Content
