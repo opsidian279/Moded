@@ -8381,6 +8381,98 @@ function ModernV2:CreateWindow(Config)
 	WindowContent.TextTransparency = 0.650
 	WindowContent.TextXAlignment = Enum.TextXAlignment.Left
 
+	local function EnableHeaderRunningText(Label, Speed, Gap)
+		Speed = Speed or 22;
+		Gap = Gap or 45;
+
+		local Clip = Instance.new("Frame");
+		Clip.Name = ModernV2.RandomString();
+		Clip.Parent = Label.Parent;
+		Clip.BackgroundTransparency = 1;
+		Clip.BorderSizePixel = 0;
+		Clip.ClipsDescendants = true;
+		Clip.Position = Label.Position;
+		Clip.Size = Label.Size;
+		Clip.ZIndex = Label.ZIndex;
+
+		Label.Parent = Clip;
+		Label.Position = UDim2.fromOffset(0, 0);
+		Label.Size = UDim2.fromScale(1, 1);
+		Label.TextTruncate = Enum.TextTruncate.None;
+
+		local Clone = Label:Clone();
+		Clone.Name = ModernV2.RandomString();
+		Clone.Parent = Clip;
+		Clone.Position = UDim2.fromOffset(0, 0);
+		Clone.TextTruncate = Enum.TextTruncate.None;
+		Clone.Visible = false;
+
+		local TextWidth = 0;
+		local ClipWidth = 0;
+		local Overflow = false;
+		local StartTick = tick();
+
+		local function SyncClone()
+			Clone.Text = Label.Text;
+			Clone.TextColor3 = Label.TextColor3;
+			Clone.TextTransparency = Label.TextTransparency;
+			Clone.Font = Label.Font;
+			Clone.FontFace = Label.FontFace;
+			Clone.TextSize = Label.TextSize;
+		end;
+
+		local function Refresh()
+			task.defer(function()
+				if not Label.Parent or not Clip.Parent then
+					return;
+				end;
+
+				SyncClone();
+				TextWidth = math.ceil(TextService:GetTextSize(Label.Text, Label.TextSize, Label.Font, Vector2.new(math.huge, Clip.AbsoluteSize.Y)).X);
+				ClipWidth = math.max(1, Clip.AbsoluteSize.X);
+				Overflow = TextWidth > ClipWidth;
+
+				if Overflow then
+					Label.Size = UDim2.new(0, TextWidth, 1, 0);
+					Clone.Size = UDim2.new(0, TextWidth, 1, 0);
+					Clone.Visible = true;
+					StartTick = tick();
+				else
+					Label.Position = UDim2.fromOffset(0, 0);
+					Label.Size = UDim2.fromScale(1, 1);
+					Clone.Visible = false;
+				end;
+			end);
+		end;
+
+		ModernV2:AddSignal(Label:GetPropertyChangedSignal("Text"):Connect(Refresh));
+		ModernV2:AddSignal(Label:GetPropertyChangedSignal("TextSize"):Connect(Refresh));
+		ModernV2:AddSignal(Label:GetPropertyChangedSignal("TextTransparency"):Connect(SyncClone));
+		ModernV2:AddSignal(Label:GetPropertyChangedSignal("TextColor3"):Connect(SyncClone));
+		ModernV2:AddSignal(Clip:GetPropertyChangedSignal("AbsoluteSize"):Connect(Refresh));
+		ModernV2:AddSignal(RunService.RenderStepped:Connect(function()
+			if not Label.Parent or not Clip.Parent then
+				return;
+			end;
+
+			if not Overflow then
+				return;
+			end;
+
+			local Cycle = TextWidth + Gap;
+			local X = -(((tick() - StartTick) * Speed) % Cycle);
+			Label.Position = UDim2.fromOffset(X, 0);
+			Clone.Position = UDim2.fromOffset(X + Cycle, 0);
+		end));
+
+		Refresh();
+
+		return Clip;
+	end;
+
+	EnableHeaderRunningText(WindowName, 24, 50);
+	EnableHeaderRunningText(WindowContent, 16, 38);
+
 	LineFrame.Name = ModernV2.RandomString();
 	LineFrame.Parent = HeadFrame
 	LineFrame.AnchorPoint = Vector2.new(0.5, 1)
