@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.9]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.8]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -6013,6 +6013,7 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 	function idx:AddButton(Config)
 		Config = ModernV2:ProcessParams(Config , {
 			Icon = 'chevron-large-left',
+			IconPosition = "Left",
 			Name = "Button",
 			Callback = EmptyFunction,
 			ToolTip = nil,
@@ -6084,6 +6085,34 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 		Icon.ImageTransparency = 0.250
 		Icon.ScaleType = Enum.ScaleType.Fit
 
+		local function ResolveIconPosition(value)
+			value = string.lower(tostring(value or "left"));
+
+			if value == "right" then
+				return "Right";
+			end;
+
+			return "Left";
+		end;
+
+		local function UpdateButtonLayout()
+			Config.IconPosition = ResolveIconPosition(Config.IconPosition);
+
+			if Config.IconPosition == "Right" then
+				Icon.AnchorPoint = Vector2.new(1, 0);
+				Icon.Position = UDim2.new(1, -11, 0, 5);
+				BasedLabel.Position = UDim2.new(0, 11, 0, 6);
+				BasedLabel.Size = UDim2.new(1, -46, 0, 15);
+			else
+				Icon.AnchorPoint = Vector2.new(0, 0);
+				Icon.Position = UDim2.new(0, 11, 0, 5);
+				BasedLabel.Position = UDim2.new(0, 35, 0, 6);
+				BasedLabel.Size = UDim2.new(1, -46, 0, 15);
+			end;
+		end;
+
+		UpdateButtonLayout();
+
 		function Button:SetText(t)
 			BasedLabel.Text = t;
 			return Button;
@@ -6093,6 +6122,16 @@ function ModernV2:RegisiterItem(Frame: Frame , Signel)
 			Config.Icon = t or Config.Icon;
 			ModernV2:SetIconMode(Icon, Config.Icon)
 			return Button;
+		end;
+
+		function Button:SetIconPosition(position)
+			Config.IconPosition = ResolveIconPosition(position);
+			UpdateButtonLayout();
+			return Button;
+		end;
+
+		function Button:GetIconPosition()
+			return Config.IconPosition;
 		end;
 
 		function Button:SetCallback(fn)
@@ -10861,10 +10900,13 @@ function ModernV2:CreateWindow(Config)
 
 				local ContentHeight = UIListLayout.AbsoluteContentSize.Y;
 				local HeaderHeight = GetSectionHeaderHeight();
-				local TargetHeight = SectionBoxed and (HeaderHeight + 10) or HeaderHeight;
+				local HeaderSpacerHeight = SectionBoxed and (HeaderHeight + 4) or 0;
+				local BoxPadding = 0;
+				local RealContentHeight = math.max(0, ContentHeight - HeaderSpacerHeight);
+				local TargetHeight = SectionBoxed and (HeaderSpacerHeight + BoxPadding) or HeaderHeight;
 
-				if not Section.Collapsed and ContentHeight > 1 then
-					TargetHeight = SectionBoxed and (ContentHeight + 10) or (ContentHeight + HeaderHeight - 0.5);
+				if not Section.Collapsed and RealContentHeight > 1 then
+					TargetHeight = SectionBoxed and (HeaderSpacerHeight + RealContentHeight + BoxPadding) or (ContentHeight + HeaderHeight - 0.5);
 				end;
 
 				ModernV2.PlayAnimate(SectionFrame , VSlowTween , {
