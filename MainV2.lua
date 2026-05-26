@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.2.0]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.2.1]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -4585,6 +4585,9 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			Search = true,
 			OptionsIcon = {},
 			DisabledOptions = {},
+			AllowNil = false,
+			AutoSelectFirst = false,
+			ValidateValue = true,
 			RefreshInterval = nil,
 			OptionsProvider = nil,
 		})
@@ -4593,6 +4596,9 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		Config.Default = ModernV2.ProcessDropdown(Config.Default);
 		Config.OptionsIcon = Config.OptionsIcon or Config.OptionIcons or Config.Icons or {};
 		Config.DisabledOptions = Config.DisabledOptions or Config.Disabled or {};
+		Config.AllowNil = Config.AllowNil == true;
+		Config.AutoSelectFirst = Config.AutoSelectFirst == true;
+		Config.ValidateValue = Config.ValidateValue ~= false;
 
 		local function NormalizeOptionMap(source)
 			local Map = {};
@@ -4637,6 +4643,67 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 
 		local DisabledMap = NormalizeOptionMap(Config.DisabledOptions);
 		local IconMap = NormalizeIconMap(Config.OptionsIcon);
+		local function GetFirstDropdownValue()
+			for _,Value in next, Config.Values do
+				return Value;
+			end;
+		end;
+
+		local function HasDropdownValue(value)
+			for _,Option in next, Config.Values do
+				if Option == value then
+					return true;
+				end;
+			end;
+
+			return false;
+		end;
+
+		local function ResolveSingleDropdownValue(value)
+			if value == nil then
+				if Config.AutoSelectFirst then
+					return GetFirstDropdownValue();
+				end;
+
+				return nil;
+			end;
+
+			if Config.ValidateValue and not HasDropdownValue(value) then
+				if Config.AutoSelectFirst then
+					return GetFirstDropdownValue();
+				end;
+
+				return nil;
+			end;
+
+			return value;
+		end;
+
+		local function ShouldFireDropdownCallback(value)
+			return Config.Multi or value ~= nil or Config.AllowNil;
+		end;
+
+		local function ResolveMultiDropdownValue(value)
+			local Processed = ModernV2.ProcessDropdown(value);
+
+			if typeof(Processed) == "table" then
+				return Processed;
+			end;
+
+			if Processed ~= nil then
+				return {
+					[Processed] = true,
+				};
+			end;
+
+			return {};
+		end;
+
+		if Config.Multi then
+			Config.Default = ResolveMultiDropdownValue(Config.Default);
+		else
+			Config.Default = ResolveSingleDropdownValue(Config.Default);
+		end;
 
 		local Dropdown = Instance.new("Frame")
 		local DropdownIcon = Instance.new("ImageLabel")
@@ -5312,6 +5379,10 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 				local ok, values = pcall(Config.OptionsProvider);
 				if ok and typeof(values) == "table" then
 					Config.Values = values;
+					if not Config.Multi then
+						Config.Default = ResolveSingleDropdownValue(Config.Default);
+						BasedLabel.Text = ModernV2.ParseDropdown(Config.Default);
+					end;
 					DropdownLib:Generate();
 				end;
 			end));
@@ -5322,7 +5393,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		end;
 
 		function DropdownLib:SetValue(v)
-			Config.Default = Config.Multi and ModernV2.ProcessDropdown(v) or v;
+			Config.Default = Config.Multi and ResolveMultiDropdownValue(v) or ResolveSingleDropdownValue(v);
 
 			BasedLabel.Text = ModernV2.ParseDropdown(Config.Default);
 
@@ -5330,12 +5401,20 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 				task.spawn(v);
 			end;
 
-			ModernV2:FireCallback(Config.Callback, Config.Name, Config.Default);
+			if ShouldFireDropdownCallback(Config.Default) then
+				ModernV2:FireCallback(Config.Callback, Config.Name, Config.Default);
+			end;
+
 			return DropdownLib;
 		end;
 
 		function DropdownLib:SetValues(a)
-			Config.Values = a;
+			Config.Values = a or {};
+
+			if not Config.Multi then
+				Config.Default = ResolveSingleDropdownValue(Config.Default);
+				BasedLabel.Text = ModernV2.ParseDropdown(Config.Default);
+			end;
 
 			if not Config.AutoUpdate then
 				DropdownLib:Generate();
@@ -5421,7 +5500,10 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 				task.spawn(Refresh);
 			end;
 
-			ModernV2:FireCallback(Config.Callback, Config.Name, Config.Default);
+			if ShouldFireDropdownCallback(Config.Default) then
+				ModernV2:FireCallback(Config.Callback, Config.Name, Config.Default);
+			end;
+
 			return DropdownLib;
 		end;
 
@@ -8423,7 +8505,38 @@ function ModernV2:CreateWindow(Config)
 	WindowContent.TextSize = 9.000
 	WindowContent.TextTransparency = 0.650
 	WindowContent.TextXAlignment = Enum.TextXAlignment.Left
-	WindowContent.TextTruncate = Enum.TextTruncate.AtEnd
+	WindowContent.TextTruncate = Enum.TextTruncate.None
+
+	local function EnableHeaderAutoFit(Label, MaxTextSize, MinTextSize)
+		MaxTextSize = MaxTextSize or Label.TextSize;
+		MinTextSize = MinTextSize or 6;
+
+		local function Refresh()
+			task.defer(function()
+				if not Label or not Label.Parent then
+					return;
+				end;
+
+				local Width = math.max(1, Label.AbsoluteSize.X);
+				local TextSize = MaxTextSize;
+
+				while TextSize > MinTextSize and TextService:GetTextSize(
+					Label.Text,
+					TextSize,
+					Label.Font,
+					Vector2.new(math.huge, Label.AbsoluteSize.Y)
+				).X > Width do
+					TextSize = TextSize - 1;
+				end;
+
+				Label.TextSize = TextSize;
+			end);
+		end;
+
+		ModernV2:AddSignal(Label:GetPropertyChangedSignal("Text"):Connect(Refresh));
+		ModernV2:AddSignal(Label:GetPropertyChangedSignal("AbsoluteSize"):Connect(Refresh));
+		Refresh();
+	end;
 
 	local function EnableHeaderRunningText(Label, Speed, Gap)
 		Speed = Speed or 22;
@@ -8514,10 +8627,12 @@ function ModernV2:CreateWindow(Config)
 		return Clip;
 	end;
 
+	EnableHeaderAutoFit(WindowContent, 9, 6);
+
 	if Window.RunningText then
 		EnableHeaderRunningText(WindowName, 24, 50);
 	else
-		WindowName.TextTruncate = Enum.TextTruncate.AtEnd;
+		WindowName.TextTruncate = Enum.TextTruncate.None;
 	end;
 
 	LineFrame.Name = ModernV2.RandomString();
