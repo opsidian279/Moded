@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.2.1]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.2.2]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -524,6 +524,7 @@ function ModernV2:CreateMenuIcon(Config)
 	-- ── Defaults ──────────────────────────────────────────────────
 	local iconSize       = Config.Size         or 48;
 	local iconImage      = Config.Image        or "";          -- rbxassetid:// OR lucide name OR URL
+	local iconScale      = tonumber(Config.IconScale or Config.Scale) or 1;
 	local iconColor      = Config.IconColor    or Color3.fromRGB(255,255,255);
 	local bgColor        = Config.BGColor      or Color3.fromRGB(20,22,27);
 	local strokeColor    = Config.StrokeColor  or ModernV2.AccentColor;
@@ -586,6 +587,7 @@ function ModernV2:CreateMenuIcon(Config)
 	IconImage.ImageColor3         = iconColor;
 	IconImage.ImageTransparency   = 1;
 	IconImage.ScaleType           = Enum.ScaleType.Fit;
+	IconImage:SetAttribute("ModernIconScaleValue", iconScale);
 
 	local UICornerImg = Instance.new("UICorner");
 	UICornerImg.CornerRadius = UDim.new(0.15, 0);
@@ -681,6 +683,19 @@ function ModernV2:CreateMenuIcon(Config)
 	function MenuIconLib:SetIcon(src)
 		iconImage = src;
 		_applyIcon(src);
+	end;
+
+	--- Change icon visual scale for padded image assets
+	function MenuIconLib:SetIconScale(scale)
+		iconScale = tonumber(scale) or iconScale;
+		IconImage:SetAttribute("ModernIconScaleValue", iconScale);
+
+		local IconScaleObject = IconImage:FindFirstChild("ModernIconScale");
+		if IconScaleObject then
+			IconScaleObject.Scale = iconScale;
+		end;
+
+		return MenuIconLib;
 	end;
 
 	--- Change icon tint colour
@@ -1771,7 +1786,7 @@ ModernV2.SetIconMode = LPH_NO_VIRTUALIZE(function(self , Label: TextLabel , Icon
 			IconScale.Name = "ModernIconScale";
 			IconScale.Parent = Label;
 		end;
-		IconScale.Scale = ModernV2.IconScale or 0.82;
+		IconScale.Scale = tonumber(Label:GetAttribute("ModernIconScaleValue")) or ModernV2.IconScale or 0.82;
 
 		local FallbackText = Label:FindFirstChild("ModernIconFallbackText");
 
@@ -4583,6 +4598,10 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 			TextLocked = "Locked",
 			Size = 100,
 			Search = true,
+			Position = "Dropdown",
+			Placement = nil,
+			DropdownPosition = nil,
+			PopupPosition = nil,
 			OptionsIcon = {},
 			DisabledOptions = {},
 			AllowNil = false,
@@ -4599,6 +4618,7 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 		Config.AllowNil = Config.AllowNil == true;
 		Config.AutoSelectFirst = Config.AutoSelectFirst == true;
 		Config.ValidateValue = Config.ValidateValue ~= false;
+		Config.DropdownPosition = Config.DropdownPosition or Config.PopupPosition or Config.Placement or Config.Position;
 
 		local function NormalizeOptionMap(source)
 			local Map = {};
@@ -4986,7 +5006,46 @@ function ModernV2:RegisiterHandler(Handler: Frame , Signal)
 				UpdateDropdownSize();
 			end)));
 
+			local GetDropdownWindowRoot = LPH_NO_VIRTUALIZE(function()
+				local Current = Dropdown;
+
+				while Current and Current.Parent do
+					if Current.Parent == ModernV2.ScreenGui
+					or (ModernV2.GlobalSurfaceGui and Current.Parent == ModernV2.GlobalSurfaceGui) then
+						return Current;
+					end;
+
+					Current = Current.Parent;
+				end;
+
+				if ModernV2.ActiveWindow and ModernV2.ActiveWindow.Root then
+					return ModernV2.ActiveWindow.Root;
+				end;
+			end);
+
 			local SetPosition = LPH_NO_VIRTUALIZE(function()
+				local Placement = string.lower(tostring(Config.DropdownPosition or "Dropdown"));
+
+				if Placement == "center" or Placement == "middle" then
+					local WindowRoot = GetDropdownWindowRoot();
+
+					DropdownHandler.AnchorPoint = Vector2.new(0.5, 0.5);
+
+					if WindowRoot and WindowRoot.Parent then
+						DropdownHandler.Position = UDim2.fromOffset(
+							WindowRoot.AbsolutePosition.X + (WindowRoot.AbsoluteSize.X / 2),
+							WindowRoot.AbsolutePosition.Y + (WindowRoot.AbsoluteSize.Y / 2)
+						);
+					else
+						DropdownHandler.Position = UDim2.fromOffset(
+							ModernV2.ScreenGui.AbsoluteSize.X / 2,
+							ModernV2.ScreenGui.AbsoluteSize.Y / 2
+						);
+					end;
+
+					return;
+				end;
+
 				if ModernV2:MoreThanHalfY(Dropdown.AbsolutePosition.Y + 85) then
 					DropdownHandler.AnchorPoint = Vector2.new(0.5,1)
 				else
@@ -8087,6 +8146,7 @@ function ModernV2:CreateWindow(Config)
 	WindowFrame.Position = UDim2.new(255, 0, 255, 0)
 	WindowFrame.Size = Window.Size
 	WindowFrame.Active = true;
+	Window.Root = WindowFrame;
 
 	if Window.Loadingscreen then
 		local LoadingOverlay = Instance.new("Frame")
