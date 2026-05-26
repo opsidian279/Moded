@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.1.8]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.1.9]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -8592,8 +8592,18 @@ function ModernV2:CreateWindow(Config)
 	UserSettingButton.ScaleType = Enum.ScaleType.Fit
 
 	if not Window.ShowUser then
-		BottomFrame.Visible = false;
-		LeftScrollingFrame.Size = UDim2.new(1, -10, 1, -65);
+		AccountProfile.Image = "";
+		AccountProfile.ImageTransparency = 1;
+		AccountProfile.BackgroundColor3 = Color3.fromRGB(26, 28, 36);
+		AccountProfile.BackgroundTransparency = 0.250;
+		ModernV2:SetIconMode(AccountProfile, "gear");
+		AccountProfile.ImageColor3 = ModernV2.AccentColor;
+		AccountProfile.ImageTransparency = 0.050;
+
+		AccountName.Text = "Settings";
+		AccountName.Size = UDim2.new(0, 120, 0, 25);
+		ExpireLabel.Text = "Customize menu";
+		ExpireLabel.Size = UDim2.new(0, 120, 0, 15);
 	end;
 
 	ModernV2:AddSignal(BottomFrame.MouseEnter:Connect(LPH_NO_VIRTUALIZE(function()
@@ -12457,6 +12467,30 @@ function ModernV2:CreateWindow(Config)
 			Username = LocalPlayer.DisplayName,
 			Expires = "Never",
 		});
+
+		if not Window.ShowUser then
+			AccountProfile.Image = "";
+			AccountProfile.ImageTransparency = 0.050;
+			AccountProfile.BackgroundColor3 = Color3.fromRGB(26, 28, 36);
+			AccountProfile.BackgroundTransparency = 0.250;
+			ModernV2:SetIconMode(AccountProfile, "gear");
+			AccountProfile.ImageColor3 = ModernV2.AccentColor;
+			AccountName.Text = "Settings";
+			ExpireLabel.Text = "Customize menu";
+			Window.Username = "Settings";
+			Window.Profile = "";
+			Window.Expires = "Customize menu";
+
+			if Window.UserSettings.UserFrame then
+				Window.UserSettings.UserFrame:SetUsername(Window.Username);
+				Window.UserSettings.UserFrame:SetProfile(Window.Profile);
+				Window.UserSettings.UserFrame:SetExpires(Window.Expires);
+			else
+				Window.UserSettings.UserFrame = UserSettings:AddUserFrame(Window.Username , Window.Profile , Window.Expires);
+			end;
+
+			return;
+		end;
 
 		AccountName.Text = Config.Username;
 		AccountProfile.Image = Config.Profile;
