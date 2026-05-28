@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.2.3]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.2.4]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -9605,6 +9605,8 @@ function ModernV2:CreateWindow(Config)
 				Label.TextXAlignment = Enum.TextXAlignment.Left;
 				Label.TextYAlignment = Enum.TextYAlignment.Center;
 				Label.TextTruncate = Enum.TextTruncate.AtEnd;
+				Label.TextWrapped = true;
+				Label.RichText = true;
 				Label.ZIndex = 14;
 				return Label;
 			end;
@@ -9642,6 +9644,7 @@ function ModernV2:CreateWindow(Config)
 				Panel.ClipsDescendants = true;
 				Panel.Size = Size;
 				Panel.Position = Position or UDim2.fromOffset(0, 0);
+				Panel.AutomaticSize = Enum.AutomaticSize.Y;
 				Panel.ZIndex = 12;
 				AddCorner(Panel, 8);
 				AddStroke(Panel, Color3.fromRGB(45, 48, 58), 0.680);
@@ -10026,14 +10029,30 @@ function ModernV2:CreateWindow(Config)
 				end;
 
 				for Index,Entry in ipairs(Entries) do
-					local Item = MakePanel(Holder, UDim2.new(1, 0, 0, 64));
+					local Item = MakePanel(Holder, UDim2.new(1, 0, 0, 0));
 					Item.LayoutOrder = Index;
+
+					local ItemPadding = Instance.new("UIPadding");
+					ItemPadding.Parent = Item;
+					ItemPadding.PaddingTop = UDim.new(0, 10);
+					ItemPadding.PaddingBottom = UDim.new(0, 10);
+					ItemPadding.PaddingLeft = UDim.new(0, 14);
+					ItemPadding.PaddingRight = UDim.new(0, 14);
+
+					local ItemLayout = Instance.new("UIListLayout");
+					ItemLayout.Parent = Item;
+					ItemLayout.SortOrder = Enum.SortOrder.LayoutOrder;
+					ItemLayout.Padding = UDim.new(0, 6);
+
 					local Title = MakeText(Item, tostring(Entry.Title or Entry.Name or ("Update "..Index)), 14, true, 0);
-					Title.Position = UDim2.fromOffset(14, 10);
-					Title.Size = UDim2.new(1, -28, 0, 18);
+					Title.LayoutOrder = 1;
+					Title.Size = UDim2.new(1, 0, 0, 18);
+
 					local Desc = MakeText(Item, tostring(Entry.Description or Entry.Content or Entry.Date or ""), 11, false, 0.300);
-					Desc.Position = UDim2.fromOffset(14, 31);
-					Desc.Size = UDim2.new(1, -28, 0, 20);
+					Desc.LayoutOrder = 2;
+					Desc.Size = UDim2.new(1, 0, 0, 0);
+					Desc.AutomaticSize = Enum.AutomaticSize.Y;
+					Desc.TextYAlignment = Enum.TextYAlignment.Top;
 				end;
 			end;
 
