@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.2.2]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.2.3]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -10816,6 +10816,23 @@ function ModernV2:CreateWindow(Config)
 						OtherTab.SetValue(true);
 						break;
 					end;
+				end;
+			end;
+
+			return Tab;
+		end;
+
+		function Tab:Select()
+			if Tab.GetLocked and Tab:GetLocked() then
+				return Tab;
+			end;
+
+			for i,v in next , Window.Tabs do
+				if v == Tab then
+					v.SetValue(true);
+					Window.CurrentTab = i;
+				else
+					v.SetValue(false);
 				end;
 			end;
 
