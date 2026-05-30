@@ -1,4 +1,4 @@
--- [ModernV2] | [Modified By nexahub] | [Version : 0.2.5]
+-- [ModernV2] | [Modified By nexahub] | [Version : 0.2.3]
 do
 	local Constant = 'L'..'P'..'H'..'_NO_VIRTUALIZE';
 	getfenv()[Constant] = getfenv()[Constant] or function(f) return f end;
@@ -8049,8 +8049,7 @@ function ModernV2:CreateWindow(Config)
 		NotifyOnCallbackError = false,
 		Loadingscreen = false,
 		Enable3DRenderer = false,
-		Keybind = "RightControl",
-		IconCursor = ""
+		Keybind = "RightControl"
 	});
 
 	ModernV2:SetTextGradientEnabled(Config.TextGradient);
@@ -8086,8 +8085,7 @@ function ModernV2:CreateWindow(Config)
 		Loadingscreen = Config.Loadingscreen == true or Config.LoadingScreen == true or Config.Loading == true,
 		OnDestroyCallbacks = {},
 		Keybind = Config.Keybind,
-		Enable3DRenderer = Config.Enable3DRenderer,
-		IconCursor = Config.IconCursor
+		Enable3DRenderer = Config.Enable3DRenderer
 	};
 
 	if type(Config.OnDestroy) == "function" then
@@ -8095,27 +8093,6 @@ function ModernV2:CreateWindow(Config)
 	end;
 
 	ModernV2.GlobalLogo = Window.Logo;
-
-	-- Store original cursor to restore later
-	local OriginalCursorIcon = Mouse.Icon;
-	Window.OriginalCursorIcon = OriginalCursorIcon;
-
-	-- Set Custom Cursor Icon (only when window is opened)
-	if tostring(Window.IconCursor or "") ~= "" then
-		local cursorIcon = tostring(Window.IconCursor);
-		
-		-- Handle lucide icons or asset IDs
-		if string.find(cursorIcon, "lucide:", 1, true) or string.find(cursorIcon, "solar:", 1, true) then
-			cursorIcon = ModernV2:NormalizeIconId(cursorIcon);
-		elseif string.find(cursorIcon, "rbxassetid://", 1, true) then
-			-- Already in correct format
-		elseif string.match(cursorIcon, "^%d+$") then
-			-- Just a number, convert to rbxassetid://
-			cursorIcon = "rbxassetid://" .. cursorIcon;
-		end;
-		
-		Mouse.Icon = cursorIcon;
-	end;
 
 	local Logging = ModernV2:CreateLogger();
 	if not isfolder(Window.ConfigFolder) then
@@ -9628,8 +9605,6 @@ function ModernV2:CreateWindow(Config)
 				Label.TextXAlignment = Enum.TextXAlignment.Left;
 				Label.TextYAlignment = Enum.TextYAlignment.Center;
 				Label.TextTruncate = Enum.TextTruncate.AtEnd;
-				Label.TextWrapped = true;
-				Label.RichText = true;
 				Label.ZIndex = 14;
 				return Label;
 			end;
@@ -9667,7 +9642,6 @@ function ModernV2:CreateWindow(Config)
 				Panel.ClipsDescendants = true;
 				Panel.Size = Size;
 				Panel.Position = Position or UDim2.fromOffset(0, 0);
-				Panel.AutomaticSize = Enum.AutomaticSize.Y;
 				Panel.ZIndex = 12;
 				AddCorner(Panel, 8);
 				AddStroke(Panel, Color3.fromRGB(45, 48, 58), 0.680);
@@ -10052,30 +10026,14 @@ function ModernV2:CreateWindow(Config)
 				end;
 
 				for Index,Entry in ipairs(Entries) do
-					local Item = MakePanel(Holder, UDim2.new(1, 0, 0, 0));
+					local Item = MakePanel(Holder, UDim2.new(1, 0, 0, 64));
 					Item.LayoutOrder = Index;
-
-					local ItemPadding = Instance.new("UIPadding");
-					ItemPadding.Parent = Item;
-					ItemPadding.PaddingTop = UDim.new(0, 10);
-					ItemPadding.PaddingBottom = UDim.new(0, 10);
-					ItemPadding.PaddingLeft = UDim.new(0, 14);
-					ItemPadding.PaddingRight = UDim.new(0, 14);
-
-					local ItemLayout = Instance.new("UIListLayout");
-					ItemLayout.Parent = Item;
-					ItemLayout.SortOrder = Enum.SortOrder.LayoutOrder;
-					ItemLayout.Padding = UDim.new(0, 6);
-
 					local Title = MakeText(Item, tostring(Entry.Title or Entry.Name or ("Update "..Index)), 14, true, 0);
-					Title.LayoutOrder = 1;
-					Title.Size = UDim2.new(1, 0, 0, 18);
-
+					Title.Position = UDim2.fromOffset(14, 10);
+					Title.Size = UDim2.new(1, -28, 0, 18);
 					local Desc = MakeText(Item, tostring(Entry.Description or Entry.Content or Entry.Date or ""), 11, false, 0.300);
-					Desc.LayoutOrder = 2;
-					Desc.Size = UDim2.new(1, 0, 0, 0);
-					Desc.AutomaticSize = Enum.AutomaticSize.Y;
-					Desc.TextYAlignment = Enum.TextYAlignment.Top;
+					Desc.Position = UDim2.fromOffset(14, 31);
+					Desc.Size = UDim2.new(1, -28, 0, 20);
 				end;
 			end;
 
@@ -13894,11 +13852,6 @@ function ModernV2:CreateWindow(Config)
 		Window.Destroyed = true;
 		Window.Signal:SetValue(false);
 
-		-- Restore original cursor icon
-		if Window.OriginalCursorIcon then
-			Mouse.Icon = Window.OriginalCursorIcon;
-		end;
-
 		for _,Callback in ipairs(Window.OnDestroyCallbacks) do
 			ModernV2:FireCallback(Callback, "OnDestroy", Window);
 		end;
@@ -14201,35 +14154,6 @@ function ModernV2:CreateWindow(Config)
 
 	function Window:Indicator(Config)
 		return Window.Indicators(Config);
-	end;
-
-	function Window:SetCursor(IconId)
-		Window.IconCursor = tostring(IconId or "");
-		
-		-- Store original cursor if not already stored
-		if not Window.OriginalCursorIcon then
-			Window.OriginalCursorIcon = Mouse.Icon;
-		end;
-		
-		if tostring(Window.IconCursor or "") == "" then
-			Mouse.Icon = Window.OriginalCursorIcon or "";
-			return Window;
-		end;
-		
-		local cursorIcon = tostring(Window.IconCursor);
-		
-		-- Handle lucide icons or asset IDs
-		if string.find(cursorIcon, "lucide:", 1, true) or string.find(cursorIcon, "solar:", 1, true) then
-			cursorIcon = ModernV2:NormalizeIconId(cursorIcon);
-		elseif string.find(cursorIcon, "rbxassetid://", 1, true) then
-			-- Already in correct format
-		elseif string.match(cursorIcon, "^%d+$") then
-			-- Just a number, convert to rbxassetid://
-			cursorIcon = "rbxassetid://" .. cursorIcon;
-		end;
-		
-		Mouse.Icon = cursorIcon;
-		return Window;
 	end;
 
 	return CaseInsensitive(Window);
@@ -14813,153 +14737,9 @@ function ModernV2:CreateIndicator()
 	return CaseInsensitive(Indicators);
 end;
 
-
-function ModernV2:CreateCursor()
-    local Cursor = {}
-    Cursor.Enabled = true
-    Cursor.Visible = true
-    
-    -- Create cursor object
-    local CursorObject = Instance.new("ImageLabel")
-    CursorObject.Name = "CustomCursor"
-    CursorObject.BackgroundTransparency = 1
-    CursorObject.Size = UDim2.fromOffset(16, 16)
-    CursorObject.ZIndex = 9999
-    CursorObject.Parent = ModernV2.ScreenGui
-    
-    -- Default cursor (you can change this to any Roblox asset ID)
-    CursorObject.Image = "rbxasset://textures/MouseIcon.png"
-    
-    -- Update cursor position on mouse move
-    local function UpdateCursorPosition()
-        if Cursor.Enabled and Cursor.Visible then
-            local mousePos = UserInputService:GetMouseLocation()
-            CursorObject.Position = UDim2.fromOffset(mousePos.X, mousePos.Y)
-        end
-    end
-    
-    -- Connect to mouse movement
-    Cursor.UpdateConnection = UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or
-           input.UserInputType == Enum.UserInputType.Touch then
-            UpdateCursorPosition()
-        end
-    end)
-    
-    -- Initial position update
-    UpdateCursorPosition()
-    
-    -- Hide default system cursor
-    UserInputService.MouseIconEnabled = false
-    
-    function Cursor:SetImage(image)
-        CursorObject.Image = image
-    end
-    
-    function Cursor:SetSize(size)
-        CursorObject.Size = UDim2.fromOffset(size, size)
-    end
-    
-    function Cursor:SetVisible(visible)
-        Cursor.Visible = visible
-        CursorObject.Visible = visible
-    end
-    
-    function Cursor:SetEnabled(enabled)
-        Cursor.Enabled = enabled
-        if not enabled then
-            CursorObject.Visible = false
-        else
-            CursorObject.Visible = Cursor.Visible
-        end
-    end
-    
-    function Cursor:Destroy()
-        if Cursor.UpdateConnection then
-            Cursor.UpdateConnection:Disconnect()
-        end
-        CursorObject:Destroy()
-        UserInputService.MouseIconEnabled = true
-    end
-    
-    return Cursor
-end
-
-function ModernV2:CreateCursor()
-    local Cursor = {}
-    Cursor.Enabled = true
-    Cursor.Visible = true
-
-    -- Create cursor object
-    local CursorObject = Instance.new("ImageLabel")
-    CursorObject.Name = "CustomCursor"
-    CursorObject.BackgroundTransparency = 1
-    CursorObject.Size = UDim2.fromOffset(16, 16)
-    CursorObject.ZIndex = 9999
-    CursorObject.Parent = ModernV2.ScreenGui
-
-    -- Default cursor (you can change this to any Roblox asset ID)
-    CursorObject.Image = "rbxasset://textures/MouseIcon.png"
-
-    -- Update cursor position on mouse move
-    local function UpdateCursorPosition()
-        if Cursor.Enabled and Cursor.Visible then
-            local mousePos = UserInputService:GetMouseLocation()
-            CursorObject.Position = UDim2.fromOffset(mousePos.X, mousePos.Y)
-        end
-    end
-
-    -- Connect to mouse movement
-    Cursor.UpdateConnection = UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or
-           input.UserInputType == Enum.UserInputType.Touch then
-            UpdateCursorPosition()
-        end
-    end)
-
-    -- Initial position update
-    UpdateCursorPosition()
-
-    -- Hide default system cursor
-    UserInputService.MouseIconEnabled = false
-
-    function Cursor:SetImage(image)
-        CursorObject.Image = image
-    end
-
-    function Cursor:SetSize(size)
-        CursorObject.Size = UDim2.fromOffset(size, size)
-    end
-
-    function Cursor:SetVisible(visible)
-        Cursor.Visible = visible
-        CursorObject.Visible = visible
-    end
-
-    function Cursor:SetEnabled(enabled)
-        Cursor.Enabled = enabled
-        if not enabled then
-            CursorObject.Visible = false
-        else
-            CursorObject.Visible = Cursor.Visible
-        end
-    end
-
-    function Cursor:Destroy()
-        if Cursor.UpdateConnection then
-            Cursor.UpdateConnection:Disconnect()
-        end
-        CursorObject:Destroy()
-        UserInputService.MouseIconEnabled = true
-    end
-
-    return Cursor
-end
-
 ModernV2.Logging = ModernV2:CreateLogger();
 ModernV2.Notifier = ModernV2:CreateNotification();
 ModernV2.Indicators = ModernV2:CreateIndicator();
-ModernV2.Cursor = ModernV2:CreateCursor();
 
 function ModernV2:Unload()
 	if not ModernV2.UnloadEnabled then
